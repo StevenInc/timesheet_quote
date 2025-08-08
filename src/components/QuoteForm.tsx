@@ -359,6 +359,31 @@ const QuoteForm: React.FC = () => {
               </div>
             </div>
 
+            {/* Expires and Payment Terms moved under Totals */}
+            <div className="form-section">
+              <div className="form-group">
+                <label htmlFor="expires">Expires</label>
+                <div className="date-input-group">
+                  <input
+                    type="date"
+                    id="expires"
+                    value={formData.expires}
+                    onChange={(e) => handleInputChange('expires', e.target.value)}
+                  />
+                </div>
+              </div>
+              <div className="form-group">
+                <label htmlFor="paymentTerms">Payment Terms</label>
+                <input
+                  type="text"
+                  id="paymentTerms"
+                  value={formData.paymentTerms}
+                  onChange={(e) => handleInputChange('paymentTerms', e.target.value)}
+                  placeholder="Net 30"
+                />
+              </div>
+            </div>
+
             <div className="form-section">
               <div className="form-group">
                 <label htmlFor="notes">Notes</label>
@@ -385,29 +410,6 @@ const QuoteForm: React.FC = () => {
 
           {/* Right Column */}
           <div className="form-column right-column">
-            <div className="form-section">
-              <div className="form-group">
-                <label htmlFor="expires">Expires</label>
-                <div className="date-input-group">
-                  <input
-                    type="date"
-                    id="expires"
-                    value={formData.expires}
-                    onChange={(e) => handleInputChange('expires', e.target.value)}
-                  />
-                </div>
-              </div>
-              <div className="form-group">
-                <label htmlFor="paymentTerms">Payment Terms</label>
-                <input
-                  type="text"
-                  id="paymentTerms"
-                  value={formData.paymentTerms}
-                  onChange={(e) => handleInputChange('paymentTerms', e.target.value)}
-                  placeholder="Net 30"
-                />
-              </div>
-            </div>
 
             <div className="form-section">
               <div className="form-group">
