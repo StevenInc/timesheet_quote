@@ -38,9 +38,8 @@ interface QuoteFormData {
   quoteHistory: QuoteHistory[];
   selectedHistoryVersion: string;
   isTaxEnabled: boolean;
+  taxRate: number; // 0.08 = 8%
 }
-
-const TAX_RATE = 0.08; // 8%
 
 const QuoteForm: React.FC = () => {
   const [formData, setFormData] = useState<QuoteFormData>({
@@ -77,10 +76,25 @@ const QuoteForm: React.FC = () => {
     ],
     selectedHistoryVersion: '2',
     isTaxEnabled: false,
+    taxRate: 0.08,
   });
+
+  const [isTaxModalOpen, setIsTaxModalOpen] = useState<boolean>(false);
+  const [tempTaxRatePercent, setTempTaxRatePercent] = useState<number>(formData.taxRate * 100);
 
   const calculateItemTotal = (quantity: number, unitPrice: number) => {
     return quantity * unitPrice;
+  };
+
+  const recalc = (
+    items: QuoteItem[] = formData.items,
+    isTaxEnabled: boolean = formData.isTaxEnabled,
+    taxRate: number = formData.taxRate
+  ) => {
+    const subtotal = items.reduce((sum, item) => sum + item.total, 0);
+    const tax = isTaxEnabled ? subtotal * taxRate : 0;
+    const total = subtotal + tax;
+    return { subtotal, tax, total };
   };
 
   const updateItem = (id: string, field: keyof QuoteItem, value: string | number) => {
@@ -95,9 +109,7 @@ const QuoteForm: React.FC = () => {
       return item;
     });
 
-    const subtotal = updatedItems.reduce((sum, item) => sum + item.total, 0);
-    const tax = formData.isTaxEnabled ? subtotal * TAX_RATE : 0;
-    const total = subtotal + tax;
+    const { subtotal, tax, total } = recalc(updatedItems);
 
     setFormData({
       ...formData,
@@ -126,9 +138,7 @@ const QuoteForm: React.FC = () => {
   const removeItem = (id: string) => {
     if (formData.items.length > 1) {
       const updatedItems = formData.items.filter(item => item.id !== id);
-      const subtotal = updatedItems.reduce((sum, item) => sum + item.total, 0);
-      const tax = formData.isTaxEnabled ? subtotal * TAX_RATE : 0;
-      const total = subtotal + tax;
+      const { subtotal, tax, total } = recalc(updatedItems);
 
       setFormData({
         ...formData,
@@ -141,22 +151,30 @@ const QuoteForm: React.FC = () => {
   };
 
   const handleInputChange = (field: keyof QuoteFormData, value: string | number | boolean) => {
-    setFormData({
-      ...formData,
-      [field]: value,
-    });
+    const next = { ...formData, [field]: value } as QuoteFormData;
+    if (field === 'taxRate' || field === 'isTaxEnabled') {
+      const { subtotal, tax, total } = recalc(next.items, next.isTaxEnabled, next.taxRate);
+      next.subtotal = subtotal;
+      next.tax = tax;
+      next.total = total;
+    }
+    setFormData(next);
   };
 
   const handleCheckboxChange = (field: keyof QuoteFormData, value: boolean) => {
     if (field === 'isTaxEnabled') {
-      const tax = value ? formData.subtotal * TAX_RATE : 0;
-      const total = formData.subtotal + tax;
+      const { subtotal, tax, total } = recalc(formData.items, value, formData.taxRate);
       setFormData({
         ...formData,
         isTaxEnabled: value,
+        subtotal,
         tax,
         total,
       });
+      if (value) {
+        setTempTaxRatePercent(formData.taxRate * 100);
+        setIsTaxModalOpen(true);
+      }
       return;
     }
 
@@ -180,6 +198,19 @@ const QuoteForm: React.FC = () => {
   const downloadQuote = () => {
     // TODO: Implement PDF generation
     console.log('Downloading quote...');
+  };
+
+  const applyNewTaxRate = () => {
+    const newRate = Math.max(0, Math.min(100, Number(tempTaxRatePercent))) / 100;
+    const { subtotal, tax, total } = recalc(formData.items, formData.isTaxEnabled, newRate);
+    setFormData({
+      ...formData,
+      taxRate: newRate,
+      subtotal,
+      tax,
+      total,
+    });
+    setIsTaxModalOpen(false);
   };
 
   return (
@@ -303,13 +334,13 @@ const QuoteForm: React.FC = () => {
             {/* Summary Totals moved under Quote Items */}
             <div className="form-section totals-section">
               <div className="checkbox-group" style={{ marginBottom: '0.5rem' }}>
-                <label className="checkbox-label">
+                <label className="checkbox-label" onClick={() => formData.isTaxEnabled && setIsTaxModalOpen(true)}>
                   <input
                     type="checkbox"
                     checked={formData.isTaxEnabled}
                     onChange={(e) => handleCheckboxChange('isTaxEnabled', e.target.checked)}
                   />
-                  Apply Tax (8%)
+                  Apply Tax ({(formData.taxRate * 100).toFixed(2)}%)
                 </label>
               </div>
               <div className="totals-grid">
@@ -450,6 +481,34 @@ const QuoteForm: React.FC = () => {
           </button>
         </div>
       </form>
+
+      {isTaxModalOpen && (
+        <div className="modal-overlay" role="dialog" aria-modal="true" aria-label="Edit tax rate">
+          <div className="modal">
+            <h3>Edit Tax Rate</h3>
+            <div className="form-group">
+              <label htmlFor="taxRateInput">Tax Rate (%)</label>
+              <input
+                id="taxRateInput"
+                type="number"
+                min={0}
+                max={100}
+                step={0.01}
+                value={Number.isNaN(tempTaxRatePercent) ? '' : tempTaxRatePercent}
+                onChange={(e) => setTempTaxRatePercent(parseFloat(e.target.value))}
+              />
+            </div>
+            <div className="modal-actions">
+              <button type="button" className="btn btn-secondary" onClick={() => setIsTaxModalOpen(false)}>
+                Cancel
+              </button>
+              <button type="button" className="btn btn-primary" onClick={applyNewTaxRate}>
+                Apply
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };
