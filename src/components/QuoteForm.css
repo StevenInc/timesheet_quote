@@ -537,3 +537,48 @@
   gap: 0.75rem;
   margin-top: 0.75rem;
 }
+
+/* Payment schedule */
+.schedule-table {
+  margin-top: 0.5rem;
+}
+
+.schedule-footer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-top: 0.5rem;
+}
+
+.schedule-total {
+  font-weight: 600;
+  color: #1e293b;
+}
+
+.schedule-total.warn {
+  color: #b45309; /* amber-700 */
+}
+
+/* Make percent column narrower in schedule */
+.schedule-table .table-header {
+  grid-template-columns: 120px 1fr 60px;
+  column-gap: 12px;
+}
+
+.schedule-table .table-row {
+  grid-template-columns: 120px 1fr 60px;
+  column-gap: 12px;
+}
+
+/* Constrain percent input width and add spacing */
+.schedule-table .table-row .table-cell:first-child input[type="number"] {
+  width: 100%;
+  max-width: 120px;
+  margin-right: 10px;
+}
+
+/* Extra left margin for schedule term trash icons */
+.schedule-table .table-cell:last-child .btn {
+  margin-left: 10px;
+  margin-right: 10px;
+}

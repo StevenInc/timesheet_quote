@@ -17,6 +17,12 @@ interface QuoteHistory {
   isCurrent: boolean;
 }
 
+interface PaymentTermItem {
+  id: string;
+  percentage: number;
+  description: string;
+}
+
 interface QuoteFormData {
   owner: string;
   clientName: string;
@@ -39,6 +45,7 @@ interface QuoteFormData {
   selectedHistoryVersion: string;
   isTaxEnabled: boolean;
   taxRate: number; // 0.08 = 8%
+  paymentSchedule: PaymentTermItem[];
 }
 
 const QuoteForm: React.FC = () => {
@@ -77,6 +84,9 @@ const QuoteForm: React.FC = () => {
     selectedHistoryVersion: '2',
     isTaxEnabled: false,
     taxRate: 0.08,
+    paymentSchedule: [
+      { id: 'ps-1', percentage: 100, description: 'net 30 days' },
+    ],
   });
 
   const [isTaxModalOpen, setIsTaxModalOpen] = useState<boolean>(false);
@@ -183,6 +193,25 @@ const QuoteForm: React.FC = () => {
       [field]: value,
     });
   };
+
+  // Payment schedule helpers
+  const updatePaymentTerm = (id: string, field: keyof PaymentTermItem, value: string | number) => {
+    const updated = formData.paymentSchedule.map((t) =>
+      t.id === id ? { ...t, [field]: field === 'percentage' ? Number(value) : value } : t
+    );
+    setFormData({ ...formData, paymentSchedule: updated });
+  };
+
+  const addPaymentTerm = () => {
+    const newTerm: PaymentTermItem = { id: `ps-${Date.now()}`, percentage: 0, description: '' };
+    setFormData({ ...formData, paymentSchedule: [...formData.paymentSchedule, newTerm] });
+  };
+
+  const removePaymentTerm = (id: string) => {
+    setFormData({ ...formData, paymentSchedule: formData.paymentSchedule.filter((t) => t.id !== id) });
+  };
+
+  const paymentScheduleTotal = formData.paymentSchedule.reduce((sum, t) => sum + (Number(t.percentage) || 0), 0);
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -382,6 +411,54 @@ const QuoteForm: React.FC = () => {
                   placeholder="Net 30"
                 />
               </div>
+
+              {/* Payment Schedule dynamic list */}
+              <div className="form-group">
+                <label>Payment Schedule</label>
+                <div className="items-table schedule-table">
+                  <div className="table-header">
+                    <div className="header-cell">Percent</div>
+                    <div className="header-cell">Description</div>
+                    <div className="header-cell" aria-hidden="true"></div>
+                  </div>
+                  {formData.paymentSchedule.map((t) => (
+                    <div key={t.id} className="table-row">
+                      <div className="table-cell">
+                        <input
+                          type="number"
+                          min={0}
+                          max={100}
+                          step={0.01}
+                          value={t.percentage}
+                          onChange={(e) => updatePaymentTerm(t.id, 'percentage', parseFloat(e.target.value) || 0)}
+                          placeholder="0"
+                        />
+                      </div>
+                      <div className="table-cell">
+                        <input
+                          type="text"
+                          value={t.description}
+                          onChange={(e) => updatePaymentTerm(t.id, 'description', e.target.value)}
+                          placeholder="e.g., with order"
+                        />
+                      </div>
+                      <div className="table-cell">
+                        <button type="button" className="btn btn-danger btn-sm" onClick={() => removePaymentTerm(t.id)}>
+                          <Trash2 size={14} />
+                        </button>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+                <div className="schedule-footer">
+                  <button type="button" className="btn btn-link add-more-btn" onClick={addPaymentTerm}>
+                    Add Terms
+                  </button>
+                  <div className={`schedule-total ${paymentScheduleTotal !== 100 ? 'warn' : ''}`}>
+                    Total: {paymentScheduleTotal.toFixed(2)}%
+                  </div>
+                </div>
+              </div>
             </div>
 
             <div className="form-section">
@@ -410,7 +487,6 @@ const QuoteForm: React.FC = () => {
 
           {/* Right Column */}
           <div className="form-column right-column">
-
             <div className="form-section">
               <div className="form-group">
                 <label htmlFor="quoteHistory">Quote History</label>
