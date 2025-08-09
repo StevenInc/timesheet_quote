@@ -1,0 +1,402 @@
+import React from 'react'
+import { Trash2, Save, Send, Archive, Copy, Download } from 'lucide-react'
+import '../QuoteForm.css'
+import type { QuoteFormData, QuoteItem, PaymentTermItem } from './types'
+
+interface Props {
+  formData: QuoteFormData
+  paymentScheduleTotal: number
+  // item handlers
+  updateItem: (id: string, field: keyof QuoteItem, value: string | number) => void
+  addItem: () => void
+  removeItem: (id: string) => void
+  // form handlers
+  handleInputChange: (field: keyof QuoteFormData, value: string | number | boolean) => void
+  handleCheckboxChange: (field: keyof QuoteFormData, value: boolean) => void
+  // payment term handlers
+  updatePaymentTerm: (id: string, field: keyof PaymentTermItem, value: string | number) => void
+  addPaymentTerm: () => void
+  removePaymentTerm: (id: string) => void
+  // tax modal
+  isTaxModalOpen: boolean
+  openTaxModal: () => void
+  closeTaxModal: () => void
+  tempTaxRatePercent: number
+  setTempTaxRatePercent: (v: number) => void
+  applyNewTaxRate: () => void
+  // misc
+  onSubmit: (e: React.FormEvent) => void
+  copyQuoteUrl: () => void
+  downloadQuote: () => void
+  // save state
+  isSaving: boolean
+  saveMessage: { type: 'success' | 'error'; text: string } | null
+}
+
+export const QuoteFormView: React.FC<Props> = (props) => {
+  const {
+    formData,
+    paymentScheduleTotal,
+    updateItem,
+    addItem,
+    removeItem,
+    handleInputChange,
+    handleCheckboxChange,
+    updatePaymentTerm,
+    addPaymentTerm,
+    removePaymentTerm,
+    isTaxModalOpen,
+    openTaxModal,
+    closeTaxModal,
+    tempTaxRatePercent,
+    setTempTaxRatePercent,
+    applyNewTaxRate,
+    onSubmit,
+    copyQuoteUrl,
+    downloadQuote,
+    isSaving,
+    saveMessage,
+  } = props
+
+  return (
+    <div className="quote-form-container">
+      <div className="quote-form-header">
+        <div className="header-left">
+          <h1>Add or Edit a Quote</h1>
+          <div className="quote-url-section">
+            <span className="quote-url">{formData.quoteUrl}</span>
+            <button type="button" className="btn btn-icon" onClick={copyQuoteUrl}>
+              <Copy size={16} />
+            </button>
+            <button type="button" className="btn btn-icon" onClick={downloadQuote}>
+              <Download size={16} />
+            </button>
+          </div>
+        </div>
+      </div>
+
+      {/* Save message display */}
+      {saveMessage && (
+        <div className={`save-message ${saveMessage.type}`}>
+          {saveMessage.text}
+        </div>
+      )}
+
+      <form onSubmit={onSubmit} className="quote-form">
+        <div className="form-content">
+          <div className="form-column left-column">
+            <div className="form-section">
+              <div className="form-group">
+                <label htmlFor="owner">Owner</label>
+                <select id="owner" value={formData.owner} onChange={(e) => handleInputChange('owner', e.target.value)}>
+                  <option value="">-- Select One --</option>
+                  <option value="owner1">Owner 1</option>
+                  <option value="owner2">Owner 2</option>
+                </select>
+              </div>
+              <div className="form-group">
+                <label htmlFor="clientName">Client Name</label>
+                <input
+                  type="text"
+                  id="clientName"
+                  value={formData.clientName}
+                  onChange={(e) => handleInputChange('clientName', e.target.value)}
+                  placeholder="John Smith"
+                />
+              </div>
+              <div className="form-group">
+                <label htmlFor="clientEmail">Email Address</label>
+                <input
+                  type="email"
+                  id="clientEmail"
+                  value={formData.clientEmail}
+                  onChange={(e) => handleInputChange('clientEmail', e.target.value)}
+                  placeholder="name@company.com"
+                />
+              </div>
+            </div>
+
+            <div className="form-section">
+              <h2>Quote Items</h2>
+              <div className="items-table">
+                <div className="table-header">
+                  <div className="header-cell">Description</div>
+                  <div className="header-cell">Quantity</div>
+                  <div className="header-cell">Unit Price</div>
+                  <div className="header-cell">Item Total</div>
+                  <div className="header-cell" aria-hidden="true"></div>
+                </div>
+                {formData.items.map((item) => (
+                  <div key={item.id} className="table-row">
+                    <div className="table-cell">
+                      <input
+                        type="text"
+                        value={item.description}
+                        onChange={(e) => updateItem(item.id, 'description', e.target.value)}
+                        placeholder="Item description"
+                      />
+                    </div>
+                    <div className="table-cell">
+                      <input
+                        type="number"
+                        min="1"
+                        value={item.quantity}
+                        onChange={(e) => updateItem(item.id, 'quantity', parseInt(e.target.value) || 0)}
+                      />
+                    </div>
+                    <div className="table-cell">
+                      <input
+                        type="number"
+                        min="0"
+                        step="0.01"
+                        value={item.unitPrice}
+                        onChange={(e) => updateItem(item.id, 'unitPrice', parseFloat(e.target.value) || 0)}
+                        placeholder="0.00"
+                      />
+                    </div>
+                    <div className="table-cell total-cell">${item.total.toFixed(2)}</div>
+                    <div className="table-cell">
+                      <button
+                        type="button"
+                        className="btn btn-danger btn-sm"
+                        onClick={() => removeItem(item.id)}
+                        disabled={formData.items.length === 1}
+                      >
+                        <Trash2 size={14} />
+                      </button>
+                    </div>
+                  </div>
+                ))}
+              </div>
+              <button type="button" className="btn btn-link add-more-btn" onClick={addItem}>
+                add more...
+              </button>
+            </div>
+
+            <div className="form-section totals-section">
+              <div className="checkbox-group" style={{ marginBottom: '0.5rem' }}>
+                <label className="checkbox-label" onClick={() => formData.isTaxEnabled && openTaxModal()}>
+                  <input
+                    type="checkbox"
+                    checked={formData.isTaxEnabled}
+                    onChange={(e) => handleCheckboxChange('isTaxEnabled', e.target.checked)}
+                  />
+                  Apply Tax ({(formData.taxRate * 100).toFixed(2)}%)
+                </label>
+              </div>
+              <div className="totals-grid">
+                <div className="total-row">
+                  <span>Subtotal:</span>
+                  <span>${formData.subtotal.toFixed(2)}</span>
+                </div>
+                <div className="total-row">
+                  <span>Tax:</span>
+                  <span>${formData.tax.toFixed(2)}</span>
+                </div>
+                <div className="total-row total-final">
+                  <span>Total:</span>
+                  <span>${formData.total.toFixed(2)}</span>
+                </div>
+              </div>
+            </div>
+
+            <div className="form-section">
+              <div className="form-group">
+                <label htmlFor="expires">Expires</label>
+                <div className="date-input-group">
+                  <input
+                    type="date"
+                    id="expires"
+                    value={formData.expires}
+                    onChange={(e) => handleInputChange('expires', e.target.value)}
+                  />
+                </div>
+              </div>
+              <div className="form-group">
+                <label htmlFor="paymentTerms">Payment Terms</label>
+                <input
+                  type="text"
+                  id="paymentTerms"
+                  value={formData.paymentTerms}
+                  onChange={(e) => handleInputChange('paymentTerms', e.target.value)}
+                  placeholder="Net 30"
+                />
+              </div>
+
+              <div className="form-group">
+                <label>Payment Schedule</label>
+                <div className="items-table schedule-table">
+                  <div className="table-header">
+                    <div className="header-cell">Percent</div>
+                    <div className="header-cell">Description</div>
+                    <div className="header-cell" aria-hidden="true"></div>
+                  </div>
+                  {formData.paymentSchedule.map((t) => (
+                    <div key={t.id} className="table-row">
+                      <div className="table-cell">
+                        <input
+                          type="number"
+                          min={0}
+                          max={100}
+                          step={0.01}
+                          value={t.percentage}
+                          onChange={(e) => updatePaymentTerm(t.id, 'percentage', parseFloat(e.target.value) || 0)}
+                          placeholder="0"
+                        />
+                      </div>
+                      <div className="table-cell">
+                        <input
+                          type="text"
+                          value={t.description}
+                          onChange={(e) => updatePaymentTerm(t.id, 'description', e.target.value)}
+                          placeholder="e.g., with order"
+                        />
+                      </div>
+                      <div className="table-cell">
+                        <button type="button" className="btn btn-danger btn-sm" onClick={() => removePaymentTerm(t.id)}>
+                          <Trash2 size={14} />
+                        </button>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+                <div className="schedule-footer">
+                  <button type="button" className="btn btn-link add-more-btn" onClick={addPaymentTerm}>
+                    Add Terms
+                  </button>
+                  <div className={`schedule-total ${paymentScheduleTotal !== 100 ? 'warn' : ''}`}>
+                    Total: {paymentScheduleTotal.toFixed(2)}%
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <div className="form-section">
+              <div className="form-group">
+                <label htmlFor="notes">Notes</label>
+                <textarea
+                  id="notes"
+                  value={formData.notes}
+                  onChange={(e) => handleInputChange('notes', e.target.value)}
+                  rows={3}
+                  placeholder="Additional notes..."
+                />
+              </div>
+              <div className="form-group">
+                <label htmlFor="legalese">Legalese</label>
+                <textarea
+                  id="legalese"
+                  value={formData.legalese}
+                  onChange={(e) => handleInputChange('legalese', e.target.value)}
+                  rows={3}
+                  placeholder="Legal terms and conditions..."
+                />
+              </div>
+            </div>
+          </div>
+
+          <div className="form-column right-column">
+            <div className="form-section">
+              <div className="form-group">
+                <label htmlFor="quoteHistory">Quote History</label>
+                <select
+                  id="quoteHistory"
+                  value={formData.selectedHistoryVersion}
+                  onChange={(e) => handleInputChange('selectedHistoryVersion', e.target.value)}
+                  className="history-select"
+                >
+                  {formData.quoteHistory.map((history) => (
+                    <option key={history.id} value={history.id}>
+                      {history.version}
+                    </option>
+                  ))}
+                </select>
+              </div>
+            </div>
+
+            <div className="form-section">
+              <div className="form-group">
+                <label htmlFor="clientComments">Client Comments</label>
+                <textarea
+                  id="clientComments"
+                  value={formData.clientComments}
+                  onChange={(e) => handleInputChange('clientComments', e.target.value)}
+                  rows={3}
+                  placeholder="Client feedback and comments..."
+                />
+              </div>
+            </div>
+
+            <div className="form-section">
+              <div className="checkbox-group">
+                <label className="checkbox-label">
+                  <input
+                    type="checkbox"
+                    checked={formData.isRecurring}
+                    onChange={(e) => handleCheckboxChange('isRecurring', e.target.checked)}
+                  />
+                  Recurring Amount
+                </label>
+              </div>
+              <div className="form-group">
+                <label htmlFor="billingPeriod">Billing Period</label>
+                <input
+                  type="text"
+                  id="billingPeriod"
+                  value={formData.billingPeriod}
+                  onChange={(e) => handleInputChange('billingPeriod', e.target.value)}
+                  placeholder="e.g., Monthly, Quarterly"
+                />
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div className="form-actions">
+          <button type="submit" className="btn btn-primary" disabled={isSaving}>
+            <Save size={16} />
+            {isSaving ? 'Saving...' : 'Save'}
+          </button>
+          <button type="button" className="btn btn-primary">
+            <Send size={16} />
+            Send to Client
+          </button>
+          <button type="button" className="btn btn-secondary">
+            <Archive size={16} />
+            Archive
+          </button>
+        </div>
+      </form>
+
+      {isTaxModalOpen && (
+        <div className="modal-overlay" role="dialog" aria-modal="true" aria-label="Edit tax rate">
+          <div className="modal">
+            <h3>Edit Tax Rate</h3>
+            <div className="form-group">
+              <label htmlFor="taxRateInput">Tax Rate (%)</label>
+              <input
+                id="taxRateInput"
+                type="number"
+                min={0}
+                max={100}
+                step={0.01}
+                value={Number.isNaN(tempTaxRatePercent) ? 0 : tempTaxRatePercent}
+                onChange={(e) => setTempTaxRatePercent(parseFloat(e.target.value))}
+              />
+            </div>
+            <div className="modal-actions">
+              <button type="button" className="btn btn-secondary" onClick={closeTaxModal}>
+                Cancel
+              </button>
+              <button type="button" className="btn btn-primary" onClick={applyNewTaxRate}>
+                Apply
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+    </div>
+  )
+}
+
+export default QuoteFormView

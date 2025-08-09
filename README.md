@@ -67,3 +67,25 @@ export default tseslint.config([
   },
 ])
 ```
+
+# timesheet_quote
+
+## Run locally
+
+```bash
+npm install
+npm run dev
+```
+
+Open the URL shown (default: http://localhost:5173).
+
+## Supabase setup
+
+Create a `.env.local` file in project root with:
+
+```
+VITE_SUPABASE_URL=your_supabase_project_url
+VITE_SUPABASE_ANON_KEY=your_supabase_anon_key
+```
+
+Restart the dev server after adding env vars.
