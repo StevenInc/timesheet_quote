@@ -200,6 +200,14 @@
   color: #9ca3af;
 }
 
+.form-help {
+  display: block;
+  margin-top: 0.25rem;
+  font-size: 0.75rem;
+  color: #6b7280;
+  font-style: italic;
+}
+
 .date-input-group {
   display: flex;
   align-items: center;

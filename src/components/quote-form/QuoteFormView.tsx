@@ -1,5 +1,5 @@
 import React from 'react'
-import { Trash2, Save, Send, Archive, Copy, Download } from 'lucide-react'
+import { Trash2, Save, Send, Archive, Copy, Download, Plus } from 'lucide-react'
 import '../QuoteForm.css'
 import type { QuoteFormData, QuoteItem, PaymentTermItem } from './types'
 
@@ -34,6 +34,13 @@ interface Props {
   // history state
   isLoadingHistory: boolean
   loadQuoteHistory: () => void
+  // new quote modal
+  isNewQuoteModalOpen: boolean
+  newQuoteNumber: string
+  openNewQuoteModal: () => void
+  closeNewQuoteModal: () => void
+  createNewQuote: () => void
+  setNewQuoteNumber: (value: string) => void
 }
 
 export const QuoteFormView: React.FC<Props> = (props) => {
@@ -61,6 +68,12 @@ export const QuoteFormView: React.FC<Props> = (props) => {
     saveMessage,
     isLoadingHistory,
     loadQuoteHistory,
+    isNewQuoteModalOpen,
+    newQuoteNumber,
+    openNewQuoteModal,
+    closeNewQuoteModal,
+    createNewQuote,
+    setNewQuoteNumber,
   } = props
 
   return (
@@ -81,6 +94,16 @@ export const QuoteFormView: React.FC<Props> = (props) => {
               <Download size={16} />
             </button>
           </div>
+        </div>
+        <div className="header-right">
+          <button
+            type="button"
+            className="btn btn-primary"
+            onClick={openNewQuoteModal}
+          >
+            <Plus size={16} />
+            New Quote
+          </button>
         </div>
       </div>
 
@@ -292,11 +315,11 @@ export const QuoteFormView: React.FC<Props> = (props) => {
                 />
               </div>
               <div className="form-group">
-                <label htmlFor="legalese">Legalese</label>
+                <label htmlFor="legalTerms">Legal Terms</label>
                 <textarea
-                  id="legalese"
-                  value={formData.legalese}
-                  onChange={(e) => handleInputChange('legalese', e.target.value)}
+                  id="legalTerms"
+                  value={formData.legalTerms}
+                  onChange={(e) => handleInputChange('legalTerms', e.target.value)}
                   rows={3}
                   placeholder="Legal terms and conditions..."
                 />
@@ -441,6 +464,41 @@ export const QuoteFormView: React.FC<Props> = (props) => {
               </button>
               <button type="button" className="btn btn-primary" onClick={applyNewTaxRate}>
                 Apply
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* New Quote Modal */}
+      {isNewQuoteModalOpen && (
+        <div className="modal-overlay" role="dialog" aria-modal="true" aria-label="Create new quote">
+          <div className="modal">
+            <h3>Create New Quote</h3>
+            <div className="form-group">
+              <label htmlFor="newQuoteNumberInput">Quote Number</label>
+              <input
+                id="newQuoteNumberInput"
+                type="text"
+                value={newQuoteNumber}
+                onChange={(e) => setNewQuoteNumber(e.target.value)}
+                placeholder="Enter quote number"
+                autoFocus
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter') {
+                    e.preventDefault()
+                    createNewQuote()
+                  }
+                }}
+              />
+              <small className="form-help">This will be the next available quote number by default</small>
+            </div>
+            <div className="modal-actions">
+              <button type="button" className="btn btn-secondary" onClick={closeNewQuoteModal}>
+                Cancel
+              </button>
+              <button type="button" className="btn btn-primary" onClick={createNewQuote}>
+                Create Quote
               </button>
             </div>
           </div>

@@ -20,6 +20,13 @@ const QuoteForm: React.FC = () => {
     saveMessage,
     isLoadingHistory,
     loadQuoteHistory,
+    // New Quote Modal
+    isNewQuoteModalOpen,
+    newQuoteNumber,
+    openNewQuoteModal,
+    closeNewQuoteModal,
+    createNewQuote,
+    setNewQuoteNumber,
   } = useQuoteForm()
 
   const [isTaxModalOpen, setIsTaxModalOpen] = useState(false)
@@ -54,31 +61,38 @@ const QuoteForm: React.FC = () => {
   }
 
   return (
-            <QuoteFormView
-          formData={formData}
-          paymentScheduleTotal={paymentScheduleTotal}
-          updateItem={updateItem}
-          addItem={addItem}
-          removeItem={removeItem}
-          handleInputChange={handleInputChange}
-          handleCheckboxChange={handleCheckboxChange}
-          updatePaymentTerm={updatePaymentTerm}
-          addPaymentTerm={addPaymentTerm}
-          removePaymentTerm={removePaymentTerm}
-          isTaxModalOpen={isTaxModalOpen}
-          openTaxModal={openTaxModal}
-          closeTaxModal={closeTaxModal}
-          tempTaxRatePercent={tempTaxRatePercent}
-          setTempTaxRatePercent={setTempTaxRatePercent}
-          applyNewTaxRate={applyNewTaxRate}
-          onSubmit={handleSubmit}
-          copyQuoteUrl={copyQuoteUrl}
-          downloadQuote={downloadQuote}
-          isSaving={isSaving}
-          saveMessage={saveMessage}
-          isLoadingHistory={isLoadingHistory}
-          loadQuoteHistory={loadQuoteHistory}
-        />
+    <QuoteFormView
+      formData={formData}
+      paymentScheduleTotal={paymentScheduleTotal}
+      updateItem={updateItem}
+      addItem={addItem}
+      removeItem={removeItem}
+      handleInputChange={handleInputChange}
+      handleCheckboxChange={handleCheckboxChange}
+      updatePaymentTerm={updatePaymentTerm}
+      addPaymentTerm={addPaymentTerm}
+      removePaymentTerm={removePaymentTerm}
+      isTaxModalOpen={isTaxModalOpen}
+      openTaxModal={openTaxModal}
+      closeTaxModal={closeTaxModal}
+      tempTaxRatePercent={tempTaxRatePercent}
+      setTempTaxRatePercent={setTempTaxRatePercent}
+      applyNewTaxRate={applyNewTaxRate}
+      onSubmit={handleSubmit}
+      copyQuoteUrl={copyQuoteUrl}
+      downloadQuote={downloadQuote}
+      isSaving={isSaving}
+      saveMessage={saveMessage}
+      isLoadingHistory={isLoadingHistory}
+      loadQuoteHistory={loadQuoteHistory}
+      // New Quote Modal
+      isNewQuoteModalOpen={isNewQuoteModalOpen}
+      newQuoteNumber={newQuoteNumber}
+      openNewQuoteModal={openNewQuoteModal}
+      closeNewQuoteModal={closeNewQuoteModal}
+      createNewQuote={createNewQuote}
+      setNewQuoteNumber={setNewQuoteNumber}
+    />
   )
 }
 

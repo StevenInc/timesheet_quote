@@ -10,6 +10,8 @@ export const useQuoteForm = () => {
     quoteNumber: '1000',
     quoteUrl: 'https://quotes.timesheets.com/68124-AJ322ADV3',
     expires: '2025-07-08',
+    taxRate: 0.08,
+    isTaxEnabled: false,
     paymentTerms: 'Net 30',
     items: [
       { id: '1', description: '', quantity: 1, unitPrice: 0, total: 0 },
@@ -18,16 +20,13 @@ export const useQuoteForm = () => {
     tax: 0,
     total: 0,
     notes: '',
-    legalese: '',
+    legalTerms: '',
     clientComments: '',
-    isAccepted: false,
-    isDeclined: false,
     isRecurring: false,
     billingPeriod: '',
+    recurringAmount: 0,
     quoteHistory: [],
     selectedHistoryVersion: '',
-    isTaxEnabled: false,
-    taxRate: 0.08,
     paymentSchedule: [
       { id: 'ps-1', percentage: 100, description: 'net 30 days' },
     ],
@@ -36,6 +35,10 @@ export const useQuoteForm = () => {
   const [isSaving, setIsSaving] = useState(false)
   const [saveMessage, setSaveMessage] = useState<{ type: 'success' | 'error'; text: string } | null>(null)
   const [isLoadingHistory, setIsLoadingHistory] = useState(false)
+
+  // New Quote Modal State
+  const [isNewQuoteModalOpen, setIsNewQuoteModalOpen] = useState(false)
+  const [newQuoteNumber, setNewQuoteNumber] = useState('')
 
   // Load quote history when component mounts
   useEffect(() => {
@@ -47,52 +50,30 @@ export const useQuoteForm = () => {
   const loadQuoteHistory = async () => {
     setIsLoadingHistory(true)
     try {
-      const { data: quotes, error } = await supabase
-        .from('quotes')
-        .select(`
-          id,
-          quote_number,
-          created_at,
-          notes,
-          status,
-          client_id,
-          clients(name, email)
-        `)
-        .order('created_at', { ascending: false })
+      // Use the new quote_history view for easier access
+      const { data: quoteHistory, error } = await supabase
+        .from('quote_history')
+        .select('*')
+        .order('quote_number', { ascending: false })
+        .order('revision_number', { ascending: false })
 
       if (error) throw error
 
-      if (quotes && quotes.length > 0) {
-        console.log('Loaded quotes:', quotes) // Debug log
+      if (quoteHistory && quoteHistory.length > 0) {
+        console.log('Loaded quote history:', quoteHistory) // Debug log
 
-        const historyItems = quotes.map((quote, index) => {
-          // Extract quote number from the URL or use the quote_number field
-          let extractedQuoteNumber = '1000'
-          if (quote.quote_number) {
-            // If quote_number looks like a URL, extract the number part
-            if (quote.quote_number.includes('http')) {
-              // Extract number from URL like "https://quotes.timesheets.com/68124-AJ322ADV3-v3"
-              const match = quote.quote_number.match(/(\d+)-[A-Z0-9]+-v\d+/)
-              if (match) {
-                extractedQuoteNumber = match[1]
-              }
-            } else {
-              // If it's already a number, use it directly
-              extractedQuoteNumber = quote.quote_number
-            }
-          }
-
-          return {
-            id: quote.id,
-            version: `v${quotes.length - index}`,
-            date: new Date(quote.created_at).toLocaleDateString(),
-            isCurrent: index === 0,
-            notes: quote.notes || '',
-            clientName: quote.clients?.name || 'Unknown Client',
-            status: quote.status,
-            quoteNumber: extractedQuoteNumber
-          }
-        })
+        const historyItems = quoteHistory.map((quote) => ({
+          id: quote.revision_id,
+          quoteId: quote.quote_id,
+          quoteNumber: quote.quote_number,
+          versionNumber: quote.revision_number,
+          version: `v${quote.revision_number}`,
+          date: new Date(quote.created_at).toLocaleDateString(),
+          isCurrent: quote.revision_number === 1, // Revision 1 is always current
+          notes: quote.notes || '',
+          clientName: quote.client_name || 'Unknown Client',
+          status: quote.status
+        }))
 
         setFormData(prev => ({
           ...prev,
@@ -101,20 +82,9 @@ export const useQuoteForm = () => {
         }))
 
         // Set the current quote number to the next available number
-        const quoteNumbers = quotes.map(q => {
-          let extractedNumber = '1000'
-          if (q.quote_number) {
-            if (q.quote_number.includes('http')) {
-              const match = q.quote_number.match(/(\d+)-[A-Z0-9]+-v\d+/)
-              if (match) {
-                extractedNumber = match[1]
-              }
-            } else {
-              extractedNumber = q.quote_number
-            }
-          }
-          return parseInt(extractedNumber)
-        }).filter(num => !isNaN(num))
+        const quoteNumbers = quoteHistory
+          .map(q => parseInt(q.quote_number))
+          .filter(num => !isNaN(num))
 
         if (quoteNumbers.length > 0) {
           const maxNumber = Math.max(...quoteNumbers)
@@ -137,9 +107,75 @@ export const useQuoteForm = () => {
       }
     } catch (error) {
       console.error('Error loading quote history:', error)
-      setSaveMessage({ type: 'error', text: `Error loading history: ${error instanceof Error ? error.message : 'Unknown error'}` })
+
+      // Provide more detailed error information for debugging
+      let errorMessage = 'Unknown error'
+      if (error instanceof Error) {
+        errorMessage = error.message
+      } else if (typeof error === 'object' && error !== null) {
+        errorMessage = JSON.stringify(error)
+      }
+
+      console.error('Detailed error info:', {
+        error,
+        errorType: typeof error,
+        errorMessage,
+        supabaseUrl: import.meta.env.VITE_SUPABASE_URL,
+        hasAnonKey: !!import.meta.env.VITE_SUPABASE_ANON_KEY
+      })
+
+      setSaveMessage({ type: 'error', text: `Error loading history: ${errorMessage}` })
     } finally {
       setIsLoadingHistory(false)
+    }
+  }
+
+  // New Quote Modal Functions
+  const openNewQuoteModal = () => {
+    // Set the default quote number to the next available number
+    setNewQuoteNumber(formData.quoteNumber)
+    setIsNewQuoteModalOpen(true)
+  }
+
+  const closeNewQuoteModal = () => {
+    setIsNewQuoteModalOpen(false)
+    setNewQuoteNumber('')
+  }
+
+  const createNewQuote = () => {
+    if (newQuoteNumber.trim()) {
+      // Reset form data for new quote
+      setFormData({
+        owner: '',
+        clientName: '',
+        clientEmail: '',
+        quoteNumber: newQuoteNumber.trim(),
+        quoteUrl: `https://quotes.timesheets.com/${newQuoteNumber.trim()}-${Math.random().toString(36).substr(2, 9).toUpperCase()}`,
+        expires: '2025-07-08',
+        taxRate: 0.08,
+        isTaxEnabled: false,
+        paymentTerms: 'Net 30',
+        items: [
+          { id: '1', description: '', quantity: 1, unitPrice: 0, total: 0 },
+        ],
+        subtotal: 0,
+        tax: 0,
+        total: 0,
+        notes: '',
+        legalTerms: '',
+        clientComments: '',
+        isRecurring: false,
+        billingPeriod: '',
+        recurringAmount: 0,
+        quoteHistory: [],
+        selectedHistoryVersion: '',
+        paymentSchedule: [
+          { id: 'ps-1', percentage: 100, description: 'net 30 days' },
+        ],
+      })
+
+      closeNewQuoteModal()
+      setSaveMessage({ type: 'success', text: `New quote ${newQuoteNumber.trim()} created!` })
     }
   }
 
@@ -231,7 +267,7 @@ export const useQuoteForm = () => {
     [formData.paymentSchedule]
   )
 
-    const saveQuote = async () => {
+  const saveQuote = async () => {
     setIsSaving(true)
     setSaveMessage(null)
 
@@ -254,10 +290,8 @@ export const useQuoteForm = () => {
           const { data: newClient, error: createError } = await supabase
             .from('clients')
             .insert({
-              owner_id: '00000000-0000-0000-0000-000000000000', // TODO: Replace with actual auth.uid()
               name: formData.clientName || 'Unknown Client',
-              email: formData.clientEmail,
-              company: formData.clientName
+              email: formData.clientEmail
             })
             .select()
             .single()
@@ -267,26 +301,14 @@ export const useQuoteForm = () => {
         }
       }
 
-      // Create the quote
+      // Create the base quote (only core quote data)
       const { data: quote, error } = await supabase
         .from('quotes')
         .insert({
           owner_id: '00000000-0000-0000-0000-000000000000', // TODO: Replace with actual auth.uid()
           client_id: clientId,
           status: 'draft',
-          quote_number: formData.quoteNumber,
-          expires_on: formData.expires,
-          payment_terms: formData.paymentTerms,
-          is_tax_enabled: formData.isTaxEnabled,
-          tax_rate: formData.taxRate,
-          subtotal: formData.subtotal,
-          tax_amount: formData.tax,
-          total_amount: formData.total,
-          notes: formData.notes,
-          legal_terms: formData.legalese,
-          client_comments: formData.clientComments,
-          is_recurring: formData.isRecurring,
-          billing_period: formData.billingPeriod || null,
+          quote_number: formData.quoteNumber
         })
         .select()
         .single()
@@ -295,28 +317,74 @@ export const useQuoteForm = () => {
 
       const quoteId = quote.id
 
-      // Insert quote items (note: line_total is computed automatically)
+      // Create the first revision of the quote
+      const { data: quoteRevision, error: revisionError } = await supabase
+        .from('quote_revisions')
+        .insert({
+          quote_id: quoteId,
+          revision_number: 1,
+          status: 'draft',
+          expires_on: formData.expires,
+          tax_rate: formData.taxRate,
+          is_tax_enabled: formData.isTaxEnabled,
+          notes: formData.notes,
+          is_recurring: formData.isRecurring,
+          billing_period: formData.billingPeriod || null,
+          recurring_amount: formData.recurringAmount || null
+        })
+        .select()
+        .single()
+
+      if (revisionError) throw revisionError
+
+      const revisionId = quoteRevision.id
+
+      // Insert quote items for this revision
       const itemsPayload = formData.items.map((i) => ({
-        quote_id: quoteId,
+        quote_revision_id: revisionId,
         description: i.description,
         quantity: i.quantity,
         unit_price: i.unitPrice,
-        // line_total is computed automatically by the database
+        total: i.total,
+        sort_order: 0
       }))
 
       const { error: itemsError } = await supabase.from('quote_items').insert(itemsPayload)
       if (itemsError) throw itemsError
 
-      // Insert payment schedule
-      const schedulePayload = formData.paymentSchedule.map((p, idx) => ({
-        quote_id: quoteId,
-        sequence: idx + 1,
+      // Insert payment terms for this revision
+      const paymentTermsPayload = formData.paymentSchedule.map((p, idx) => ({
+        quote_revision_id: revisionId,
         percentage: p.percentage,
         description: p.description,
+        sort_order: idx
       }))
 
-      const { error: scheduleError } = await supabase.from('payment_schedule').insert(schedulePayload)
-      if (scheduleError) throw scheduleError
+      const { error: paymentTermsError } = await supabase.from('payment_terms').insert(paymentTermsPayload)
+      if (paymentTermsError) throw paymentTermsError
+
+      // Insert legal terms for this revision
+      if (formData.legalTerms) {
+        const { error: legalTermsError } = await supabase
+          .from('legal_terms')
+          .insert({
+            quote_revision_id: revisionId,
+            terms: formData.legalTerms
+          })
+        if (legalTermsError) throw legalTermsError
+      }
+
+      // Insert client comments for this revision
+      if (formData.clientComments) {
+        const { error: clientCommentsError } = await supabase
+          .from('client_comments')
+          .insert({
+            quote_id: quoteId,
+            quote_revision_id: revisionId,
+            comment: formData.clientComments
+          })
+        if (clientCommentsError) throw clientCommentsError
+      }
 
       // Add new quote to history
       const newHistoryItem = {
@@ -372,5 +440,12 @@ export const useQuoteForm = () => {
     saveMessage,
     isLoadingHistory,
     loadQuoteHistory,
+    // New Quote Modal
+    isNewQuoteModalOpen,
+    newQuoteNumber,
+    openNewQuoteModal,
+    closeNewQuoteModal,
+    createNewQuote,
+    setNewQuoteNumber,
   }
 }
