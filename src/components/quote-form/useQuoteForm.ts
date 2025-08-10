@@ -1,5 +1,5 @@
 import { useMemo, useState, useEffect } from 'react'
-import type { QuoteFormData, QuoteItem, PaymentTermItem } from './types'
+import type { QuoteFormData, QuoteItem, PaymentTermItem, NewQuoteModalData, QuoteHistory } from './types'
 import { supabase } from '../../lib/supabaseClient'
 
 export const useQuoteForm = () => {
@@ -38,7 +38,13 @@ export const useQuoteForm = () => {
 
   // New Quote Modal State
   const [isNewQuoteModalOpen, setIsNewQuoteModalOpen] = useState(false)
-  const [newQuoteNumber, setNewQuoteNumber] = useState('')
+  const [newQuoteData, setNewQuoteData] = useState<NewQuoteModalData>({
+    quoteNumber: '',
+    clientName: ''
+  })
+  const [clientSuggestions, setClientSuggestions] = useState<string[]>([])
+  const [isLoadingClients, setIsLoadingClients] = useState(false)
+  const [isCreatingQuote, setIsCreatingQuote] = useState(false)
 
   // Load quote history when component mounts
   useEffect(() => {
@@ -133,24 +139,60 @@ export const useQuoteForm = () => {
   // New Quote Modal Functions
   const openNewQuoteModal = () => {
     // Set the default quote number to the next available number
-    setNewQuoteNumber(formData.quoteNumber)
+    setNewQuoteData({
+      quoteNumber: formData.quoteNumber,
+      clientName: ''
+    })
     setIsNewQuoteModalOpen(true)
   }
 
   const closeNewQuoteModal = () => {
     setIsNewQuoteModalOpen(false)
-    setNewQuoteNumber('')
+    setNewQuoteData({ quoteNumber: '', clientName: '' })
+    setClientSuggestions([])
   }
 
-  const createNewQuote = () => {
-    if (newQuoteNumber.trim()) {
-      // Reset form data for new quote
-      setFormData({
+  const searchClients = async (searchTerm: string) => {
+    if (searchTerm.length < 2) {
+      setClientSuggestions([])
+      return
+    }
+
+    setIsLoadingClients(true)
+    try {
+      const { data: clients, error } = await supabase
+        .from('clients')
+        .select('name')
+        .ilike('name', `%${searchTerm}%`)
+        .limit(10)
+
+      if (error) throw error
+
+      const names = clients?.map(client => client.name).filter(Boolean) || []
+      setClientSuggestions(names)
+    } catch (error) {
+      console.error('Error searching clients:', error)
+      setClientSuggestions([])
+    } finally {
+      setIsLoadingClients(false)
+    }
+  }
+
+  const updateNewQuoteData = (field: keyof NewQuoteModalData, value: string) => {
+    setNewQuoteData(prev => ({ ...prev, [field]: value }))
+  }
+
+  const createNewQuote = async () => {
+    if (newQuoteData.quoteNumber.trim()) {
+      setIsCreatingQuote(true)
+
+      // Create a temporary form data object for the new quote
+      const newQuoteFormData: QuoteFormData = {
         owner: '',
-        clientName: '',
+        clientName: newQuoteData.clientName.trim(),
         clientEmail: '',
-        quoteNumber: newQuoteNumber.trim(),
-        quoteUrl: `https://quotes.timesheets.com/${newQuoteNumber.trim()}-${Math.random().toString(36).substr(2, 9).toUpperCase()}`,
+        quoteNumber: newQuoteData.quoteNumber.trim(),
+        quoteUrl: `https://quotes.timesheets.com/${newQuoteData.quoteNumber.trim()}-${Math.random().toString(36).substr(2, 9).toUpperCase()}`,
         expires: '2025-07-08',
         taxRate: 0.08,
         isTaxEnabled: false,
@@ -172,10 +214,30 @@ export const useQuoteForm = () => {
         paymentSchedule: [
           { id: 'ps-1', percentage: 100, description: 'net 30 days' },
         ],
-      })
+      }
 
-      closeNewQuoteModal()
-      setSaveMessage({ type: 'success', text: `New quote ${newQuoteNumber.trim()} created!` })
+      try {
+        // Set the form data to the new quote
+        setFormData(newQuoteFormData)
+
+        // Close the modal
+        closeNewQuoteModal()
+
+        // Save the new quote to the database using the newQuoteFormData directly
+        await saveQuote(newQuoteFormData)
+        setSaveMessage({ type: 'success', text: `New quote ${newQuoteData.quoteNumber.trim()} created and saved!` })
+      } catch (error) {
+        console.error('Error saving new quote:', error)
+        console.error('Error details:', {
+          error,
+          errorType: typeof error,
+          errorMessage: error instanceof Error ? error.message : 'Unknown error',
+          newQuoteFormData: newQuoteFormData
+        })
+        setSaveMessage({ type: 'error', text: `Error saving new quote: ${error instanceof Error ? error.message : 'Unknown error'}` })
+      } finally {
+        setIsCreatingQuote(false)
+      }
     }
   }
 
@@ -267,39 +329,76 @@ export const useQuoteForm = () => {
     [formData.paymentSchedule]
   )
 
-  const saveQuote = async () => {
+  const saveQuote = async (quoteData?: QuoteFormData) => {
+    const dataToSave = quoteData || formData
     setIsSaving(true)
     setSaveMessage(null)
 
     try {
+      console.log('Starting to save quote with data:', dataToSave)
+
       // First, create or get the client
       let clientId = null
-      if (formData.clientName || formData.clientEmail) {
-        // Try to find existing client
+      if (dataToSave.clientName || dataToSave.clientEmail) {
+        console.log('Processing client:', { name: dataToSave.clientName, email: dataToSave.clientEmail })
+
+        // Try to find existing client by name first
         const { data: existingClients, error: searchError } = await supabase
           .from('clients')
           .select('id')
-          .or(`name.eq.${formData.clientName},email.eq.${formData.clientEmail}`)
+          .eq('name', dataToSave.clientName)
 
-        if (searchError) throw searchError
+        if (searchError) {
+          console.error('Error searching for existing client:', searchError)
+          throw searchError
+        }
 
         if (existingClients && existingClients.length > 0) {
           clientId = existingClients[0].id
+          console.log('Found existing client with ID:', clientId)
         } else {
-          // Create new client
+          console.log('Creating new client...')
+          // Create new client - ensure we have a valid email
+          const clientEmail = dataToSave.clientEmail || `${dataToSave.clientName.toLowerCase().replace(/\s+/g, '.')}@example.com`
           const { data: newClient, error: createError } = await supabase
             .from('clients')
             .insert({
-              name: formData.clientName || 'Unknown Client',
-              email: formData.clientEmail
+              name: dataToSave.clientName || 'Unknown Client',
+              email: clientEmail
             })
             .select()
             .single()
 
-          if (createError) throw createError
+          if (createError) {
+            console.error('Error creating new client:', createError)
+            throw createError
+          }
           clientId = newClient.id
+          console.log('Created new client with ID:', clientId)
         }
       }
+
+      // Ensure we have a client ID - create a default client if none exists
+      if (!clientId) {
+        console.log('No client specified, creating default client...')
+        const { data: defaultClient, error: defaultClientError } = await supabase
+          .from('clients')
+          .insert({
+            name: 'Default Client',
+            email: 'default@example.com'
+          })
+          .select()
+          .single()
+
+        if (defaultClientError) {
+          console.error('Error creating default client:', defaultClientError)
+          throw defaultClientError
+        }
+        clientId = defaultClient.id
+        console.log('Created default client with ID:', clientId)
+      }
+
+      console.log('Client ID resolved:', clientId)
 
       // Create the base quote (only core quote data)
       const { data: quote, error } = await supabase
@@ -308,14 +407,18 @@ export const useQuoteForm = () => {
           owner_id: '00000000-0000-0000-0000-000000000000', // TODO: Replace with actual auth.uid()
           client_id: clientId,
           status: 'draft',
-          quote_number: formData.quoteNumber
+          quote_number: dataToSave.quoteNumber
         })
         .select()
         .single()
 
-      if (error) throw error
+      if (error) {
+        console.error('Error creating quote:', error)
+        throw error
+      }
 
       const quoteId = quote.id
+      console.log('Created quote with ID:', quoteId)
 
       // Create the first revision of the quote
       const { data: quoteRevision, error: revisionError } = await supabase
@@ -324,13 +427,13 @@ export const useQuoteForm = () => {
           quote_id: quoteId,
           revision_number: 1,
           status: 'draft',
-          expires_on: formData.expires,
-          tax_rate: formData.taxRate,
-          is_tax_enabled: formData.isTaxEnabled,
-          notes: formData.notes,
-          is_recurring: formData.isRecurring,
-          billing_period: formData.billingPeriod || null,
-          recurring_amount: formData.recurringAmount || null
+          expires_on: dataToSave.expires,
+          tax_rate: dataToSave.taxRate,
+          is_tax_enabled: dataToSave.isTaxEnabled,
+          notes: dataToSave.notes,
+          is_recurring: dataToSave.isRecurring,
+          billing_period: dataToSave.billingPeriod || null,
+          recurring_amount: dataToSave.recurringAmount || null
         })
         .select()
         .single()
@@ -340,7 +443,7 @@ export const useQuoteForm = () => {
       const revisionId = quoteRevision.id
 
       // Insert quote items for this revision
-      const itemsPayload = formData.items.map((i) => ({
+      const itemsPayload = dataToSave.items.map((i) => ({
         quote_revision_id: revisionId,
         description: i.description,
         quantity: i.quantity,
@@ -353,7 +456,7 @@ export const useQuoteForm = () => {
       if (itemsError) throw itemsError
 
       // Insert payment terms for this revision
-      const paymentTermsPayload = formData.paymentSchedule.map((p, idx) => ({
+      const paymentTermsPayload = dataToSave.paymentSchedule.map((p, idx) => ({
         quote_revision_id: revisionId,
         percentage: p.percentage,
         description: p.description,
@@ -364,34 +467,40 @@ export const useQuoteForm = () => {
       if (paymentTermsError) throw paymentTermsError
 
       // Insert legal terms for this revision
-      if (formData.legalTerms) {
+      if (dataToSave.legalTerms) {
         const { error: legalTermsError } = await supabase
           .from('legal_terms')
           .insert({
             quote_revision_id: revisionId,
-            terms: formData.legalTerms
+            terms: dataToSave.legalTerms
           })
         if (legalTermsError) throw legalTermsError
       }
 
       // Insert client comments for this revision
-      if (formData.clientComments) {
+      if (dataToSave.clientComments) {
         const { error: clientCommentsError } = await supabase
           .from('client_comments')
           .insert({
             quote_id: quoteId,
             quote_revision_id: revisionId,
-            comment: formData.clientComments
+            comment: dataToSave.clientComments
           })
         if (clientCommentsError) throw clientCommentsError
       }
 
       // Add new quote to history
-      const newHistoryItem = {
+      const newHistoryItem: QuoteHistory = {
         id: Date.now().toString(),
-        version: `New - ${new Date().toLocaleDateString()}`,
+        quoteId: quoteId,
+        quoteNumber: dataToSave.quoteNumber,
+        versionNumber: 1,
         date: new Date().toLocaleDateString(),
-        isCurrent: true
+        isCurrent: true,
+        notes: '',
+        clientName: dataToSave.clientName,
+        status: 'draft',
+        version: 'v1'
       }
 
       // Update all existing history items to not be current
@@ -442,10 +551,16 @@ export const useQuoteForm = () => {
     loadQuoteHistory,
     // New Quote Modal
     isNewQuoteModalOpen,
-    newQuoteNumber,
+    newQuoteData,
     openNewQuoteModal,
     closeNewQuoteModal,
     createNewQuote,
-    setNewQuoteNumber,
+    setNewQuoteData,
+    updateNewQuoteData,
+    clientSuggestions,
+    setClientSuggestions,
+    isLoadingClients,
+    searchClients,
+    isCreatingQuote,
   }
 }

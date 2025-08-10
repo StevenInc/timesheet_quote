@@ -65,3 +65,8 @@ export interface QuoteFormData {
   quoteHistory: QuoteHistory[]
   selectedHistoryVersion: string
 }
+
+export interface NewQuoteModalData {
+  quoteNumber: string
+  clientName: string
+}

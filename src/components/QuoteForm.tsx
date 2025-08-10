@@ -22,11 +22,16 @@ const QuoteForm: React.FC = () => {
     loadQuoteHistory,
     // New Quote Modal
     isNewQuoteModalOpen,
-    newQuoteNumber,
+    newQuoteData,
     openNewQuoteModal,
     closeNewQuoteModal,
     createNewQuote,
-    setNewQuoteNumber,
+    updateNewQuoteData,
+    clientSuggestions,
+    setClientSuggestions,
+    isLoadingClients,
+    searchClients,
+    isCreatingQuote,
   } = useQuoteForm()
 
   const [isTaxModalOpen, setIsTaxModalOpen] = useState(false)
@@ -87,11 +92,16 @@ const QuoteForm: React.FC = () => {
       loadQuoteHistory={loadQuoteHistory}
       // New Quote Modal
       isNewQuoteModalOpen={isNewQuoteModalOpen}
-      newQuoteNumber={newQuoteNumber}
+      newQuoteData={newQuoteData}
       openNewQuoteModal={openNewQuoteModal}
       closeNewQuoteModal={closeNewQuoteModal}
       createNewQuote={createNewQuote}
-      setNewQuoteNumber={setNewQuoteNumber}
+      updateNewQuoteData={updateNewQuoteData}
+      clientSuggestions={clientSuggestions}
+      setClientSuggestions={setClientSuggestions}
+      isLoadingClients={isLoadingClients}
+      searchClients={searchClients}
+      isCreatingQuote={isCreatingQuote}
     />
   )
 }

@@ -1,7 +1,7 @@
 import React from 'react'
 import { Trash2, Save, Send, Archive, Copy, Download, Plus } from 'lucide-react'
 import '../QuoteForm.css'
-import type { QuoteFormData, QuoteItem, PaymentTermItem } from './types'
+import type { QuoteFormData, QuoteItem, PaymentTermItem, NewQuoteModalData } from './types'
 
 interface Props {
   formData: QuoteFormData
@@ -36,11 +36,16 @@ interface Props {
   loadQuoteHistory: () => void
   // new quote modal
   isNewQuoteModalOpen: boolean
-  newQuoteNumber: string
+  newQuoteData: NewQuoteModalData
   openNewQuoteModal: () => void
   closeNewQuoteModal: () => void
   createNewQuote: () => void
-  setNewQuoteNumber: (value: string) => void
+  updateNewQuoteData: (field: keyof NewQuoteModalData, value: string) => void
+  clientSuggestions: string[]
+  setClientSuggestions: (suggestions: string[]) => void
+  isLoadingClients: boolean
+  searchClients: (searchTerm: string) => void
+  isCreatingQuote: boolean
 }
 
 export const QuoteFormView: React.FC<Props> = (props) => {
@@ -69,11 +74,16 @@ export const QuoteFormView: React.FC<Props> = (props) => {
     isLoadingHistory,
     loadQuoteHistory,
     isNewQuoteModalOpen,
-    newQuoteNumber,
+    newQuoteData,
     openNewQuoteModal,
     closeNewQuoteModal,
     createNewQuote,
-    setNewQuoteNumber,
+    updateNewQuoteData,
+    clientSuggestions,
+    setClientSuggestions,
+    isLoadingClients,
+    searchClients,
+    isCreatingQuote,
   } = props
 
   return (
@@ -480,8 +490,8 @@ export const QuoteFormView: React.FC<Props> = (props) => {
               <input
                 id="newQuoteNumberInput"
                 type="text"
-                value={newQuoteNumber}
-                onChange={(e) => setNewQuoteNumber(e.target.value)}
+                value={newQuoteData.quoteNumber}
+                onChange={(e) => updateNewQuoteData('quoteNumber', e.target.value)}
                 placeholder="Enter quote number"
                 autoFocus
                 onKeyDown={(e) => {
@@ -493,12 +503,56 @@ export const QuoteFormView: React.FC<Props> = (props) => {
               />
               <small className="form-help">This will be the next available quote number by default</small>
             </div>
+            <div className="form-group">
+              <label htmlFor="newClientNameInput">Client Name</label>
+              <div className="combo-box-container">
+                <input
+                  id="newClientNameInput"
+                  type="text"
+                  value={newQuoteData.clientName}
+                  onChange={(e) => {
+                    const value = e.target.value
+                    updateNewQuoteData('clientName', value)
+                    searchClients(value)
+                  }}
+                  placeholder="Type to search or enter new client name"
+                  onKeyDown={(e) => {
+                    if (e.key === 'Enter') {
+                      e.preventDefault()
+                      createNewQuote()
+                    }
+                  }}
+                />
+                {isLoadingClients && (
+                  <div className="combo-box-loading">
+                    <div className="loading-spinner"></div>
+                  </div>
+                )}
+                {clientSuggestions.length > 0 && (
+                  <div className="combo-box-suggestions">
+                    {clientSuggestions.map((suggestion, index) => (
+                      <div
+                        key={index}
+                        className="suggestion-item"
+                        onClick={() => {
+                          updateNewQuoteData('clientName', suggestion)
+                          setClientSuggestions([])
+                        }}
+                      >
+                        {suggestion}
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+              <small className="form-help">Type to search existing clients or enter a new client name</small>
+            </div>
             <div className="modal-actions">
-              <button type="button" className="btn btn-secondary" onClick={closeNewQuoteModal}>
+              <button type="button" className="btn btn-secondary" onClick={closeNewQuoteModal} disabled={isCreatingQuote}>
                 Cancel
               </button>
-              <button type="button" className="btn btn-primary" onClick={createNewQuote}>
-                Create Quote
+              <button type="button" className="btn btn-primary" onClick={createNewQuote} disabled={isCreatingQuote}>
+                {isCreatingQuote ? 'Creating...' : 'Create Quote'}
               </button>
             </div>
           </div>
