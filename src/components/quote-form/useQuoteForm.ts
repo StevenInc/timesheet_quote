@@ -44,6 +44,8 @@ export const useQuoteForm = () => {
   // Quote Revisions State
   const [quoteRevisions, setQuoteRevisions] = useState<DatabaseQuoteRevision[]>([])
   const [isLoadingQuoteRevisions, setIsLoadingQuoteRevisions] = useState(false)
+  const [currentLoadedRevisionId, setCurrentLoadedRevisionId] = useState<string | null>(null)
+  const [currentLoadedQuoteId, setCurrentLoadedQuoteId] = useState<string | null>(null)
 
   // New Quote Modal State
   const [isNewQuoteModalOpen, setIsNewQuoteModalOpen] = useState(false)
@@ -358,91 +360,62 @@ export const useQuoteForm = () => {
   }
 
   const createNewQuote = async () => {
-    if (newQuoteData.quoteNumber.trim()) {
-      setIsCreatingQuote(true)
+    setIsCreatingQuote(true)
+    try {
+      console.log('Creating new quote with data:', newQuoteData)
 
-      try {
-        // First, check if a client with this name already exists in the database
-        let clientEmail = `${newQuoteData.clientName.trim().toLowerCase().replace(/\s+/g, '.')}@example.com`
+      // Validate required fields
+      if (!newQuoteData.quoteNumber?.trim()) {
+        throw new Error('Quote number is required')
+      }
+      if (!newQuoteData.clientName?.trim()) {
+        throw new Error('Client name is required')
+      }
 
-        if (newQuoteData.clientName.trim()) {
-          const { data: existingClient, error: clientError } = await supabase
-            .from('clients')
-            .select('email')
-            .eq('name', newQuoteData.clientName.trim())
-            .single()
+      // Clear any loaded revision state
+      clearLoadedRevisionState()
 
-          if (!clientError && existingClient && existingClient.email) {
-            // Use the actual email from the database
-            clientEmail = existingClient.email
-            console.log('Found existing client email:', clientEmail)
-          } else {
-            console.log('No existing client found, using generated email:', clientEmail)
-          }
-        }
+      // Create the quote using the existing saveQuote function
+      const result = await saveQuote({
+        ...formData,
+        quoteNumber: newQuoteData.quoteNumber,
+        clientName: newQuoteData.clientName,
+        clientEmail: '',
+        items: [{ id: '1', description: '', quantity: 1, unitPrice: 0, total: 0 }],
+        subtotal: 0,
+        tax: 0,
+        total: 0
+      })
 
-        // Create a temporary form data object for the new quote
-        const newQuoteFormData: QuoteFormData = {
-          owner: '',
-          clientName: newQuoteData.clientName.trim(),
-          clientEmail: clientEmail,
-          quoteNumber: newQuoteData.quoteNumber.trim(),
-          quoteUrl: `https://quotes.timesheets.com/${newQuoteData.quoteNumber.trim()}-${Math.random().toString(36).substr(2, 9).toUpperCase()}`,
-          expires: '2025-07-08',
-          taxRate: 0.08,
-          isTaxEnabled: false,
-          paymentTerms: 'Net 30',
-          items: [
-            { id: '1', description: '', quantity: 1, unitPrice: 0, total: 0 },
-          ],
+      if (result.success) {
+        console.log('New quote created successfully:', result.quoteId)
+        setSaveMessage({ type: 'success', text: 'New quote created successfully!' })
+        closeNewQuoteModal()
+
+        // Reset form data to defaults
+        setFormData(prev => ({
+          ...prev,
+          quoteNumber: newQuoteData.quoteNumber,
+          clientName: newQuoteData.clientName,
+          clientEmail: '',
+          items: [{ id: '1', description: '', quantity: 1, unitPrice: 0, total: 0 }],
           subtotal: 0,
           tax: 0,
           total: 0,
           notes: '',
-          legalTerms: `TERMS AND CONDITIONS
-
-1. PAYMENT TERMS
-   Payment is due within 30 days of invoice date. Late payments may incur additional charges.
-
-2. SCOPE OF WORK
-   All work will be performed according to the specifications outlined in this quote.
-
-3. CHANGES AND REVISIONS
-   Any changes to the scope of work must be agreed upon in writing and may affect pricing and timeline.
-
-4. INTELLECTUAL PROPERTY
-   All work product remains the property of the client upon full payment.
-
-5. LIABILITY
-   Our liability is limited to the amount paid for services rendered.
-
-6. GOVERNING LAW
-   This agreement is governed by the laws of the jurisdiction where services are performed.`,
+          legalTerms: '',
           clientComments: '',
           isRecurring: false,
           billingPeriod: '',
           recurringAmount: 0,
-          quoteHistory: [],
-          selectedHistoryVersion: '',
-          paymentSchedule: [
-            { id: 'ps-1', percentage: 100, description: 'net 30 days' },
-          ],
-        }
-
-        // Set the form data to the new quote
-        setFormData(newQuoteFormData)
-
-        // Close the modal
-        closeNewQuoteModal()
-
-        // Don't save to database yet - wait for user to click save button
-        setSaveMessage({ type: 'success', text: `New quote ${newQuoteData.quoteNumber.trim()} created! Click the save button when ready to save to database.` })
-      } catch (error) {
-        console.error('Error creating new quote:', error)
-        setSaveMessage({ type: 'error', text: `Error creating new quote: ${error instanceof Error ? error.message : 'Unknown error'}` })
-      } finally {
-        setIsCreatingQuote(false)
+          paymentSchedule: [{ id: 'ps-1', percentage: 100, description: 'net 30 days' }]
+        }))
       }
+    } catch (error) {
+      console.error('Error creating new quote:', error)
+      setSaveMessage({ type: 'error', text: `Error creating new quote: ${error instanceof Error ? error.message : 'Unknown error'}` })
+    } finally {
+      setIsCreatingQuote(false)
     }
   }
 
@@ -455,6 +428,43 @@ export const useQuoteForm = () => {
     const tax = isTaxEnabled ? subtotal * taxRate : 0
     const total = subtotal + tax
     return { subtotal, tax, total }
+  }
+
+  const clearLoadedRevisionState = () => {
+    setCurrentLoadedRevisionId(null)
+    setCurrentLoadedQuoteId(null)
+  }
+
+  const resetForm = () => {
+    setFormData({
+      owner: '',
+      clientName: '',
+      clientEmail: '',
+      quoteNumber: '1000',
+      quoteUrl: 'https://quotes.timesheets.com/68124-AJ322ADV3',
+      expires: '2025-07-08',
+      taxRate: 0.08,
+      isTaxEnabled: false,
+      paymentTerms: 'Net 30',
+      items: [
+        { id: '1', description: '', quantity: 1, unitPrice: 0, total: 0 },
+      ],
+      subtotal: 0,
+      tax: 0,
+      total: 0,
+      notes: '',
+      legalTerms: '',
+      clientComments: '',
+      isRecurring: false,
+      billingPeriod: '',
+      recurringAmount: 0,
+      quoteHistory: [],
+      selectedHistoryVersion: '',
+      paymentSchedule: [
+        { id: 'ps-1', percentage: 100, description: 'net 30 days' },
+      ],
+    })
+    clearLoadedRevisionState()
   }
 
   const updateItem = (id: string, field: keyof QuoteItem, value: string | number) => {
@@ -631,98 +641,155 @@ export const useQuoteForm = () => {
       }
 
       if (existingQuote) {
-        // Quote exists - update it instead of creating a new one
-        console.log('Quote with number', dataToSave.quoteNumber, 'already exists, updating...')
+        // Quote exists - check if we're saving changes to a loaded revision
+        console.log('Quote with number', dataToSave.quoteNumber, 'already exists')
         quoteId = existingQuote.id
 
-        // Update the existing quote
-        const { error: updateError } = await supabase
-          .from('quotes')
-          .update({
-            client_id: clientId,
-            status: 'draft',
-            updated_at: new Date().toISOString()
-          })
-          .eq('id', quoteId)
+        if (currentLoadedRevisionId && currentLoadedQuoteId === quoteId) {
+          // We're saving changes to a loaded revision - create a new revision
+          console.log('Creating new revision for existing quote...')
 
-        if (updateError) {
-          console.error('Error updating existing quote:', updateError)
-          throw updateError
+          // Get the current highest revision number
+          const { data: currentRevisions, error: revisionCheckError } = await supabase
+            .from('quote_revisions')
+            .select('revision_number')
+            .eq('quote_id', quoteId)
+            .order('revision_number', { ascending: false })
+            .limit(1)
+
+          if (revisionCheckError) {
+            console.error('Error checking current revisions:', revisionCheckError)
+            throw revisionCheckError
+          }
+
+          const nextRevisionNumber = currentRevisions && currentRevisions.length > 0
+            ? Math.max(...currentRevisions.map(r => r.revision_number)) + 1
+            : 1
+
+          console.log('Creating new revision number:', nextRevisionNumber)
+
+          // Create a new revision
+          const { data: newRevision, error: revisionError } = await supabase
+            .from('quote_revisions')
+            .insert({
+              quote_id: quoteId,
+              revision_number: nextRevisionNumber,
+              status: 'draft',
+              expires_on: dataToSave.expires,
+              tax_rate: dataToSave.taxRate,
+              is_tax_enabled: dataToSave.isTaxEnabled,
+              notes: dataToSave.notes,
+              is_recurring: dataToSave.isRecurring,
+              billing_period: dataToSave.billingPeriod || null,
+              recurring_amount: dataToSave.recurringAmount || null
+            })
+            .select()
+            .single()
+
+          if (revisionError) {
+            console.error('Error creating new revision:', revisionError)
+            throw revisionError
+          }
+
+          revisionId = newRevision.id
+          console.log('Created new revision with ID:', revisionId)
+
+          // Clear the loaded revision tracking since we're now working with a new revision
+          setCurrentLoadedRevisionId(null)
+          setCurrentLoadedQuoteId(null)
+        } else {
+          // Regular update of existing quote - update the first revision
+          console.log('Updating existing quote...')
+
+          // Update the existing quote
+          const { error: updateError } = await supabase
+            .from('quotes')
+            .update({
+              client_id: clientId,
+              status: 'draft',
+              updated_at: new Date().toISOString()
+            })
+            .eq('id', quoteId)
+
+          if (updateError) {
+            console.error('Error updating existing quote:', updateError)
+            throw updateError
+          }
+
+          console.log('Updated existing quote with ID:', quoteId)
+
+          // For existing quotes, we need to create a new revision number
+          // Get the current highest revision number
+          const { data: currentRevisions, error: revisionCheckError } = await supabase
+            .from('quote_revisions')
+            .select('revision_number')
+            .eq('quote_id', quoteId)
+            .order('revision_number', { ascending: false })
+            .limit(1)
+
+          if (revisionCheckError) {
+            console.error('Error checking current revisions:', revisionCheckError)
+            throw revisionCheckError
+          }
+
+          const nextRevisionNumber = currentRevisions && currentRevisions.length > 0
+            ? Math.max(...currentRevisions.map(r => r.revision_number)) + 1
+            : 1
+
+          console.log('Next revision number for existing quote:', nextRevisionNumber)
+
+          // Delete existing revision data to avoid conflicts
+          await supabase.from('quote_items').delete().eq('quote_revision_id',
+            (await supabase.from('quote_revisions').select('id').eq('quote_id', quoteId).eq('revision_number', 1).single()).data?.id
+          )
+          await supabase.from('payment_terms').delete().eq('quote_revision_id',
+            (await supabase.from('quote_revisions').select('id').eq('quote_id', quoteId).eq('revision_number', 1).single()).data?.id
+          )
+          await supabase.from('legal_terms').delete().eq('quote_revision_id',
+            (await supabase.from('quote_revisions').select('id').eq('quote_id', quoteId).eq('revision_number', 1).single()).data?.id
+          )
+          await supabase.from('client_comments').delete().eq('quote_revision_id',
+            (await supabase.from('quote_revisions').select('id').eq('quote_id', quoteId).eq('revision_number', 1).single()).data?.id
+          )
+
+          // Update the existing revision instead of creating a new one
+          const { error: revisionUpdateError } = await supabase
+            .from('quote_revisions')
+            .update({
+              status: 'draft',
+              expires_on: dataToSave.expires,
+              tax_rate: dataToSave.taxRate,
+              is_tax_enabled: dataToSave.isTaxEnabled,
+              notes: dataToSave.notes,
+              is_recurring: dataToSave.isRecurring,
+              billing_period: dataToSave.billingPeriod || null,
+              recurring_amount: dataToSave.recurringAmount || null,
+              updated_at: new Date().toISOString()
+            })
+            .eq('quote_id', quoteId)
+            .eq('revision_number', 1)
+
+          if (revisionUpdateError) {
+            console.error('Error updating existing revision:', revisionUpdateError)
+            throw revisionUpdateError
+          }
+
+          // Get the revision ID for the existing revision
+          const { data: existingRevision, error: revisionGetError } = await supabase
+            .from('quote_revisions')
+            .select('id')
+            .eq('quote_id', quoteId)
+            .eq('revision_number', 1)
+            .single()
+
+          if (revisionGetError) {
+            console.error('Error getting existing revision:', revisionGetError)
+            throw revisionGetError
+          }
+
+          revisionId = existingRevision.id
+          console.log('Using existing revision ID:', revisionId)
         }
-
-        console.log('Updated existing quote with ID:', quoteId)
-
-        // For existing quotes, we need to create a new revision number
-        // Get the current highest revision number
-        const { data: currentRevisions, error: revisionCheckError } = await supabase
-          .from('quote_revisions')
-          .select('revision_number')
-          .eq('quote_id', quoteId)
-          .order('revision_number', { ascending: false })
-          .limit(1)
-
-        if (revisionCheckError) {
-          console.error('Error checking current revisions:', revisionCheckError)
-          throw revisionCheckError
-        }
-
-        const nextRevisionNumber = currentRevisions && currentRevisions.length > 0
-          ? Math.max(...currentRevisions.map(r => r.revision_number)) + 1
-          : 1
-
-        console.log('Next revision number for existing quote:', nextRevisionNumber)
-
-        // Delete existing revision data to avoid conflicts
-        await supabase.from('quote_items').delete().eq('quote_revision_id',
-          (await supabase.from('quote_revisions').select('id').eq('quote_id', quoteId).eq('revision_number', 1).single()).data?.id
-        )
-        await supabase.from('payment_terms').delete().eq('quote_revision_id',
-          (await supabase.from('quote_revisions').select('id').eq('quote_id', quoteId).eq('revision_number', 1).single()).data?.id
-        )
-        await supabase.from('legal_terms').delete().eq('quote_revision_id',
-          (await supabase.from('quote_revisions').select('id').eq('quote_id', quoteId).eq('revision_number', 1).single()).data?.id
-        )
-        await supabase.from('client_comments').delete().eq('quote_revision_id',
-          (await supabase.from('quote_revisions').select('id').eq('quote_id', quoteId).eq('revision_number', 1).single()).data?.id
-        )
-
-        // Update the existing revision instead of creating a new one
-        const { error: revisionUpdateError } = await supabase
-          .from('quote_revisions')
-          .update({
-            status: 'draft',
-            expires_on: dataToSave.expires,
-            tax_rate: dataToSave.taxRate,
-            is_tax_enabled: dataToSave.isTaxEnabled,
-            notes: dataToSave.notes,
-            is_recurring: dataToSave.isRecurring,
-            billing_period: dataToSave.billingPeriod || null,
-            recurring_amount: dataToSave.recurringAmount || null,
-            updated_at: new Date().toISOString()
-          })
-          .eq('quote_id', quoteId)
-          .eq('revision_number', 1)
-
-        if (revisionUpdateError) {
-          console.error('Error updating existing revision:', revisionUpdateError)
-          throw revisionUpdateError
-        }
-
-        // Get the revision ID for the existing revision
-        const { data: existingRevision, error: revisionGetError } = await supabase
-          .from('quote_revisions')
-          .select('id')
-          .eq('quote_id', quoteId)
-          .eq('revision_number', 1)
-          .single()
-
-        if (revisionGetError) {
-          console.error('Error getting existing revision:', revisionGetError)
-          throw revisionGetError
-        }
-
-        revisionId = existingRevision.id
-        console.log('Using existing revision ID:', revisionId)
       } else {
         // Quote doesn't exist - create a new one
         console.log('Creating new quote with number:', dataToSave.quoteNumber)
@@ -1038,6 +1105,7 @@ export const useQuoteForm = () => {
         .select(`
           *,
           quotes!inner(
+            id,
             quote_number,
             clients(name, email)
           ),
@@ -1053,6 +1121,10 @@ export const useQuoteForm = () => {
 
       if (revision) {
         console.log('Loaded quote revision:', revision)
+
+        // Track which revision and quote are currently loaded
+        setCurrentLoadedRevisionId(revisionId)
+        setCurrentLoadedQuoteId(revision.quotes.id)
 
         // Update form data with the loaded revision
         setFormData(prev => ({
@@ -1133,24 +1205,32 @@ export const useQuoteForm = () => {
     isLoadingClients,
     searchClients,
     isCreatingQuote,
-    loadClientQuotes,
-    clientQuotes,
-    isLoadingClientQuotes,
-    selectedClientQuote,
-    setSelectedClientQuote,
-    loadClientQuotesByName,
-    // Quote Revisions
-    quoteRevisions,
-    isLoadingQuoteRevisions,
-    loadQuoteRevisions,
-    loadQuoteRevision,
     // View Quote Modal
     isViewQuoteModalOpen,
     openViewQuoteModal,
     closeViewQuoteModal,
     availableClients,
     isLoadingAvailableClients,
+    loadAvailableClients,
     selectedClientId,
+    setSelectedClientId,
+    clientQuotes,
+    isLoadingClientQuotes,
+    selectedClientQuote,
+    setSelectedClientQuote,
+    loadClientQuotes,
     handleClientSelection,
+    loadClientQuotesByName,
+    // Quote Revisions
+    quoteRevisions,
+    isLoadingQuoteRevisions,
+    loadQuoteRevisions,
+    loadQuoteRevision,
+    // Revision state tracking
+    currentLoadedRevisionId,
+    currentLoadedQuoteId,
+    // Utility functions
+    clearLoadedRevisionState,
+    resetForm,
   }
 }

@@ -41,6 +41,10 @@ const QuoteForm: React.FC = () => {
     isLoadingQuoteRevisions,
     loadQuoteRevisions,
     loadQuoteRevision,
+    currentLoadedRevisionId,
+    currentLoadedQuoteId,
+    clearLoadedRevisionState,
+    resetForm,
     // View Quote Modal
     isViewQuoteModalOpen,
     openViewQuoteModal,
@@ -103,10 +107,9 @@ const QuoteForm: React.FC = () => {
       onSubmit={handleSubmit}
       copyQuoteUrl={copyQuoteUrl}
       downloadQuote={downloadQuote}
+      loadQuoteHistory={loadQuoteHistory}
       isSaving={isSaving}
       saveMessage={saveMessage}
-      loadQuoteHistory={loadQuoteHistory}
-      // New Quote Modal
       isNewQuoteModalOpen={isNewQuoteModalOpen}
       newQuoteData={newQuoteData}
       openNewQuoteModal={openNewQuoteModal}
@@ -123,17 +126,19 @@ const QuoteForm: React.FC = () => {
       isLoadingClientQuotes={isLoadingClientQuotes}
       selectedClientQuote={selectedClientQuote}
       setSelectedClientQuote={setSelectedClientQuote}
-      // Quote Revisions
       quoteRevisions={quoteRevisions}
       isLoadingQuoteRevisions={isLoadingQuoteRevisions}
       loadQuoteRevisions={loadQuoteRevisions}
       loadQuoteRevision={loadQuoteRevision}
-      // View Quote Modal
+      currentLoadedRevisionId={currentLoadedRevisionId}
+      currentLoadedQuoteId={currentLoadedQuoteId}
+      clearLoadedRevisionState={clearLoadedRevisionState}
+      resetForm={resetForm}
       isViewQuoteModalOpen={isViewQuoteModalOpen}
       openViewQuoteModal={openViewQuoteModal}
       closeViewQuoteModal={closeViewQuoteModal}
-      availableClients={availableClients}
       isLoadingAvailableClients={isLoadingAvailableClients}
+      availableClients={availableClients}
       selectedClientId={selectedClientId}
       handleClientSelection={handleClientSelection}
     />

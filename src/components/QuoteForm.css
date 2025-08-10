@@ -1079,3 +1079,56 @@
 .quote-version-row.clickable:active {
   background-color: #cbd5e1;
 }
+
+/* Revision indicator */
+.revision-indicator {
+  background: linear-gradient(135deg, #f0f9ff 0%, #e0f2fe 100%);
+  border: 1px solid #0ea5e9;
+  border-radius: 8px;
+  padding: 16px 20px;
+  margin: 16px 0;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  box-shadow: 0 2px 4px rgba(14, 165, 233, 0.1);
+}
+
+.revision-info {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.revision-badge {
+  font-weight: 600;
+  color: #0369a1;
+  font-size: 14px;
+}
+
+.revision-details {
+  color: #0c4a6e;
+  font-size: 13px;
+}
+
+.revision-actions {
+  display: flex;
+  gap: 8px;
+}
+
+.btn-sm {
+  padding: 6px 12px;
+  font-size: 12px;
+  border-radius: 6px;
+}
+
+.btn-outline {
+  background: transparent;
+  border: 1px solid #64748b;
+  color: #64748b;
+}
+
+.btn-outline:hover {
+  background: #f1f5f9;
+  border-color: #475569;
+  color: #475569;
+}
