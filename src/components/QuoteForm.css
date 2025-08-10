@@ -70,6 +70,30 @@
   gap: 0.5rem;
 }
 
+.quote-number-display {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  margin-bottom: 1rem;
+  background: rgba(59, 130, 246, 0.1);
+  padding: 0.75rem 1rem;
+  border-radius: 8px;
+  border: 1px solid rgba(59, 130, 246, 0.2);
+}
+
+.quote-number-label {
+  font-size: 0.875rem;
+  font-weight: 500;
+  color: #374151;
+}
+
+.quote-number-value {
+  font-size: 1.5rem;
+  font-weight: 700;
+  color: #1d4ed8;
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.1);
+}
+
 .btn-close {
   background: #ef4444;
   color: white;
@@ -569,6 +593,130 @@
 /* Payment schedule */
 .schedule-table {
   margin-top: 0.5rem;
+}
+
+/* Quote History Table */
+.history-table-container {
+  margin-top: 0.5rem;
+}
+
+.history-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.875rem;
+}
+
+.history-table th {
+  background-color: #f8fafc;
+  padding: 0.5rem;
+  text-align: left;
+  font-weight: 600;
+  color: #374151;
+  border-bottom: 1px solid #e5e7eb;
+}
+
+.history-table td {
+  padding: 0.5rem;
+  border-bottom: 1px solid #f3f4f6;
+  cursor: pointer;
+}
+
+.history-row {
+  transition: background-color 0.15s ease;
+}
+
+.history-row:hover {
+  background-color: #f9fafb;
+}
+
+.history-row.selected {
+  background-color: #eff6ff;
+  border-left: 3px solid #3b82f6;
+}
+
+.history-row.selected td {
+  font-weight: 500;
+}
+
+.notes-cell {
+  max-width: 200px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  color: #6b7280;
+  font-style: italic;
+}
+
+.notes-cell:hover {
+  color: #374151;
+}
+
+/* History loading and empty states */
+.history-loading,
+.history-empty {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 2rem;
+  color: #6b7280;
+  text-align: center;
+}
+
+.history-loading {
+  gap: 1rem;
+}
+
+.loading-spinner {
+  width: 24px;
+  height: 24px;
+  border: 2px solid #e5e7eb;
+  border-top: 2px solid #3b82f6;
+  border-radius: 50%;
+  animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
+}
+
+.history-empty {
+  gap: 0.5rem;
+}
+
+.btn-link {
+  background: none;
+  border: none;
+  color: #3b82f6;
+  text-decoration: underline;
+  cursor: pointer;
+  font-size: 0.875rem;
+  padding: 0;
+}
+
+.btn-link:hover {
+  color: #2563eb;
+}
+
+.status-badge {
+  display: inline-block;
+  padding: 0.25rem 0.5rem;
+  border-radius: 12px;
+  font-size: 0.75rem;
+  font-weight: 500;
+  text-transform: uppercase;
+  letter-spacing: 0.025em;
+}
+
+.status-badge.current {
+  background-color: #d1fae5;
+  color: #065f46;
+}
+
+.status-badge.previous {
+  background-color: #f3f4f6;
+  color: #6b7280;
 }
 
 .schedule-footer {

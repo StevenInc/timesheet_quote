@@ -18,6 +18,8 @@ const QuoteForm: React.FC = () => {
     saveQuote,
     isSaving,
     saveMessage,
+    isLoadingHistory,
+    loadQuoteHistory,
   } = useQuoteForm()
 
   const [isTaxModalOpen, setIsTaxModalOpen] = useState(false)
@@ -52,29 +54,31 @@ const QuoteForm: React.FC = () => {
   }
 
   return (
-    <QuoteFormView
-      formData={formData}
-      paymentScheduleTotal={paymentScheduleTotal}
-      updateItem={updateItem}
-      addItem={addItem}
-      removeItem={removeItem}
-      handleInputChange={handleInputChange}
-      handleCheckboxChange={handleCheckboxChange}
-      updatePaymentTerm={updatePaymentTerm}
-      addPaymentTerm={addPaymentTerm}
-      removePaymentTerm={removePaymentTerm}
-      isTaxModalOpen={isTaxModalOpen}
-      openTaxModal={openTaxModal}
-      closeTaxModal={closeTaxModal}
-      tempTaxRatePercent={tempTaxRatePercent}
-      setTempTaxRatePercent={setTempTaxRatePercent}
-      applyNewTaxRate={applyNewTaxRate}
-      onSubmit={handleSubmit}
-      copyQuoteUrl={copyQuoteUrl}
-      downloadQuote={downloadQuote}
-      isSaving={isSaving}
-      saveMessage={saveMessage}
-    />
+            <QuoteFormView
+          formData={formData}
+          paymentScheduleTotal={paymentScheduleTotal}
+          updateItem={updateItem}
+          addItem={addItem}
+          removeItem={removeItem}
+          handleInputChange={handleInputChange}
+          handleCheckboxChange={handleCheckboxChange}
+          updatePaymentTerm={updatePaymentTerm}
+          addPaymentTerm={addPaymentTerm}
+          removePaymentTerm={removePaymentTerm}
+          isTaxModalOpen={isTaxModalOpen}
+          openTaxModal={openTaxModal}
+          closeTaxModal={closeTaxModal}
+          tempTaxRatePercent={tempTaxRatePercent}
+          setTempTaxRatePercent={setTempTaxRatePercent}
+          applyNewTaxRate={applyNewTaxRate}
+          onSubmit={handleSubmit}
+          copyQuoteUrl={copyQuoteUrl}
+          downloadQuote={downloadQuote}
+          isSaving={isSaving}
+          saveMessage={saveMessage}
+          isLoadingHistory={isLoadingHistory}
+          loadQuoteHistory={loadQuoteHistory}
+        />
   )
 }
 

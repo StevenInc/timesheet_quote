@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react'
+import { useMemo, useState, useEffect } from 'react'
 import type { QuoteFormData, QuoteItem, PaymentTermItem } from './types'
 import { supabase } from '../../lib/supabaseClient'
 
@@ -7,6 +7,7 @@ export const useQuoteForm = () => {
     owner: '',
     clientName: '',
     clientEmail: '',
+    quoteNumber: '1000',
     quoteUrl: 'https://quotes.timesheets.com/68124-AJ322ADV3',
     expires: '2025-07-08',
     paymentTerms: 'Net 30',
@@ -23,13 +24,8 @@ export const useQuoteForm = () => {
     isDeclined: false,
     isRecurring: false,
     billingPeriod: '',
-    quoteHistory: [
-      { id: '1', version: 'Current Version', date: '', isCurrent: true },
-      { id: '2', version: '03 - 07/08/25', date: '2025-07-08', isCurrent: false },
-      { id: '3', version: '02 - 07/08/25', date: '2025-07-08', isCurrent: false },
-      { id: '4', version: '01 - 07/03/25', date: '2025-07-03', isCurrent: false },
-    ],
-    selectedHistoryVersion: '2',
+    quoteHistory: [],
+    selectedHistoryVersion: '',
     isTaxEnabled: false,
     taxRate: 0.08,
     paymentSchedule: [
@@ -39,8 +35,113 @@ export const useQuoteForm = () => {
 
   const [isSaving, setIsSaving] = useState(false)
   const [saveMessage, setSaveMessage] = useState<{ type: 'success' | 'error'; text: string } | null>(null)
+  const [isLoadingHistory, setIsLoadingHistory] = useState(false)
+
+  // Load quote history when component mounts
+  useEffect(() => {
+    loadQuoteHistory()
+  }, [])
 
   const calculateItemTotal = (quantity: number, unitPrice: number) => quantity * unitPrice
+
+  const loadQuoteHistory = async () => {
+    setIsLoadingHistory(true)
+    try {
+      const { data: quotes, error } = await supabase
+        .from('quotes')
+        .select(`
+          id,
+          quote_number,
+          created_at,
+          notes,
+          status,
+          client_id,
+          clients(name, email)
+        `)
+        .order('created_at', { ascending: false })
+
+      if (error) throw error
+
+      if (quotes && quotes.length > 0) {
+        console.log('Loaded quotes:', quotes) // Debug log
+
+        const historyItems = quotes.map((quote, index) => {
+          // Extract quote number from the URL or use the quote_number field
+          let extractedQuoteNumber = '1000'
+          if (quote.quote_number) {
+            // If quote_number looks like a URL, extract the number part
+            if (quote.quote_number.includes('http')) {
+              // Extract number from URL like "https://quotes.timesheets.com/68124-AJ322ADV3-v3"
+              const match = quote.quote_number.match(/(\d+)-[A-Z0-9]+-v\d+/)
+              if (match) {
+                extractedQuoteNumber = match[1]
+              }
+            } else {
+              // If it's already a number, use it directly
+              extractedQuoteNumber = quote.quote_number
+            }
+          }
+
+          return {
+            id: quote.id,
+            version: `v${quotes.length - index}`,
+            date: new Date(quote.created_at).toLocaleDateString(),
+            isCurrent: index === 0,
+            notes: quote.notes || '',
+            clientName: quote.clients?.name || 'Unknown Client',
+            status: quote.status,
+            quoteNumber: extractedQuoteNumber
+          }
+        })
+
+        setFormData(prev => ({
+          ...prev,
+          quoteHistory: historyItems,
+          selectedHistoryVersion: historyItems[0]?.id || ''
+        }))
+
+        // Set the current quote number to the next available number
+        const quoteNumbers = quotes.map(q => {
+          let extractedNumber = '1000'
+          if (q.quote_number) {
+            if (q.quote_number.includes('http')) {
+              const match = q.quote_number.match(/(\d+)-[A-Z0-9]+-v\d+/)
+              if (match) {
+                extractedNumber = match[1]
+              }
+            } else {
+              extractedNumber = q.quote_number
+            }
+          }
+          return parseInt(extractedNumber)
+        }).filter(num => !isNaN(num))
+
+        if (quoteNumbers.length > 0) {
+          const maxNumber = Math.max(...quoteNumbers)
+          setFormData(prev => ({
+            ...prev,
+            quoteNumber: (maxNumber + 1).toString()
+          }))
+        } else {
+          setFormData(prev => ({
+            ...prev,
+            quoteNumber: '1000'
+          }))
+        }
+      } else {
+        // No quotes found, set default quote number
+        setFormData(prev => ({
+          ...prev,
+          quoteNumber: '1000'
+        }))
+      }
+    } catch (error) {
+      console.error('Error loading quote history:', error)
+      setSaveMessage({ type: 'error', text: `Error loading history: ${error instanceof Error ? error.message : 'Unknown error'}` })
+    } finally {
+      setIsLoadingHistory(false)
+    }
+  }
 
   const recalc = (
     items: QuoteItem[] = formData.items,
@@ -173,7 +274,7 @@ export const useQuoteForm = () => {
           owner_id: '00000000-0000-0000-0000-000000000000', // TODO: Replace with actual auth.uid()
           client_id: clientId,
           status: 'draft',
-          quote_number: formData.quoteUrl,
+          quote_number: formData.quoteNumber,
           expires_on: formData.expires,
           payment_terms: formData.paymentTerms,
           is_tax_enabled: formData.isTaxEnabled,
@@ -239,6 +340,10 @@ export const useQuoteForm = () => {
       }))
 
       setSaveMessage({ type: 'success', text: 'Quote saved successfully!' })
+
+      // Reload the quote history to include the new quote
+      await loadQuoteHistory()
+
       return quote
 
     } catch (error) {
@@ -265,5 +370,7 @@ export const useQuoteForm = () => {
     saveQuote,
     isSaving,
     saveMessage,
+    isLoadingHistory,
+    loadQuoteHistory,
   }
 }

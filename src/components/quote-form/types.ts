@@ -11,6 +11,10 @@ export interface QuoteHistory {
   version: string;
   date: string;
   isCurrent: boolean;
+  notes: string;
+  clientName: string;
+  status: string;
+  quoteNumber: string;
 }
 
 export interface PaymentTermItem {
@@ -23,6 +27,7 @@ export interface QuoteFormData {
   owner: string;
   clientName: string;
   clientEmail: string;
+  quoteNumber: string;
   quoteUrl: string;
   expires: string;
   paymentTerms: string;

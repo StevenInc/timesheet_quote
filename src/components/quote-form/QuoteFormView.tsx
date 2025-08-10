@@ -31,6 +31,9 @@ interface Props {
   // save state
   isSaving: boolean
   saveMessage: { type: 'success' | 'error'; text: string } | null
+  // history state
+  isLoadingHistory: boolean
+  loadQuoteHistory: () => void
 }
 
 export const QuoteFormView: React.FC<Props> = (props) => {
@@ -56,6 +59,8 @@ export const QuoteFormView: React.FC<Props> = (props) => {
     downloadQuote,
     isSaving,
     saveMessage,
+    isLoadingHistory,
+    loadQuoteHistory,
   } = props
 
   return (
@@ -63,6 +68,10 @@ export const QuoteFormView: React.FC<Props> = (props) => {
       <div className="quote-form-header">
         <div className="header-left">
           <h1>Add or Edit a Quote</h1>
+          <div className="quote-number-display">
+            <span className="quote-number-label">Quote #</span>
+            <span className="quote-number-value">{formData.quoteNumber}</span>
+          </div>
           <div className="quote-url-section">
             <span className="quote-url">{formData.quoteUrl}</span>
             <button type="button" className="btn btn-icon" onClick={copyQuoteUrl}>
@@ -297,20 +306,62 @@ export const QuoteFormView: React.FC<Props> = (props) => {
 
           <div className="form-column right-column">
             <div className="form-section">
-              <div className="form-group">
-                <label htmlFor="quoteHistory">Quote History</label>
-                <select
-                  id="quoteHistory"
-                  value={formData.selectedHistoryVersion}
-                  onChange={(e) => handleInputChange('selectedHistoryVersion', e.target.value)}
-                  className="history-select"
-                >
-                  {formData.quoteHistory.map((history) => (
-                    <option key={history.id} value={history.id}>
-                      {history.version}
-                    </option>
-                  ))}
-                </select>
+              <h3>Quote History</h3>
+              <div className="history-table-container">
+                {isLoadingHistory ? (
+                  <div className="history-loading">
+                    <div className="loading-spinner"></div>
+                    <span>Loading quotes...</span>
+                  </div>
+                ) : formData.quoteHistory.length === 0 ? (
+                  <div className="history-empty">
+                    <span>No quotes found</span>
+                    <button
+                      type="button"
+                      className="btn btn-link"
+                      onClick={loadQuoteHistory}
+                    >
+                      Refresh
+                    </button>
+                  </div>
+                ) : (
+                  <table className="history-table">
+                    <thead>
+                      <tr>
+                        <th>Version</th>
+                        <th>Date</th>
+                        <th>Notes</th>
+                        <th>Status</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {formData.quoteHistory.map((history) => (
+                        <tr
+                          key={history.id}
+                          className={`history-row ${formData.selectedHistoryVersion === history.id ? 'selected' : ''}`}
+                          onClick={() => handleInputChange('selectedHistoryVersion', history.id)}
+                        >
+                          <td>{history.quoteNumber}-{history.version}</td>
+                          <td>{history.date}</td>
+                          <td className="notes-cell" title={history.notes || 'No notes'}>
+                            {history.notes ?
+                              (history.notes.length > 30 ?
+                                `${history.notes.substring(0, 30)}...` :
+                                history.notes
+                              ) :
+                              'No notes'
+                            }
+                          </td>
+                          <td>
+                            <span className={`status-badge ${history.isCurrent ? 'current' : 'previous'}`}>
+                              {history.isCurrent ? 'Current' : 'Previous'}
+                            </span>
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                )}
               </div>
             </div>
 
