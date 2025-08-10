@@ -1,7 +1,7 @@
 import React from 'react'
 import { Trash2, Save, Send, Archive, Copy, Download, Plus, Eye } from 'lucide-react'
 import '../QuoteForm.css'
-import type { QuoteFormData, QuoteItem, PaymentTermItem, NewQuoteModalData, ClientQuote } from './types'
+import type { QuoteFormData, QuoteItem, PaymentTermItem, NewQuoteModalData, ClientQuote, DatabaseQuoteRevision } from './types'
 
 interface Props {
   formData: QuoteFormData
@@ -28,6 +28,7 @@ interface Props {
   onSubmit: (e: React.FormEvent) => void
   copyQuoteUrl: () => void
   downloadQuote: () => void
+  loadQuoteHistory: (quoteId?: string) => void
   // save state
   isSaving: boolean
   saveMessage: { type: 'success' | 'error'; text: string } | null
@@ -50,7 +51,11 @@ interface Props {
   isLoadingClientQuotes: boolean
   selectedClientQuote: string
   setSelectedClientQuote: (quoteId: string) => void
-  loadClientQuotesByName: (clientName: string) => void
+  // quote revisions
+  quoteRevisions: DatabaseQuoteRevision[]
+  isLoadingQuoteRevisions: boolean
+  loadQuoteRevisions: (quoteId: string) => void
+  loadQuoteRevision: (revisionId: string) => void
   // view quote modal
   isViewQuoteModalOpen: boolean
   openViewQuoteModal: () => void
@@ -62,6 +67,13 @@ interface Props {
 }
 
 export const QuoteFormView: React.FC<Props> = (props) => {
+  // Load quote revisions when a quote is selected
+  React.useEffect(() => {
+    if (props.selectedClientQuote) {
+      props.loadQuoteRevisions(props.selectedClientQuote)
+    }
+  }, [props.selectedClientQuote, props.loadQuoteRevisions])
+
   const {
     formData,
     paymentScheduleTotal,
@@ -96,11 +108,14 @@ export const QuoteFormView: React.FC<Props> = (props) => {
     isLoadingClients,
     searchClients,
     isCreatingQuote,
+    loadClientQuotes,
     clientQuotes,
     isLoadingClientQuotes,
     selectedClientQuote,
     setSelectedClientQuote,
-    loadClientQuotesByName,
+    // quote revisions
+    quoteRevisions,
+    isLoadingQuoteRevisions,
     isViewQuoteModalOpen,
     openViewQuoteModal,
     closeViewQuoteModal,
@@ -371,7 +386,14 @@ export const QuoteFormView: React.FC<Props> = (props) => {
 
           <div className="form-column right-column">
             <div className="form-section">
-              <h3>Company Quote History</h3>
+              <h3>
+                Company Quote History
+                {selectedClientId && availableClients.length > 0 && (
+                  <span className="company-name">
+                    {' '}- {availableClients.find(client => client.id === selectedClientId)?.name}
+                  </span>
+                )}
+              </h3>
               <div className="history-table-container">
                 {isLoadingClientQuotes ? (
                   <div className="history-loading">
@@ -396,7 +418,7 @@ export const QuoteFormView: React.FC<Props> = (props) => {
                         <th>Quote #</th>
                         <th>Status</th>
                         <th>Notes</th>
-                        <th>Created</th>
+                        <th>Last Updated</th>
                       </tr>
                     </thead>
                     <tbody>
@@ -421,7 +443,7 @@ export const QuoteFormView: React.FC<Props> = (props) => {
                               'No notes'
                             }
                           </td>
-                          <td>{quote.createdAt}</td>
+                          <td>{quote.lastUpdated}</td>
                         </tr>
                       ))}
                     </tbody>
@@ -431,51 +453,49 @@ export const QuoteFormView: React.FC<Props> = (props) => {
             </div>
 
             <div className="form-section">
-              <h3>Client Quotes</h3>
-              <div className="client-quotes-container">
-                {isLoadingClientQuotes ? (
-                  <div className="client-quotes-loading">
-                    <div className="loading-spinner"></div>
-                    <span>Loading client quotes...</span>
+              <h3>Quote Versions</h3>
+              <div className="quote-versions-container">
+                {!selectedClientQuote ? (
+                  <div className="quote-versions-empty">
+                    <span>Select a quote from Company Quote History to view its versions</span>
                   </div>
-                ) : clientQuotes.length === 0 ? (
-                  <div className="client-quotes-empty">
-                    <span>No quotes found for this client</span>
-                    {formData.clientName && (
-                      <button
-                        type="button"
-                        className="btn btn-link"
-                        onClick={() => loadClientQuotesByName(formData.clientName)}
-                      >
-                        Load Quotes
-                      </button>
-                    )}
+                ) : isLoadingQuoteRevisions ? (
+                  <div className="quote-versions-loading">
+                    <div className="loading-spinner"></div>
+                    <span>Loading quote versions...</span>
+                  </div>
+                ) : quoteRevisions.length === 0 ? (
+                  <div className="quote-versions-empty">
+                    <span>No versions found for this quote</span>
                   </div>
                 ) : (
-                  <table className="client-quotes-table">
+                  <table className="quote-versions-table">
                     <thead>
                       <tr>
-                        <th>Quote #</th>
+                        <th>Version</th>
                         <th>Status</th>
-                        <th>Revisions</th>
+                        <th>Notes</th>
                         <th>Created</th>
+                        <th>Updated</th>
                       </tr>
                     </thead>
                     <tbody>
-                      {clientQuotes.map((quote) => (
+                      {quoteRevisions.map((revision) => (
                         <tr
-                          key={quote.id}
-                          className={`client-quote-row ${selectedClientQuote === quote.id ? 'selected' : ''}`}
-                          onClick={() => setSelectedClientQuote(quote.id)}
+                          key={revision.id}
+                          className="quote-version-row clickable"
+                          onClick={() => props.loadQuoteRevision(revision.id)}
+                          style={{ cursor: 'pointer' }}
                         >
-                          <td>{quote.quoteNumber}</td>
+                          <td>v{revision.revision_number}</td>
                           <td>
-                            <span className={`status-badge ${quote.status}`}>
-                              {quote.status}
+                            <span className={`status-badge ${revision.status}`}>
+                              {revision.status}
                             </span>
                           </td>
-                          <td>{quote.totalRevisions} (v{quote.latestRevisionNumber})</td>
-                          <td>{quote.createdAt}</td>
+                          <td>{revision.notes || '-'}</td>
+                          <td>{new Date(revision.created_at).toLocaleDateString()}</td>
+                          <td>{new Date(revision.updated_at).toLocaleDateString()}</td>
                         </tr>
                       ))}
                     </tbody>

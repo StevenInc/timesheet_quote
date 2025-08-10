@@ -164,6 +164,19 @@
   margin: 0 0 1rem 0;
 }
 
+.form-section h3 {
+  font-size: 1.125rem;
+  font-weight: 600;
+  color: #1e293b;
+  margin: 0 0 1rem 0;
+}
+
+.form-section h3 .company-name {
+  font-weight: 500;
+  color: #6b7280;
+  font-size: 1rem;
+}
+
 .form-group {
   display: flex;
   flex-direction: column;
@@ -1007,4 +1020,62 @@
   display: flex;
   gap: 12px;
   align-items: center;
+}
+
+/* Quote Versions Table */
+.quote-versions-container {
+  margin-top: 1rem;
+}
+
+.quote-versions-empty {
+  text-align: center;
+  padding: 2rem;
+  color: #6b7280;
+  font-style: italic;
+}
+
+.quote-versions-loading {
+  text-align: center;
+  padding: 2rem;
+  color: #6b7280;
+}
+
+.quote-versions-table {
+  width: 100%;
+  border-collapse: collapse;
+  margin-top: 1rem;
+}
+
+.quote-versions-table th,
+.quote-versions-table td {
+  padding: 0.75rem;
+  text-align: left;
+  border-bottom: 1px solid #e5e7eb;
+}
+
+.quote-versions-table th {
+  background-color: #f9fafb;
+  font-weight: 600;
+  color: #374151;
+}
+
+.quote-version-row {
+  transition: background-color 0.2s;
+}
+
+.quote-version-row:hover {
+  background-color: #f3f4f6;
+}
+
+.quote-version-row.clickable {
+  cursor: pointer;
+  transition: background-color 0.2s ease;
+}
+
+.quote-version-row.clickable:hover {
+  background-color: #e2e8f0;
+}
+
+.quote-version-row.clickable:active {
+  background-color: #cbd5e1;
 }

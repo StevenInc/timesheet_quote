@@ -18,7 +18,6 @@ const QuoteForm: React.FC = () => {
     saveQuote,
     isSaving,
     saveMessage,
-    isLoadingHistory,
     loadQuoteHistory,
     // New Quote Modal
     isNewQuoteModalOpen,
@@ -37,7 +36,11 @@ const QuoteForm: React.FC = () => {
     isLoadingClientQuotes,
     selectedClientQuote,
     setSelectedClientQuote,
-    loadClientQuotesByName,
+    // Quote Revisions
+    quoteRevisions,
+    isLoadingQuoteRevisions,
+    loadQuoteRevisions,
+    loadQuoteRevision,
     // View Quote Modal
     isViewQuoteModalOpen,
     openViewQuoteModal,
@@ -102,7 +105,6 @@ const QuoteForm: React.FC = () => {
       downloadQuote={downloadQuote}
       isSaving={isSaving}
       saveMessage={saveMessage}
-      isLoadingHistory={isLoadingHistory}
       loadQuoteHistory={loadQuoteHistory}
       // New Quote Modal
       isNewQuoteModalOpen={isNewQuoteModalOpen}
@@ -121,7 +123,11 @@ const QuoteForm: React.FC = () => {
       isLoadingClientQuotes={isLoadingClientQuotes}
       selectedClientQuote={selectedClientQuote}
       setSelectedClientQuote={setSelectedClientQuote}
-      loadClientQuotesByName={loadClientQuotesByName}
+      // Quote Revisions
+      quoteRevisions={quoteRevisions}
+      isLoadingQuoteRevisions={isLoadingQuoteRevisions}
+      loadQuoteRevisions={loadQuoteRevisions}
+      loadQuoteRevision={loadQuoteRevision}
       // View Quote Modal
       isViewQuoteModalOpen={isViewQuoteModalOpen}
       openViewQuoteModal={openViewQuoteModal}

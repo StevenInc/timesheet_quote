@@ -1,4 +1,4 @@
-import { useMemo, useState, useEffect } from 'react'
+import React, { useMemo, useState, useEffect } from 'react'
 import type { QuoteFormData, QuoteItem, PaymentTermItem, NewQuoteModalData, QuoteHistory, DatabaseQuote, DatabaseQuoteRevision, DatabaseQuoteItem, DatabasePaymentTerm, ClientQuote, DatabaseClient } from './types'
 import { supabase } from '../../lib/supabaseClient'
 
@@ -40,6 +40,10 @@ export const useQuoteForm = () => {
   const [clientQuotes, setClientQuotes] = useState<ClientQuote[]>([])
   const [isLoadingClientQuotes, setIsLoadingClientQuotes] = useState(false)
   const [selectedClientQuote, setSelectedClientQuote] = useState<string>('')
+
+  // Quote Revisions State
+  const [quoteRevisions, setQuoteRevisions] = useState<DatabaseQuoteRevision[]>([])
+  const [isLoadingQuoteRevisions, setIsLoadingQuoteRevisions] = useState(false)
 
   // New Quote Modal State
   const [isNewQuoteModalOpen, setIsNewQuoteModalOpen] = useState(false)
@@ -251,10 +255,10 @@ export const useQuoteForm = () => {
     }
   }
 
-  const loadClientQuotes = async (clientId: string) => {
+  const loadClientQuotes = React.useCallback(async (clientId: string) => {
     setIsLoadingClientQuotes(true)
     try {
-      // Get all quotes for the specified client with their latest revision notes
+      // Get all quotes for the specified client with their latest revision notes and dates
       const { data: quotes, error } = await supabase
         .from('quotes')
         .select(`
@@ -263,7 +267,7 @@ export const useQuoteForm = () => {
           status,
           created_at,
           updated_at,
-          quote_revisions(id, revision_number, notes)
+          quote_revisions(id, revision_number, notes, updated_at)
         `)
         .eq('client_id', clientId)
         .order('created_at', { ascending: false })
@@ -286,7 +290,10 @@ export const useQuoteForm = () => {
             updatedAt: new Date(quote.updated_at).toLocaleDateString(),
             latestRevisionNumber: latestRevision,
             totalRevisions: revisions.length,
-            notes: latestRevisionData?.notes || ''
+            notes: latestRevisionData?.notes || '',
+            lastUpdated: latestRevisionData?.updated_at ?
+              new Date(latestRevisionData.updated_at).toLocaleDateString() :
+              new Date(quote.updated_at).toLocaleDateString()
           }
         })
 
@@ -305,20 +312,20 @@ export const useQuoteForm = () => {
     } finally {
       setIsLoadingClientQuotes(false)
     }
-  }
+  }, [])
 
   // New Quote Modal Functions
-  const openNewQuoteModal = async () => {
+  const openNewQuoteModal = React.useCallback(async () => {
     // Always get a fresh, unique quote number when opening the modal
     await loadNextQuoteNumber()
     setIsNewQuoteModalOpen(true)
-  }
+  }, [])
 
-  const closeNewQuoteModal = () => {
+  const closeNewQuoteModal = React.useCallback(() => {
     setIsNewQuoteModalOpen(false)
     setNewQuoteData({ quoteNumber: '', clientName: '' })
     setClientSuggestions([])
-  }
+  }, [])
 
   const searchClients = async (searchTerm: string) => {
     if (searchTerm.length < 2) {
@@ -429,7 +436,7 @@ export const useQuoteForm = () => {
         closeNewQuoteModal()
 
         // Don't save to database yet - wait for user to click save button
-        setSaveMessage({ type: 'info', text: `New quote ${newQuoteData.quoteNumber.trim()} created! Click the save button when ready to save to database.` })
+        setSaveMessage({ type: 'success', text: `New quote ${newQuoteData.quoteNumber.trim()} created! Click the save button when ready to save to database.` })
       } catch (error) {
         console.error('Error creating new quote:', error)
         setSaveMessage({ type: 'error', text: `Error creating new quote: ${error instanceof Error ? error.message : 'Unknown error'}` })
@@ -873,7 +880,7 @@ export const useQuoteForm = () => {
         // Handle Supabase errors specifically
         if ('code' in error && 'message' in error) {
           errorMessage = `${error.code}: ${error.message}`
-        } else if ('details' in error) {
+        } else if ('details' in error && typeof error.details === 'string') {
           errorMessage = error.details
         } else {
           errorMessage = JSON.stringify(error)
@@ -927,16 +934,17 @@ export const useQuoteForm = () => {
     }
   }
 
-  const openViewQuoteModal = async () => {
+  const openViewQuoteModal = React.useCallback(async () => {
     setIsViewQuoteModalOpen(true)
     await loadAvailableClients()
-  }
+  }, [])
 
-  const closeViewQuoteModal = () => {
+  const closeViewQuoteModal = React.useCallback(() => {
     setIsViewQuoteModalOpen(false)
-    setSelectedClientId('')
-    setAvailableClients([])
-  }
+    // Don't clear selectedClientId and availableClients so company name stays visible
+    // setSelectedClientId('')
+    // setAvailableClients([])
+  }, [])
 
   const loadAvailableClients = async () => {
     setIsLoadingAvailableClients(true)
@@ -963,16 +971,135 @@ export const useQuoteForm = () => {
     }
   }
 
-  const handleClientSelection = async (clientId: string) => {
+  const handleClientSelection = React.useCallback(async (clientId: string) => {
     setSelectedClientId(clientId)
-    // Load the first quote for this client
+
+    // Find the selected client to get their information
+    const selectedClient = availableClients.find(client => client.id === clientId)
+
+    if (selectedClient) {
+      // Populate the form fields with the selected client's information
+      setFormData(prev => ({
+        ...prev,
+        clientName: selectedClient.name,
+        clientEmail: selectedClient.email,
+        // Note: Owner field is not available in client data, so it remains unchanged
+      }))
+    }
+
+    // Load quotes for this client
     await loadClientQuotes(clientId)
+
+    // If there are existing quotes, load the most recent one to get additional context
     if (clientQuotes.length > 0) {
-      // Load the first quote
       await loadQuote(clientQuotes[0].id)
     }
+
     closeViewQuoteModal()
-  }
+  }, [availableClients])
+
+  const loadQuoteRevisions = React.useCallback(async (quoteId: string) => {
+    if (!quoteId) {
+      setQuoteRevisions([])
+      return
+    }
+
+    setIsLoadingQuoteRevisions(true)
+    try {
+      const { data: revisions, error } = await supabase
+        .from('quote_revisions')
+        .select('*')
+        .eq('quote_id', quoteId)
+        .order('revision_number', { ascending: false })
+
+      if (error) throw error
+
+      if (revisions && revisions.length > 0) {
+        console.log('Loaded quote revisions for quote ID:', quoteId, revisions)
+        setQuoteRevisions(revisions)
+      } else {
+        setQuoteRevisions([])
+      }
+    } catch (error) {
+      console.error('Error loading quote revisions:', error)
+      setQuoteRevisions([])
+    } finally {
+      setIsLoadingQuoteRevisions(false)
+    }
+  }, [])
+
+  const loadQuoteRevision = React.useCallback(async (revisionId: string) => {
+    if (!revisionId) return
+
+    try {
+      // Load the specific revision with all its related data
+      const { data: revision, error } = await supabase
+        .from('quote_revisions')
+        .select(`
+          *,
+          quotes!inner(
+            quote_number,
+            clients(name, email)
+          ),
+          quote_items(*),
+          payment_terms(*),
+          legal_terms(*),
+          client_comments(*)
+        `)
+        .eq('id', revisionId)
+        .single()
+
+      if (error) throw error
+
+      if (revision) {
+        console.log('Loaded quote revision:', revision)
+
+        // Update form data with the loaded revision
+        setFormData(prev => ({
+          ...prev,
+          quoteNumber: revision.quotes.quote_number,
+          clientName: revision.quotes.clients?.name || '',
+          clientEmail: revision.quotes.clients?.email || '',
+          expires: revision.expires_on || '2025-07-08',
+          taxRate: revision.tax_rate || 0.08,
+          isTaxEnabled: revision.is_tax_enabled || false,
+          notes: revision.notes || '',
+          isRecurring: revision.is_recurring || false,
+          billingPeriod: revision.billing_period || '',
+          recurringAmount: revision.recurring_amount || 0,
+          items: revision.quote_items?.map((item: DatabaseQuoteItem) => ({
+            id: item.id,
+            description: item.description || '',
+            quantity: item.quantity || 1,
+            unitPrice: item.unit_price || 0,
+            total: item.total || 0
+          })) || [{ id: '1', description: '', quantity: 1, unitPrice: 0, total: 0 }],
+          paymentSchedule: revision.payment_terms?.map((term: DatabasePaymentTerm) => ({
+            id: term.id,
+            percentage: term.percentage || 100,
+            description: term.description || ''
+          })) || [{ id: 'ps-1', percentage: 100, description: 'net 30 days' }],
+          legalTerms: revision.legal_terms?.[0]?.terms || '',
+          clientComments: revision.client_comments?.[0]?.comment || ''
+        }))
+
+        // Recalculate totals
+        const items = revision.quote_items?.map((item: DatabaseQuoteItem) => ({
+          id: item.id,
+          description: item.description || '',
+          quantity: item.quantity || 1,
+          unitPrice: item.unit_price || 0,
+          total: item.total || 0
+        })) || [{ id: '1', description: '', quantity: 1, unitPrice: 0, total: 0 }]
+
+        const { subtotal, tax, total } = recalc(items, revision.is_tax_enabled, revision.tax_rate)
+        setFormData(prev => ({ ...prev, subtotal, tax, total }))
+      }
+    } catch (error) {
+      console.error('Error loading quote revision:', error)
+      setSaveMessage({ type: 'error', text: `Error loading quote revision: ${error instanceof Error ? error.message : 'Unknown error'}` })
+    }
+  }, [])
 
   return {
     formData,
@@ -1012,6 +1139,11 @@ export const useQuoteForm = () => {
     selectedClientQuote,
     setSelectedClientQuote,
     loadClientQuotesByName,
+    // Quote Revisions
+    quoteRevisions,
+    isLoadingQuoteRevisions,
+    loadQuoteRevisions,
+    loadQuoteRevision,
     // View Quote Modal
     isViewQuoteModalOpen,
     openViewQuoteModal,

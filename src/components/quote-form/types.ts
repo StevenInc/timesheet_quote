@@ -107,10 +107,19 @@ export interface DatabaseQuoteRevision {
   is_recurring: boolean
   billing_period: string
   recurring_amount: number
+  created_at: string
+  updated_at: string
   quote_items?: DatabaseQuoteItem[]
   payment_terms?: DatabasePaymentTerm[]
   legal_terms?: DatabaseLegalTerm[]
   client_comments?: DatabaseClientComment[]
+  quotes?: {
+    quote_number: string
+    clients?: {
+      name: string
+      email: string
+    }
+  }
 }
 
 export interface DatabaseClient {
@@ -135,4 +144,5 @@ export interface ClientQuote {
   latestRevisionNumber: number
   totalRevisions: number
   notes: string
+  lastUpdated: string
 }
