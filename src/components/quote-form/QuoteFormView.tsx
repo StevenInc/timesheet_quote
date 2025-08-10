@@ -1,5 +1,5 @@
 import React from 'react'
-import { Trash2, Save, Send, Archive, Copy, Download, Plus } from 'lucide-react'
+import { Trash2, Save, Send, Archive, Copy, Download, Plus, Eye } from 'lucide-react'
 import '../QuoteForm.css'
 import type { QuoteFormData, QuoteItem, PaymentTermItem, NewQuoteModalData, ClientQuote } from './types'
 
@@ -31,9 +31,7 @@ interface Props {
   // save state
   isSaving: boolean
   saveMessage: { type: 'success' | 'error'; text: string } | null
-  // history state
-  isLoadingHistory: boolean
-  loadQuoteHistory: () => void
+
   // new quote modal
   isNewQuoteModalOpen: boolean
   newQuoteData: NewQuoteModalData
@@ -86,8 +84,7 @@ export const QuoteFormView: React.FC<Props> = (props) => {
     downloadQuote,
     isSaving,
     saveMessage,
-    isLoadingHistory,
-    loadQuoteHistory,
+
     isNewQuoteModalOpen,
     newQuoteData,
     openNewQuoteModal,
@@ -135,10 +132,11 @@ export const QuoteFormView: React.FC<Props> = (props) => {
         <div className="header-right">
           <button
             type="button"
-            className="btn btn-secondary"
+            className="btn btn-success"
             onClick={openViewQuoteModal}
           >
-            View Quote
+            <Eye size={16} />
+            View Quotes
           </button>
           <button
             type="button"
@@ -373,57 +371,57 @@ export const QuoteFormView: React.FC<Props> = (props) => {
 
           <div className="form-column right-column">
             <div className="form-section">
-              <h3>Quote History</h3>
+              <h3>Company Quote History</h3>
               <div className="history-table-container">
-                {isLoadingHistory ? (
+                {isLoadingClientQuotes ? (
                   <div className="history-loading">
                     <div className="loading-spinner"></div>
                     <span>Loading quotes...</span>
                   </div>
-                ) : formData.quoteHistory.length === 0 ? (
+                ) : clientQuotes.length === 0 ? (
                   <div className="history-empty">
-                    <span>No quotes found</span>
+                    <span>No quotes found for selected company</span>
                     <button
                       type="button"
                       className="btn btn-link"
-                      onClick={loadQuoteHistory}
+                      onClick={() => selectedClientId && loadClientQuotes(selectedClientId)}
                     >
-                      Refresh
+                      Load Quotes
                     </button>
                   </div>
                 ) : (
                   <table className="history-table">
                     <thead>
                       <tr>
-                        <th>Version</th>
-                        <th>Date</th>
-                        <th>Notes</th>
+                        <th>Quote #</th>
                         <th>Status</th>
+                        <th>Notes</th>
+                        <th>Created</th>
                       </tr>
                     </thead>
                     <tbody>
-                      {formData.quoteHistory.map((history) => (
+                      {clientQuotes.map((quote) => (
                         <tr
-                          key={history.id}
-                          className={`history-row ${formData.selectedHistoryVersion === history.id ? 'selected' : ''}`}
-                          onClick={() => handleInputChange('selectedHistoryVersion', history.id)}
+                          key={quote.id}
+                          className={`history-row ${selectedClientQuote === quote.id ? 'selected' : ''}`}
+                          onClick={() => setSelectedClientQuote(quote.id)}
                         >
-                          <td>{history.quoteNumber}-{history.version}</td>
-                          <td>{history.date}</td>
-                          <td className="notes-cell" title={history.notes || 'No notes'}>
-                            {history.notes ?
-                              (history.notes.length > 30 ?
-                                `${history.notes.substring(0, 30)}...` :
-                                history.notes
+                          <td>{quote.quoteNumber}</td>
+                          <td>
+                            <span className={`status-badge ${quote.status}`}>
+                              {quote.status}
+                            </span>
+                          </td>
+                          <td className="notes-cell" title={quote.notes || 'No notes'}>
+                            {quote.notes ?
+                              (quote.notes.length > 30 ?
+                                `${quote.notes.substring(0, 30)}...` :
+                                quote.notes
                               ) :
                               'No notes'
                             }
                           </td>
-                          <td>
-                            <span className={`status-badge ${history.isCurrent ? 'current' : 'previous'}`}>
-                              {history.isCurrent ? 'Current' : 'Previous'}
-                            </span>
-                          </td>
+                          <td>{quote.createdAt}</td>
                         </tr>
                       ))}
                     </tbody>

@@ -70,6 +70,11 @@
   gap: 0.5rem;
 }
 
+.header-right .btn {
+  width: 160px;
+  justify-content: center;
+}
+
 .quote-number-display {
   display: flex;
   align-items: center;
@@ -427,6 +432,17 @@
   cursor: not-allowed;
   transform: none;
   box-shadow: none;
+}
+
+.btn-success {
+  background: #10b981;
+  color: white;
+}
+
+.btn-success:hover {
+  background: #059669;
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(16, 185, 129, 0.3);
 }
 
 .btn-sm {

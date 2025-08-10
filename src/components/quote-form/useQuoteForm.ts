@@ -254,7 +254,7 @@ export const useQuoteForm = () => {
   const loadClientQuotes = async (clientId: string) => {
     setIsLoadingClientQuotes(true)
     try {
-      // Get all quotes for the specified client
+      // Get all quotes for the specified client with their latest revision notes
       const { data: quotes, error } = await supabase
         .from('quotes')
         .select(`
@@ -263,7 +263,7 @@ export const useQuoteForm = () => {
           status,
           created_at,
           updated_at,
-          quote_revisions(id, revision_number)
+          quote_revisions(id, revision_number, notes)
         `)
         .eq('client_id', clientId)
         .order('created_at', { ascending: false })
@@ -276,6 +276,7 @@ export const useQuoteForm = () => {
         const clientQuoteItems = quotes.map((quote) => {
           const revisions = quote.quote_revisions || []
           const latestRevision = Math.max(...revisions.map(r => r.revision_number), 0)
+          const latestRevisionData = revisions.find(r => r.revision_number === latestRevision)
 
           return {
             id: quote.id,
@@ -284,7 +285,8 @@ export const useQuoteForm = () => {
             createdAt: new Date(quote.created_at).toLocaleDateString(),
             updatedAt: new Date(quote.updated_at).toLocaleDateString(),
             latestRevisionNumber: latestRevision,
-            totalRevisions: revisions.length
+            totalRevisions: revisions.length,
+            notes: latestRevisionData?.notes || ''
           }
         })
 

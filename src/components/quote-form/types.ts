@@ -134,4 +134,5 @@ export interface ClientQuote {
   updatedAt: string
   latestRevisionNumber: number
   totalRevisions: number
+  notes: string
 }
