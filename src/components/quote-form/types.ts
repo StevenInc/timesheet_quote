@@ -70,3 +70,68 @@ export interface NewQuoteModalData {
   quoteNumber: string
   clientName: string
 }
+
+// Database response types for Supabase queries
+export interface DatabaseQuoteItem {
+  id: string
+  description: string
+  quantity: number
+  unit_price: number
+  total: number
+}
+
+export interface DatabasePaymentTerm {
+  id: string
+  percentage: number
+  description: string
+}
+
+export interface DatabaseLegalTerm {
+  id: string
+  terms: string
+}
+
+export interface DatabaseClientComment {
+  id: string
+  comment: string
+}
+
+export interface DatabaseQuoteRevision {
+  id: string
+  revision_number: number
+  status: string
+  expires_on: string
+  tax_rate: number
+  is_tax_enabled: boolean
+  notes: string
+  is_recurring: boolean
+  billing_period: string
+  recurring_amount: number
+  quote_items?: DatabaseQuoteItem[]
+  payment_terms?: DatabasePaymentTerm[]
+  legal_terms?: DatabaseLegalTerm[]
+  client_comments?: DatabaseClientComment[]
+}
+
+export interface DatabaseClient {
+  id: string
+  name: string
+  email: string
+}
+
+export interface DatabaseQuote {
+  id: string
+  quote_number: string
+  clients: DatabaseClient
+  quote_revisions: DatabaseQuoteRevision[]
+}
+
+export interface ClientQuote {
+  id: string
+  quoteNumber: string
+  status: string
+  createdAt: string
+  updatedAt: string
+  latestRevisionNumber: number
+  totalRevisions: number
+}

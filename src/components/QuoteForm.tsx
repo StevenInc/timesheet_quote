@@ -32,6 +32,20 @@ const QuoteForm: React.FC = () => {
     isLoadingClients,
     searchClients,
     isCreatingQuote,
+    loadClientQuotes,
+    clientQuotes,
+    isLoadingClientQuotes,
+    selectedClientQuote,
+    setSelectedClientQuote,
+    loadClientQuotesByName,
+    // View Quote Modal
+    isViewQuoteModalOpen,
+    openViewQuoteModal,
+    closeViewQuoteModal,
+    availableClients,
+    isLoadingAvailableClients,
+    selectedClientId,
+    handleClientSelection,
   } = useQuoteForm()
 
   const [isTaxModalOpen, setIsTaxModalOpen] = useState(false)
@@ -102,6 +116,20 @@ const QuoteForm: React.FC = () => {
       isLoadingClients={isLoadingClients}
       searchClients={searchClients}
       isCreatingQuote={isCreatingQuote}
+      loadClientQuotes={loadClientQuotes}
+      clientQuotes={clientQuotes}
+      isLoadingClientQuotes={isLoadingClientQuotes}
+      selectedClientQuote={selectedClientQuote}
+      setSelectedClientQuote={setSelectedClientQuote}
+      loadClientQuotesByName={loadClientQuotesByName}
+      // View Quote Modal
+      isViewQuoteModalOpen={isViewQuoteModalOpen}
+      openViewQuoteModal={openViewQuoteModal}
+      closeViewQuoteModal={closeViewQuoteModal}
+      availableClients={availableClients}
+      isLoadingAvailableClients={isLoadingAvailableClients}
+      selectedClientId={selectedClientId}
+      handleClientSelection={handleClientSelection}
     />
   )
 }

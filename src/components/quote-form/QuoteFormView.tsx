@@ -1,7 +1,7 @@
 import React from 'react'
 import { Trash2, Save, Send, Archive, Copy, Download, Plus } from 'lucide-react'
 import '../QuoteForm.css'
-import type { QuoteFormData, QuoteItem, PaymentTermItem, NewQuoteModalData } from './types'
+import type { QuoteFormData, QuoteItem, PaymentTermItem, NewQuoteModalData, ClientQuote } from './types'
 
 interface Props {
   formData: QuoteFormData
@@ -46,6 +46,21 @@ interface Props {
   isLoadingClients: boolean
   searchClients: (searchTerm: string) => void
   isCreatingQuote: boolean
+  // client quotes
+  loadClientQuotes: (clientId: string) => void
+  clientQuotes: ClientQuote[]
+  isLoadingClientQuotes: boolean
+  selectedClientQuote: string
+  setSelectedClientQuote: (quoteId: string) => void
+  loadClientQuotesByName: (clientName: string) => void
+  // view quote modal
+  isViewQuoteModalOpen: boolean
+  openViewQuoteModal: () => void
+  closeViewQuoteModal: () => void
+  isLoadingAvailableClients: boolean
+  availableClients: { id: string; name: string; email: string }[]
+  selectedClientId: string
+  handleClientSelection: (clientId: string) => void
 }
 
 export const QuoteFormView: React.FC<Props> = (props) => {
@@ -84,6 +99,18 @@ export const QuoteFormView: React.FC<Props> = (props) => {
     isLoadingClients,
     searchClients,
     isCreatingQuote,
+    clientQuotes,
+    isLoadingClientQuotes,
+    selectedClientQuote,
+    setSelectedClientQuote,
+    loadClientQuotesByName,
+    isViewQuoteModalOpen,
+    openViewQuoteModal,
+    closeViewQuoteModal,
+    isLoadingAvailableClients,
+    availableClients,
+    selectedClientId,
+    handleClientSelection,
   } = props
 
   return (
@@ -106,6 +133,13 @@ export const QuoteFormView: React.FC<Props> = (props) => {
           </div>
         </div>
         <div className="header-right">
+          <button
+            type="button"
+            className="btn btn-secondary"
+            onClick={openViewQuoteModal}
+          >
+            View Quote
+          </button>
           <button
             type="button"
             className="btn btn-primary"
@@ -399,6 +433,60 @@ export const QuoteFormView: React.FC<Props> = (props) => {
             </div>
 
             <div className="form-section">
+              <h3>Client Quotes</h3>
+              <div className="client-quotes-container">
+                {isLoadingClientQuotes ? (
+                  <div className="client-quotes-loading">
+                    <div className="loading-spinner"></div>
+                    <span>Loading client quotes...</span>
+                  </div>
+                ) : clientQuotes.length === 0 ? (
+                  <div className="client-quotes-empty">
+                    <span>No quotes found for this client</span>
+                    {formData.clientName && (
+                      <button
+                        type="button"
+                        className="btn btn-link"
+                        onClick={() => loadClientQuotesByName(formData.clientName)}
+                      >
+                        Load Quotes
+                      </button>
+                    )}
+                  </div>
+                ) : (
+                  <table className="client-quotes-table">
+                    <thead>
+                      <tr>
+                        <th>Quote #</th>
+                        <th>Status</th>
+                        <th>Revisions</th>
+                        <th>Created</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {clientQuotes.map((quote) => (
+                        <tr
+                          key={quote.id}
+                          className={`client-quote-row ${selectedClientQuote === quote.id ? 'selected' : ''}`}
+                          onClick={() => setSelectedClientQuote(quote.id)}
+                        >
+                          <td>{quote.quoteNumber}</td>
+                          <td>
+                            <span className={`status-badge ${quote.status}`}>
+                              {quote.status}
+                            </span>
+                          </td>
+                          <td>{quote.totalRevisions} (v{quote.latestRevisionNumber})</td>
+                          <td>{quote.createdAt}</td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                )}
+              </div>
+            </div>
+
+            <div className="form-section">
               <div className="form-group">
                 <label htmlFor="clientComments">Client Comments</label>
                 <textarea
@@ -553,6 +641,48 @@ export const QuoteFormView: React.FC<Props> = (props) => {
               </button>
               <button type="button" className="btn btn-primary" onClick={createNewQuote} disabled={isCreatingQuote}>
                 {isCreatingQuote ? 'Creating...' : 'Create Quote'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* View Quote Modal */}
+      {isViewQuoteModalOpen && (
+        <div className="modal-overlay" role="dialog" aria-modal="true" aria-label="Select client to view quote">
+          <div className="modal">
+            <h3>Select Client to View Quote</h3>
+            <div className="form-group">
+              <label>Available Clients</label>
+              <div className="clients-list-container">
+                {isLoadingAvailableClients ? (
+                  <div className="clients-loading">
+                    <div className="loading-spinner"></div>
+                    <span>Loading clients...</span>
+                  </div>
+                ) : availableClients.length === 0 ? (
+                  <div className="clients-empty">
+                    <span>No clients found in database</span>
+                  </div>
+                ) : (
+                  <div className="clients-list">
+                    {availableClients.map((client) => (
+                      <div
+                        key={client.id}
+                        className={`client-item ${selectedClientId === client.id ? 'selected' : ''}`}
+                        onClick={() => handleClientSelection(client.id)}
+                      >
+                        <div className="client-name">{client.name}</div>
+                        <div className="client-email">{client.email}</div>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+            </div>
+            <div className="modal-actions">
+              <button type="button" className="btn btn-secondary" onClick={closeViewQuoteModal}>
+                Cancel
               </button>
             </div>
           </div>
