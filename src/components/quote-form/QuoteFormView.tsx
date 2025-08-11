@@ -56,6 +56,7 @@ interface Props {
   isLoadingQuoteRevisions: boolean
   loadQuoteRevisions: (quoteId: string) => void
   loadQuoteRevision: (revisionId: string) => void
+  archiveQuoteRevision: (revisionId: string) => void
   // revision state tracking
   currentLoadedRevisionId: string | null
   currentLoadedQuoteId: string | null
@@ -121,6 +122,7 @@ export const QuoteFormView: React.FC<Props> = (props) => {
     // quote revisions
     quoteRevisions,
     isLoadingQuoteRevisions,
+    archiveQuoteRevision,
     isViewQuoteModalOpen,
     openViewQuoteModal,
     closeViewQuoteModal,
@@ -348,11 +350,11 @@ export const QuoteFormView: React.FC<Props> = (props) => {
               <div className="form-group">
                 <label>Payment Schedule</label>
                 <div className="items-table schedule-table">
-                  <div className="table-header">
-                    <div className="header-cell">Percent</div>
-                    <div className="header-cell">Description</div>
-                    <div className="header-cell" aria-hidden="true"></div>
-                  </div>
+                                  <div className="table-header">
+                  <div className="header-cell">Percent</div>
+                  <div className="header-cell">Description</div>
+                  <div className="header-cell" aria-hidden="true"></div>
+                </div>
                   {formData.paymentSchedule.map((t) => (
                     <div key={t.id} className="table-row">
                       <div className="table-cell">
@@ -510,6 +512,7 @@ export const QuoteFormView: React.FC<Props> = (props) => {
                         <th>Notes</th>
                         <th>Created</th>
                         <th>Updated</th>
+                        <th>Archive</th>
                       </tr>
                     </thead>
                     <tbody>
@@ -529,6 +532,16 @@ export const QuoteFormView: React.FC<Props> = (props) => {
                           <td>{revision.notes || '-'}</td>
                           <td>{new Date(revision.created_at).toLocaleDateString()}</td>
                           <td>{new Date(revision.updated_at).toLocaleDateString()}</td>
+                          <td>
+                            <i
+                              className="fa-solid fa-box-archive"
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                archiveQuoteRevision(revision.id);
+                              }}
+                              style={{ cursor: 'pointer' }}
+                            ></i>
+                          </td>
                         </tr>
                       ))}
                     </tbody>

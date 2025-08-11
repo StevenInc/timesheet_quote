@@ -16,7 +16,7 @@ export interface QuoteRevision {
   id: string
   quoteId: string
   revisionNumber: number
-  status: 'draft' | 'sent' | 'approved' | 'rejected' | 'expired'
+  status: 'DRAFT' | 'SENT' | 'APPROVED' | 'REJECTED' | 'EXPIRED'
   expiresOn?: string
   taxRate: number
   isTaxEnabled: boolean
@@ -109,6 +109,7 @@ export interface DatabaseQuoteRevision {
   recurring_amount: number
   created_at: string
   updated_at: string
+  archived: boolean
   quote_items?: DatabaseQuoteItem[]
   payment_terms?: DatabasePaymentTerm[]
   legal_terms?: DatabaseLegalTerm[]

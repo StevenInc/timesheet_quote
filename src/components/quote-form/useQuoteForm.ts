@@ -674,7 +674,7 @@ export const useQuoteForm = () => {
             .insert({
               quote_id: quoteId,
               revision_number: nextRevisionNumber,
-              status: 'draft',
+              status: 'DRAFT',
               expires_on: dataToSave.expires,
               tax_rate: dataToSave.taxRate,
               is_tax_enabled: dataToSave.isTaxEnabled,
@@ -706,7 +706,7 @@ export const useQuoteForm = () => {
             .from('quotes')
             .update({
               client_id: clientId,
-              status: 'draft',
+              status: 'DRAFT',
               updated_at: new Date().toISOString()
             })
             .eq('id', quoteId)
@@ -756,7 +756,7 @@ export const useQuoteForm = () => {
           const { error: revisionUpdateError } = await supabase
             .from('quote_revisions')
             .update({
-              status: 'draft',
+              status: 'DRAFT',
               expires_on: dataToSave.expires,
               tax_rate: dataToSave.taxRate,
               is_tax_enabled: dataToSave.isTaxEnabled,
@@ -799,7 +799,7 @@ export const useQuoteForm = () => {
           .insert({
             owner_id: '11111111-1111-1111-1111-111111111111', // Temporary placeholder - replace with actual auth.uid() when auth is implemented
             client_id: clientId,
-            status: 'draft',
+            status: 'DRAFT',
             quote_number: dataToSave.quoteNumber
           })
           .select()
@@ -817,7 +817,7 @@ export const useQuoteForm = () => {
         console.log('Creating quote revision with data:', {
           quote_id: quoteId,
           revision_number: 1,
-          status: 'draft',
+          status: 'DRAFT',
           expires_on: dataToSave.expires,
           tax_rate: dataToSave.taxRate,
           is_tax_enabled: dataToSave.isTaxEnabled,
@@ -832,7 +832,7 @@ export const useQuoteForm = () => {
           .insert({
             quote_id: quoteId,
             revision_number: 1,
-            status: 'draft',
+            status: 'DRAFT',
             expires_on: dataToSave.expires,
             tax_rate: dataToSave.taxRate,
             is_tax_enabled: dataToSave.isTaxEnabled,
@@ -912,7 +912,7 @@ export const useQuoteForm = () => {
         isCurrent: true,
         notes: '',
         clientName: dataToSave.clientName,
-        status: 'draft',
+        status: 'DRAFT',
         version: 'v1'
       }
 
@@ -1077,6 +1077,7 @@ export const useQuoteForm = () => {
         .from('quote_revisions')
         .select('*')
         .eq('quote_id', quoteId)
+        .eq('archived', false)
         .order('revision_number', { ascending: false })
 
       if (error) throw error
@@ -1094,6 +1095,56 @@ export const useQuoteForm = () => {
       setIsLoadingQuoteRevisions(false)
     }
   }, [])
+
+    const archiveQuoteRevision = React.useCallback(async (revisionId: string) => {
+    try {
+      console.log('Starting archive process for revision:', revisionId)
+
+      // Find the revision to archive
+      const revisionToArchive = quoteRevisions.find(r => r.id === revisionId)
+      if (!revisionToArchive) {
+        console.error('Revision not found:', revisionId)
+        return
+      }
+
+      console.log('Revision to archive:', revisionToArchive)
+
+      // Check if this is the CURRENT revision (first in the list)
+      const isCurrentRevision = quoteRevisions.indexOf(revisionToArchive) === 0
+      console.log('Is current revision:', isCurrentRevision)
+
+      // Archive the revision in the database
+      const { error: archiveError } = await supabase
+        .from('quote_revisions')
+        .update({ archived: true })
+        .eq('id', revisionId)
+
+      if (archiveError) throw archiveError
+
+      // If this was the CURRENT revision, we don't need to update any database fields
+      // The "CURRENT" status is just a UI concept - the first non-archived revision will be shown as current
+      if (isCurrentRevision) {
+        console.log('Archived CURRENT revision - UI will automatically show next revision as current')
+      }
+
+      // Refresh the revisions list to show the updated state
+      if (currentLoadedQuoteId) {
+        await loadQuoteRevisions(currentLoadedQuoteId)
+      }
+
+      setSaveMessage({
+        type: 'success',
+        text: 'Revision archived successfully'
+      })
+
+    } catch (error) {
+      console.error('Error archiving revision:', error)
+      setSaveMessage({
+        type: 'error',
+        text: `Error archiving revision: ${error instanceof Error ? error.message : 'Unknown error'}`
+      })
+    }
+  }, [quoteRevisions, currentLoadedQuoteId, loadQuoteRevisions])
 
   const loadQuoteRevision = React.useCallback(async (revisionId: string) => {
     if (!revisionId) return
@@ -1226,6 +1277,7 @@ export const useQuoteForm = () => {
     isLoadingQuoteRevisions,
     loadQuoteRevisions,
     loadQuoteRevision,
+    archiveQuoteRevision,
     // Revision state tracking
     currentLoadedRevisionId,
     currentLoadedQuoteId,
