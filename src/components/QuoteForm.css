@@ -1094,6 +1094,16 @@
   background-color: #cbd5e1;
 }
 
+.quote-version-row.active-revision {
+  background-color: #dbeafe;
+  border-left: 4px solid #3b82f6;
+  font-weight: 500;
+}
+
+.quote-version-row.active-revision:hover {
+  background-color: #bfdbfe;
+}
+
 /* Revision indicator */
 .revision-indicator {
   background: linear-gradient(135deg, #f0f9ff 0%, #e0f2fe 100%);

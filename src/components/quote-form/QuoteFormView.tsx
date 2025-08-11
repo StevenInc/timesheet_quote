@@ -510,7 +510,9 @@ export const QuoteFormView: React.FC<Props> = (props) => {
                       {quoteRevisions.map((revision) => (
                         <tr
                           key={revision.id}
-                          className="quote-version-row clickable"
+                          className={`quote-version-row clickable ${
+                            props.currentLoadedRevisionId === revision.id ? 'active-revision' : ''
+                          }`}
                           onClick={() => props.loadQuoteRevision(revision.id)}
                           style={{ cursor: 'pointer' }}
                         >
