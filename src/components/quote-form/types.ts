@@ -98,6 +98,7 @@ export interface DatabaseClientComment {
 
 export interface DatabaseQuoteRevision {
   id: string
+  quote_id: string
   revision_number: number
   status: string
   expires_on: string

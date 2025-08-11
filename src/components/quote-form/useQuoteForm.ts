@@ -260,7 +260,7 @@ export const useQuoteForm = () => {
   const loadClientQuotes = React.useCallback(async (clientId: string) => {
     setIsLoadingClientQuotes(true)
     try {
-      // Get all quotes for the specified client with their latest revision notes and dates
+      // Get all non-archived quotes for the specified client with their latest revision notes and dates
       const { data: quotes, error } = await supabase
         .from('quotes')
         .select(`
@@ -272,6 +272,7 @@ export const useQuoteForm = () => {
           quote_revisions(id, revision_number, notes, updated_at)
         `)
         .eq('client_id', clientId)
+        .eq('archived', false)
         .order('created_at', { ascending: false })
 
       if (error) throw error
@@ -1150,15 +1151,43 @@ export const useQuoteForm = () => {
 
       if (archiveError) throw archiveError
 
-      // If this was the CURRENT revision, we don't need to update any database fields
-      // The "CURRENT" status is just a UI concept - the first non-archived revision will be shown as current
-      if (isCurrentRevision) {
-        console.log('Archived CURRENT revision - UI will automatically show next revision as current')
-      }
+      // Check if this was the last remaining revision for this quote
+      const remainingRevisions = quoteRevisions.filter(r => r.id !== revisionId)
+      if (remainingRevisions.length === 0) {
+        // This was the last revision - archive the base quote
+        console.log('Last revision archived - archiving base quote:', revisionToArchive.quote_id)
 
-      // Refresh the revisions list to show the updated state
-      if (currentLoadedQuoteId) {
-        await loadQuoteRevisions(currentLoadedQuoteId)
+        const { error: quoteArchiveError } = await supabase
+          .from('quotes')
+          .update({ archived: true })
+          .eq('id', revisionToArchive.quote_id)
+
+        if (quoteArchiveError) {
+          console.error('Error archiving base quote:', quoteArchiveError)
+          // Don't throw here - the revision was archived successfully
+        } else {
+          console.log('Base quote archived successfully')
+
+          // Remove the archived quote from the client quotes list
+          setClientQuotes(prev => prev.filter(quote => quote.id !== revisionToArchive.quote_id))
+
+          // If this was the currently selected quote, clear the selection
+          if (selectedClientQuote === revisionToArchive.quote_id) {
+            setSelectedClientQuote('')
+            setQuoteRevisions([])
+          }
+        }
+      } else {
+        // If this was the CURRENT revision, we don't need to update any database fields
+        // The "CURRENT" status is just a UI concept - the first non-archived revision will be shown as current
+        if (isCurrentRevision) {
+          console.log('Archived CURRENT revision - UI will automatically show next revision as current')
+        }
+
+        // Refresh the revisions list to show the updated state
+        if (currentLoadedQuoteId) {
+          await loadQuoteRevisions(currentLoadedQuoteId)
+        }
       }
 
       setSaveMessage({

@@ -190,33 +190,7 @@ export const QuoteFormView: React.FC<Props> = (props) => {
         </div>
       )}
 
-      {/* Revision indicator */}
-      {props.currentLoadedRevisionId && (
-        <div className="revision-indicator">
-          <div className="revision-info">
-            <span className="revision-badge">📋 Revision Loaded</span>
-            <span className="revision-details">
-              Changes will create a new revision when saved
-            </span>
-          </div>
-          <div className="revision-actions">
-            <button
-              type="button"
-              className="btn btn-secondary btn-sm"
-              onClick={props.clearLoadedRevisionState}
-            >
-              Clear Revision
-            </button>
-            <button
-              type="button"
-              className="btn btn-outline btn-sm"
-              onClick={props.resetForm}
-            >
-              Reset Form
-            </button>
-          </div>
-        </div>
-      )}
+
 
       <form onSubmit={onSubmit} className="quote-form">
         <div className="form-content">
