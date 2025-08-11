@@ -1,6 +1,7 @@
 import React, { useMemo, useState, useEffect } from 'react'
 import type { QuoteFormData, QuoteItem, PaymentTermItem, NewQuoteModalData, QuoteHistory, DatabaseQuote, DatabaseQuoteRevision, DatabaseQuoteItem, DatabasePaymentTerm, ClientQuote, DatabaseClient } from './types'
 import { supabase } from '../../lib/supabaseClient'
+import EmailService from '../../lib/emailService'
 
 export const useQuoteForm = () => {
   const [formData, setFormData] = useState<QuoteFormData>({
@@ -1529,6 +1530,432 @@ export const useQuoteForm = () => {
     }
   }, [currentLoadedRevisionId])
 
+  const saveQuoteForEmail = async (quoteData?: QuoteFormData) => {
+    const dataToSave = quoteData || formData
+    console.log('💾 saveQuoteForEmail called with data:', dataToSave)
+
+    try {
+      // Validate required fields
+      if (!dataToSave.quoteNumber?.trim()) {
+        throw new Error('Quote number is required')
+      }
+      if (!dataToSave.clientName?.trim()) {
+        throw new Error('Client name is required')
+      }
+      if (!dataToSave.items || dataToSave.items.length === 0) {
+        throw new Error('At least one quote item is required')
+      }
+
+      // First, create or get the client
+      let clientId = null
+      if (dataToSave.clientName || dataToSave.clientEmail) {
+        console.log('Processing client:', { name: dataToSave.clientName, email: dataToSave.clientEmail })
+
+        // Try to find existing client by name first
+        const { data: existingClients, error: searchError } = await supabase
+          .from('clients')
+          .select('id')
+          .eq('name', dataToSave.clientName)
+
+        if (searchError) {
+          console.error('Error searching for existing client:', searchError)
+          throw searchError
+        }
+
+        if (existingClients && existingClients.length > 0) {
+          clientId = existingClients[0].id
+          console.log('Found existing client with ID:', clientId)
+        } else {
+          console.log('Creating new client...')
+          // Create new client - ensure we have a valid email
+          const clientEmail = dataToSave.clientEmail || `${dataToSave.clientName.toLowerCase().replace(/\s+/g, '.')}@example.com`
+          const { data: newClient, error: createError } = await supabase
+            .from('clients')
+            .insert({
+              name: dataToSave.clientName || 'Unknown Client',
+              email: clientEmail
+            })
+            .select()
+            .single()
+
+          if (createError) {
+            console.error('Error creating new client:', createError)
+            throw createError
+          }
+          clientId = newClient.id
+          console.log('Created new client with ID:', clientId)
+        }
+      }
+
+      // Ensure we have a client ID - create a default client if none exists
+      if (!clientId) {
+        console.log('No client specified, creating default client...')
+        const { data: defaultClient, error: defaultClientError } = await supabase
+          .from('clients')
+          .insert({
+            name: 'Default Client',
+            email: 'default@example.com'
+          })
+          .select()
+          .single()
+
+        if (defaultClientError) {
+          console.error('Error creating default client:', defaultClientError)
+          throw defaultClientError
+        }
+        clientId = defaultClient.id
+        console.log('Created default client with ID:', clientId)
+      }
+
+      console.log('Client ID resolved:', clientId)
+
+      // Check if a quote with this quote number already exists
+      const { data: existingQuote, error: checkError } = await supabase
+        .from('quotes')
+        .select('id')
+        .eq('quote_number', dataToSave.quoteNumber)
+        .single()
+
+      let quoteId: string
+      let revisionId: string
+
+      if (checkError && checkError.code !== 'PGRST116') {
+        // PGRST116 means "no rows returned" - that's expected if no quote exists
+        // Any other error should be logged and we'll fall back to creating a new quote
+        console.error('Error checking for existing quote:', checkError)
+      }
+
+      if (existingQuote) {
+        // Update existing quote
+        quoteId = existingQuote.id
+        console.log('Updating existing quote with ID:', quoteId)
+
+        // Update the quote (without expires_on since it's not in the quotes table)
+        const { error: updateError } = await supabase
+          .from('quotes')
+          .update({
+            client_id: clientId,
+            quote_number: dataToSave.quoteNumber,
+            updated_at: new Date().toISOString()
+          })
+          .eq('id', quoteId)
+
+        if (updateError) throw updateError
+
+        // Get the most recent revision for this quote
+        const { data: revisions, error: revisionsError } = await supabase
+          .from('quote_revisions')
+          .select('id')
+          .eq('quote_id', quoteId)
+          .order('revision_number', { ascending: false })
+          .limit(1)
+          .single()
+
+        if (revisionsError) {
+          console.error('Error getting revisions:', revisionsError)
+          throw revisionsError
+        }
+
+        revisionId = revisions.id
+        console.log('Using existing revision with ID:', revisionId)
+
+        // Update the revision (including expires_on here)
+        const { error: revisionUpdateError } = await supabase
+          .from('quote_revisions')
+          .update({
+            expires_on: dataToSave.expires,
+            tax_rate: dataToSave.taxRate,
+            is_tax_enabled: dataToSave.isTaxEnabled,
+            is_recurring: dataToSave.isRecurring,
+            billing_period: dataToSave.billingPeriod && ['monthly', 'quarterly', 'yearly', 'one-time'].includes(dataToSave.billingPeriod)
+              ? dataToSave.billingPeriod
+              : null,
+            recurring_amount: dataToSave.recurringAmount,
+            updated_at: new Date().toISOString()
+          })
+          .eq('id', revisionId)
+
+        if (revisionUpdateError) throw revisionUpdateError
+
+      } else {
+        // Create new quote
+        console.log('Creating new quote...')
+        const { data: newQuote, error: createError } = await supabase
+          .from('quotes')
+          .insert({
+            client_id: clientId,
+            quote_number: dataToSave.quoteNumber,
+            created_at: new Date().toISOString(),
+            updated_at: new Date().toISOString()
+          })
+          .select()
+          .single()
+
+        if (createError) {
+          console.error('Error creating new quote:', createError)
+          throw createError
+        }
+
+        quoteId = newQuote.id
+        console.log('Created new quote with ID:', quoteId)
+
+        // Create new revision (including expires_on here)
+        console.log('Creating new revision...')
+        const { data: newRevision, error: revisionError } = await supabase
+          .from('quote_revisions')
+          .insert({
+            quote_id: quoteId,
+            revision_number: 1,
+            expires_on: dataToSave.expires,
+            tax_rate: dataToSave.taxRate,
+            is_tax_enabled: dataToSave.isTaxEnabled,
+            is_recurring: dataToSave.isRecurring,
+            billing_period: dataToSave.billingPeriod && ['monthly', 'quarterly', 'yearly', 'one-time'].includes(dataToSave.billingPeriod)
+              ? dataToSave.billingPeriod
+              : null,
+            recurring_amount: dataToSave.recurringAmount,
+            notes: 'Quote created for email sending',
+            created_at: new Date().toISOString(),
+            updated_at: new Date().toISOString()
+          })
+          .select()
+          .single()
+
+        if (revisionError) {
+          console.error('Error creating new revision:', revisionError)
+          throw revisionError
+        }
+
+        revisionId = newRevision.id
+        console.log('Created new revision with ID:', revisionId)
+      }
+
+      // Save quote items
+      console.log('Saving quote items...')
+      try {
+        // First, delete any existing items for this revision to prevent duplication
+        const { error: deleteItemsError } = await supabase
+          .from('quote_items')
+          .delete()
+          .eq('quote_revision_id', revisionId)
+
+        if (deleteItemsError) {
+          console.error('Error deleting existing quote items:', deleteItemsError)
+          throw deleteItemsError
+        }
+
+        // Then insert new items
+        if (dataToSave.items.length > 0) {
+          const { error: itemsError } = await supabase
+            .from('quote_items')
+            .insert(
+              dataToSave.items.map(item => ({
+                quote_revision_id: revisionId,
+                description: item.description || 'No description',
+                quantity: item.quantity || 1,
+                unit_price: item.unitPrice || 0,
+                total: item.total || 0,
+                sort_order: 0
+              }))
+            )
+
+          if (itemsError) {
+            console.error('Error inserting quote items:', itemsError)
+            throw itemsError
+          }
+        }
+      } catch (error) {
+        console.error('Error in quote items operation:', error)
+        throw error
+      }
+
+      // Save payment terms
+      console.log('Saving payment terms...')
+      try {
+        // First, delete any existing payment terms for this revision to prevent duplication
+        const { error: deletePaymentTermsError } = await supabase
+          .from('payment_terms')
+          .delete()
+          .eq('quote_revision_id', revisionId)
+
+        if (deletePaymentTermsError) {
+          console.error('Error deleting existing payment terms:', deletePaymentTermsError)
+          throw deletePaymentTermsError
+        }
+
+        // Then insert new payment terms
+        if (dataToSave.paymentSchedule.length > 0) {
+          const { error: paymentTermsError } = await supabase
+            .from('payment_terms')
+            .insert(
+              dataToSave.paymentSchedule.map(term => ({
+                quote_revision_id: revisionId,
+                percentage: term.percentage || 100,
+                description: term.description || 'Payment term',
+                sort_order: 0
+              }))
+            )
+
+          if (paymentTermsError) {
+            console.error('Error inserting payment terms:', paymentTermsError)
+            throw paymentTermsError
+          }
+        }
+      } catch (error) {
+        console.error('Error in payment terms operation:', error)
+        throw error
+      }
+
+      // Save notes
+      if (dataToSave.notes) {
+        console.log('Saving notes...')
+        try {
+          // Notes are stored directly in quote_revisions table, not in a separate quote_notes table
+          const { error: notesError } = await supabase
+            .from('quote_revisions')
+            .update({
+              notes: dataToSave.notes
+            })
+            .eq('id', revisionId)
+
+          if (notesError) {
+            console.error('Error updating notes in quote_revisions:', notesError)
+            throw notesError
+          }
+        } catch (error) {
+          console.error('Error in notes operation:', error)
+          throw error
+        }
+      }
+
+      // Save legal terms
+      if (dataToSave.legalTerms) {
+        console.log('Saving legal terms...')
+        try {
+          // Use upsert with the correct column name
+          const { error: legalTermsError } = await supabase
+            .from('legal_terms') // Fixed: was quote_legal_terms
+            .insert({
+              quote_revision_id: revisionId, // Fixed: was revision_id
+              terms: dataToSave.legalTerms
+            })
+
+          if (legalTermsError) {
+            console.error('Error inserting legal terms:', legalTermsError)
+            throw legalTermsError
+          }
+        } catch (error) {
+          console.error('Error in legal terms operation:', error)
+          throw error
+        }
+      }
+
+      // Save client comments
+      if (dataToSave.clientComments) {
+        console.log('Saving client comments...')
+        try {
+          // Use upsert with the correct column name
+          const { error: clientCommentsError } = await supabase
+            .from('client_comments') // Fixed: was quote_client_comments
+            .insert({
+              quote_id: quoteId, // This table has both quote_id and quote_revision_id
+              quote_revision_id: revisionId, // Fixed: was revision_id
+              comment: dataToSave.clientComments
+            })
+
+          if (clientCommentsError) {
+            console.error('Error inserting client comments:', clientCommentsError)
+            throw clientCommentsError
+          }
+        } catch (error) {
+          console.error('Error in client comments operation:', error)
+          throw error
+        }
+      }
+
+      console.log('✅ Quote saved successfully for email sending')
+      return { quoteId, success: true }
+
+    } catch (error) {
+      console.error('❌ Error saving quote for email:', error)
+      throw error
+    }
+  }
+
+  const sendQuoteToClient = async () => {
+    console.log('🚀 sendQuoteToClient called')
+    console.log('Current form data:', formData)
+
+    if (!formData.clientEmail) {
+      console.log('❌ No client email found')
+      setSaveMessage({ type: 'error', text: 'Client email is required to send quote' })
+      return
+    }
+
+    if (!formData.quoteNumber) {
+      console.log('❌ No quote number found')
+      setSaveMessage({ type: 'error', text: 'Quote number is required to send quote' })
+      return
+    }
+
+    console.log('✅ Validation passed, starting email process...')
+    setIsSaving(true)
+    try {
+      // First, ensure the quote is saved using the email-specific save function
+      console.log('💾 Saving quote before sending (using saveQuoteForEmail)...')
+      const savedQuote = await saveQuoteForEmail()
+      console.log('💾 Save result:', savedQuote)
+
+      if (!savedQuote) {
+        throw new Error('Failed to save quote before sending')
+      }
+
+      // Send email using EmailService
+      console.log('📧 Calling EmailService...')
+      const emailService = EmailService.getInstance()
+      await emailService.sendQuoteEmail({
+        quoteId: savedQuote.quoteId,
+        clientEmail: formData.clientEmail,
+        clientName: formData.clientName,
+        quoteNumber: formData.quoteNumber,
+        quoteUrl: formData.quoteUrl,
+        total: formData.total,
+        expires: formData.expires
+      })
+
+      console.log('📧 Email sent successfully, updating status...')
+      // Update quote status to EMAILED
+      const { error: statusError } = await supabase
+        .from('quote_status_history')
+        .insert({
+          quote_id: savedQuote.quoteId,
+          status: 'EMAILED',
+          notes: `Quote sent to client via email on ${new Date().toISOString()}`,
+          created_at: new Date().toISOString()
+        })
+
+      if (statusError) {
+        console.warn('⚠️ Failed to update quote status:', statusError)
+        // Don't throw here as the email was sent successfully
+      }
+
+      console.log('✅ Setting success message...')
+      setSaveMessage({ type: 'success', text: 'Quote sent to client successfully!' })
+
+      // Play success sound
+      console.log('🔊 Playing success sound...')
+      const audio = new Audio('data:audio/wav;base64,UklGRnoGAABXQVZFZm10IBAAAAABAAEAQB8AAEAfAAABAAgAZGF0YQoGAACBhYqFbF1fdJivrJBhNjVgodDbq2EcBj+a2/LDciUFLIHO8tiJNwgZaLvt559NEAxQp+PwtmMcBjiR1/LMeSwFJHfH8N2QQAoUXrTp66hVFApGn+DyvmwhBSuBzvLZiTYIG2m98OScTgwOUarm7blmGgU7k9n1unEiBC13yO/eizEIHWq+8+OWT')
+      audio.play().catch(() => {}) // Ignore errors if audio fails
+
+    } catch (error) {
+      console.error('❌ Error sending quote to client:', error)
+      setSaveMessage({ type: 'error', text: `Failed to send quote: ${error instanceof Error ? error.message : 'Unknown error'}` })
+    } finally {
+      console.log('🏁 Setting isSaving to false')
+      setIsSaving(false)
+    }
+  }
+
   return {
     formData,
     setFormData,
@@ -1542,6 +1969,8 @@ export const useQuoteForm = () => {
     removePaymentTerm,
     paymentScheduleTotal,
     saveQuote,
+    saveQuoteForEmail,
+    sendQuoteToClient,
     isSaving,
     saveMessage,
     isLoadingHistory,

@@ -16,6 +16,7 @@ const QuoteForm: React.FC = () => {
     removePaymentTerm,
     paymentScheduleTotal,
     saveQuote,
+    sendQuoteToClient,
     isSaving,
     saveMessage,
     loadQuoteHistory,
@@ -115,6 +116,8 @@ const QuoteForm: React.FC = () => {
       loadQuoteHistory={loadQuoteHistory}
       isSaving={isSaving}
       saveMessage={saveMessage}
+      saveQuote={saveQuote}
+      sendQuoteToClient={sendQuoteToClient}
       isNewQuoteModalOpen={isNewQuoteModalOpen}
       newQuoteData={newQuoteData}
       openNewQuoteModal={openNewQuoteModal}

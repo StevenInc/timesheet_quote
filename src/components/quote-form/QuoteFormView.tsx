@@ -32,7 +32,9 @@ interface Props {
   // save state
   isSaving: boolean
   saveMessage: { type: 'success' | 'error'; text: string } | null
-
+  // quote actions
+  saveQuote: () => Promise<{ quoteId: string; success: boolean }>
+  sendQuoteToClient: () => Promise<void>
   // new quote modal
   isNewQuoteModalOpen: boolean
   newQuoteData: NewQuoteModalData
@@ -231,7 +233,6 @@ export const QuoteFormView: React.FC<Props> = (props) => {
     onSubmit,
     copyQuoteUrl,
     downloadQuote,
-    isSaving,
     saveMessage,
 
     isNewQuoteModalOpen,
@@ -696,13 +697,13 @@ export const QuoteFormView: React.FC<Props> = (props) => {
         </div>
 
         <div className="form-actions">
-          <button type="submit" className="btn btn-primary" disabled={isSaving}>
+          <button type="submit" className="btn btn-primary" disabled={props.isSaving}>
             <Save size={16} />
-            {isSaving ? 'Saving...' : 'Save'}
+            {props.isSaving ? 'Saving...' : 'Save'}
           </button>
-          <button type="button" className="btn btn-primary">
+          <button type="button" className="btn btn-primary" onClick={props.sendQuoteToClient} disabled={props.isSaving}>
             <Send size={16} />
-            Send to Client
+            {props.isSaving ? 'Sending...' : 'Send to Client'}
           </button>
           <button type="button" className="btn btn-secondary">
             <Archive size={16} />
