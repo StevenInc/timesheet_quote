@@ -4,13 +4,21 @@ import { supabase } from '../../lib/supabaseClient'
 import EmailService from '../../lib/emailService'
 
 export const useQuoteForm = () => {
+  // Helper function to get default expiration date (30 days from today)
+  const getDefaultExpirationDate = () => {
+    const today = new Date()
+    const thirtyDaysFromNow = new Date(today)
+    thirtyDaysFromNow.setDate(today.getDate() + 30)
+    return thirtyDaysFromNow.toISOString().split('T')[0] // Format as YYYY-MM-DD
+  }
+
   const [formData, setFormData] = useState<QuoteFormData>({
     owner: '',
     clientName: '',
     clientEmail: '',
     quoteNumber: '1000',
     quoteUrl: 'https://quotes.timesheets.com/68124-AJ322ADV3',
-    expires: '2025-07-08',
+    expires: getDefaultExpirationDate(),
     taxRate: 0.08,
     isTaxEnabled: false,
     paymentTerms: 'Net 30',
@@ -243,7 +251,7 @@ export const useQuoteForm = () => {
             quoteNumber: quote.quote_number,
             clientName: quote.clients?.name || '',
             clientEmail: quote.clients?.email || '',
-            expires: latestRevision.expires_on || '2025-07-08',
+            expires: latestRevision.expires_on || getDefaultExpirationDate(),
             taxRate: latestRevision.tax_rate || 0.08,
             isTaxEnabled: latestRevision.is_tax_enabled || false,
             title: latestRevision.title || '',
@@ -442,7 +450,7 @@ export const useQuoteForm = () => {
         subtotal: 0,
         tax: 0,
         total: 0
-      })
+      }, false) // Don't open title modal for new quotes
 
       if (result.success) {
         console.log('New quote created successfully:', result.quoteId)
@@ -455,6 +463,7 @@ export const useQuoteForm = () => {
           quoteNumber: newQuoteData.quoteNumber,
           clientName: newQuoteData.clientName,
           clientEmail: '',
+          expires: getDefaultExpirationDate(), // Set fresh expiration date
           items: [{ id: '1', description: '', quantity: 1, unitPrice: 0, total: 0 }],
           subtotal: 0,
           tax: 0,
@@ -499,7 +508,7 @@ export const useQuoteForm = () => {
       clientEmail: '',
       quoteNumber: '1000',
       quoteUrl: 'https://quotes.timesheets.com/68124-AJ322ADV3',
-      expires: '2025-07-08',
+      expires: getDefaultExpirationDate(),
       taxRate: 0.08,
       isTaxEnabled: false,
       paymentTerms: 'Net 30',
@@ -600,7 +609,7 @@ export const useQuoteForm = () => {
     [formData.paymentSchedule]
   )
 
-  const saveQuote = async (quoteData?: QuoteFormData) => {
+  const saveQuote = async (quoteData?: QuoteFormData, openTitleModalAfterSave: boolean = true) => {
     const dataToSave = quoteData || formData
     setIsSaving(true)
     setSaveMessage(null)
@@ -1016,8 +1025,10 @@ export const useQuoteForm = () => {
         selectedHistoryVersion: newHistoryItem.id
       }))
 
-      // Show title modal instead of immediately completing the save
-      openTitleModal(dataToSave, quoteId, revisionId)
+      // Show title modal only if requested
+      if (openTitleModalAfterSave) {
+        openTitleModal(dataToSave, quoteId, revisionId)
+      }
 
       return { quoteId, success: true }
 
@@ -1177,7 +1188,7 @@ export const useQuoteForm = () => {
           quoteNumber: revision.quotes.quote_number,
           clientName: revision.quotes.clients?.name || '',
           clientEmail: revision.quotes.clients?.email || '',
-          expires: revision.expires_on || '2025-07-08',
+          expires: revision.expires_on || getDefaultExpirationDate(),
           taxRate: revision.tax_rate || 0.08,
           isTaxEnabled: revision.is_tax_enabled || false,
           title: revision.title || '',
@@ -1555,7 +1566,7 @@ export const useQuoteForm = () => {
           quoteNumber: revision.quotes.quote_number,
           clientName: revision.quotes.clients?.name || '',
           clientEmail: revision.quotes.clients?.email || '',
-          expires: revision.expires_on || '2025-07-08',
+          expires: revision.expires_on || getDefaultExpirationDate(),
           taxRate: revision.tax_rate || 0.08,
           isTaxEnabled: revision.is_tax_enabled || false,
           title: revision.title || '',
