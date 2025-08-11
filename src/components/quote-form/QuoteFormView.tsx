@@ -438,7 +438,7 @@ export const QuoteFormView: React.FC<Props> = (props) => {
                       <tr>
                         <th>Quote #</th>
                         <th>Status</th>
-                        <th>Notes</th>
+                        <th>Title</th>
                         <th>Last Updated</th>
                       </tr>
                     </thead>
@@ -495,7 +495,7 @@ export const QuoteFormView: React.FC<Props> = (props) => {
                       <tr>
                         <th>Version</th>
                         <th>Status</th>
-                        <th>Notes</th>
+                        <th>Title</th>
                         <th>Created</th>
                         <th>Updated</th>
                         <th>Archive</th>
