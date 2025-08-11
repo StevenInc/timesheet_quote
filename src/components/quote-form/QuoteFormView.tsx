@@ -522,8 +522,8 @@ export const QuoteFormView: React.FC<Props> = (props) => {
                         >
                           <td>v{revision.revision_number}</td>
                           <td>
-                            <span className={`status-badge ${revision.status}`}>
-                              {revision.status}
+                            <span className={`status-badge ${quoteRevisions.indexOf(revision) === 0 ? 'current' : revision.status}`}>
+                              {quoteRevisions.indexOf(revision) === 0 ? 'CURRENT' : revision.status}
                             </span>
                           </td>
                           <td>{revision.notes || '-'}</td>
