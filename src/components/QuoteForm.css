@@ -967,6 +967,21 @@
   color: #721c24;
 }
 
+.status-badge.emailed {
+  background-color: #dbeafe;
+  color: #1d4ed8;
+}
+
+.status-badge.paid {
+  background-color: #dcfce7;
+  color: #166534;
+}
+
+.status-badge.accepted {
+  background-color: #d1fae5;
+  color: #065f46;
+}
+
 /* View Quote Modal Styles */
 .clients-list-container {
   margin-top: 10px;

@@ -114,6 +114,9 @@ export interface DatabaseQuoteRevision {
   created_at: string
   updated_at: string
   archived: boolean
+  sent_via_email?: boolean
+  sent_at?: string
+  currentQuoteStatus?: string
   quote_items?: DatabaseQuoteItem[]
   payment_terms?: DatabasePaymentTerm[]
   legal_terms?: DatabaseLegalTerm[]

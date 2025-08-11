@@ -290,7 +290,7 @@ export const useQuoteForm = () => {
           status,
           created_at,
           updated_at,
-          quote_revisions(id, revision_number, title, notes, updated_at)
+          quote_revisions(id, revision_number, title, notes, updated_at, status, sent_via_email)
         `)
         .eq('client_id', clientId)
         .eq('archived', false)
@@ -311,10 +311,39 @@ export const useQuoteForm = () => {
           // Debug logging to see what data we're getting
           console.log('Quote:', quote.quote_number, 'Latest revision data:', latestRevisionData)
 
+          // Determine the most primary status from all revisions
+          const determineMostPrimaryStatus = (revisions: Array<{status: string, sent_via_email?: boolean}>) => {
+            // Priority order: PAID > ACCEPTED > REJECTED > EXPIRED > EMAIL SENT > DRAFT
+            const priorityOrder = ['PAID', 'ACCEPTED', 'REJECTED', 'EXPIRED', 'EMAILED', 'DRAFT']
+
+            // Check if any revision was sent via email
+            const hasEmailSent = revisions.some(r => r.sent_via_email === true)
+
+            // Get all statuses from revisions only
+            const revisionStatuses = revisions.map(r => r.status).filter(Boolean)
+
+            // If any revision was sent via email, return EMAILED
+            if (hasEmailSent) {
+              return 'EMAILED'
+            }
+
+            // Find the highest priority status from revisions only
+            for (const priorityStatus of priorityOrder) {
+              if (revisionStatuses.includes(priorityStatus)) {
+                return priorityStatus
+              }
+            }
+
+            // Default to DRAFT if no statuses found
+            return 'DRAFT'
+          }
+
+          const mostPrimaryStatus = determineMostPrimaryStatus(revisions)
+
           return {
             id: quote.id,
             quoteNumber: quote.quote_number,
-            status: quote.status,
+            status: mostPrimaryStatus,
             createdAt: new Date(quote.created_at).toLocaleDateString(),
             updatedAt: new Date(quote.updated_at).toLocaleDateString(),
             latestRevisionNumber: latestRevision,
@@ -1333,9 +1362,24 @@ export const useQuoteForm = () => {
     console.log('📥 Loading quote revisions for quote:', quoteId)
     setIsLoadingQuoteRevisions(true)
     try {
+      // First, get the current quote status from status history
+      const { data: statusData, error: statusError } = await supabase
+        .from('quote_status_history')
+        .select('status')
+        .eq('quote_id', quoteId)
+        .order('created_at', { ascending: false })
+        .limit(1)
+
+      if (statusError) {
+        console.warn('⚠️ Failed to load quote status:', statusError)
+      }
+
+      const currentQuoteStatus = statusData && statusData.length > 0 ? statusData[0].status : 'DRAFT'
+
+      // Then get the revisions
       const { data: revisions, error } = await supabase
         .from('quote_revisions')
-        .select('*')
+        .select('*, sent_via_email, sent_at')
         .eq('quote_id', quoteId)
         .eq('archived', false)
         .order('revision_number', { ascending: false })
@@ -1343,9 +1387,22 @@ export const useQuoteForm = () => {
       if (error) throw error
 
       if (revisions && revisions.length > 0) {
-        console.log('✅ Loaded quote revisions for quote ID:', quoteId, revisions)
-        console.log('📝 Setting quoteRevisions state with', revisions.length, 'revisions')
-        setQuoteRevisions(revisions)
+        // Add the current quote status to each revision for display purposes
+        const revisionsWithStatus = revisions.map(revision => ({
+          ...revision,
+          currentQuoteStatus: currentQuoteStatus
+        }))
+
+        console.log('✅ Loaded quote revisions for quote ID:', quoteId, revisionsWithStatus)
+        console.log('📝 Setting quoteRevisions state with', revisionsWithStatus.length, 'revisions')
+        console.log('🔍 Revision details:', revisionsWithStatus.map(r => ({
+          id: r.id,
+          revision_number: r.revision_number,
+          status: r.status,
+          sent_via_email: r.sent_via_email,
+          currentQuoteStatus: r.currentQuoteStatus
+        })))
+        setQuoteRevisions(revisionsWithStatus)
         console.log('✅ State update triggered for quoteRevisions')
       } else {
         console.log('❌ No revisions found for quote:', quoteId)
@@ -1935,24 +1992,40 @@ export const useQuoteForm = () => {
         expires: formData.expires
       })
 
-      console.log('📧 Email sent successfully, updating status...')
-      // Update quote status to EMAILED
-      const { error: statusError } = await supabase
-        .from('quote_status_history')
-        .insert({
-          quote_id: savedQuote.quoteId,
-          status: 'EMAILED',
-          notes: `Quote sent to client via email on ${new Date().toISOString()}`,
-          created_at: new Date().toISOString()
-        })
+      console.log('📧 Email sent successfully, updating revision status...')
+      // Note: quote_status_history is only used for future audit features, not for display
 
-      if (statusError) {
-        console.warn('⚠️ Failed to update quote status:', statusError)
-        // Don't throw here as the email was sent successfully
+      // Mark the current revision as sent via email
+      if (currentLoadedRevisionId) {
+        const { error: revisionUpdateError } = await supabase
+          .from('quote_revisions')
+          .update({
+            sent_via_email: true,
+            sent_at: new Date().toISOString()
+          })
+          .eq('id', currentLoadedRevisionId)
+
+        if (revisionUpdateError) {
+          console.warn('⚠️ Failed to update revision sent status:', revisionUpdateError)
+        } else {
+          console.log('✅ Marked revision as sent via email:', currentLoadedRevisionId)
+        }
       }
 
       console.log('✅ Setting success message...')
       setSaveMessage({ type: 'success', text: 'Quote sent to client successfully!' })
+
+      // Refresh the client quotes to show the updated status
+      if (selectedClientId) {
+        console.log('🔄 Refreshing client quotes to show updated status...')
+        await loadClientQuotes(selectedClientId)
+      }
+
+      // Also refresh the quote revisions to show the updated status
+      if (currentLoadedQuoteId === savedQuote.quoteId) {
+        console.log('🔄 Refreshing quote revisions to show updated status...')
+        await loadQuoteRevisions(savedQuote.quoteId, true)
+      }
 
     } catch (error) {
       console.error('❌ Error sending quote to client:', error)

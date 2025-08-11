@@ -571,9 +571,9 @@ export const QuoteFormView: React.FC<Props> = (props) => {
                         >
                           <td>{quote.quoteNumber}</td>
                           <td>
-                            <span className={`status-badge ${quote.status}`}>
-                              {quote.status}
-                            </span>
+                                                     <span className={`status-badge ${quote.status.toLowerCase()}`}>
+                           {quote.status === 'EMAILED' ? 'EMAIL SENT' : quote.status}
+                         </span>
                           </td>
                           <td className="notes-cell" title={quote.title || quote.notes || 'No title'}>
                             {quote.title ?
@@ -638,8 +638,17 @@ export const QuoteFormView: React.FC<Props> = (props) => {
                         >
                           <td>v{revision.revision_number}</td>
                           <td>
-                            <span className={`status-badge ${quoteRevisions.indexOf(revision) === 0 ? 'current' : revision.status}`}>
-                              {quoteRevisions.indexOf(revision) === 0 ? 'CURRENT' : revision.status}
+                            <span
+                              className={`status-badge ${(revision.sent_via_email || revision.status === 'EMAILED') ? 'emailed' : (quoteRevisions.indexOf(revision) === 0 ? 'current' : revision.status.toLowerCase())}`}
+                              title={(revision.sent_via_email && revision.sent_at) ? `Sent on ${new Date(revision.sent_at).toLocaleDateString()}` : ''}
+                            >
+                              {(revision.sent_via_email || revision.status === 'EMAILED')
+                                ? 'EMAIL SENT'
+                                : (quoteRevisions.indexOf(revision) === 0
+                                    ? 'CURRENT'
+                                    : revision.status
+                                  )
+                              }
                             </span>
                           </td>
                           <td>{revision.title || revision.notes || '-'}</td>
