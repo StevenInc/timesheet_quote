@@ -39,7 +39,18 @@ export const useQuoteForm = () => {
   // Client Quotes State
   const [clientQuotes, setClientQuotes] = useState<ClientQuote[]>([])
   const [isLoadingClientQuotes, setIsLoadingClientQuotes] = useState(false)
-  const [selectedClientQuote, setSelectedClientQuote] = useState<string>('')
+  const [selectedClientQuote, setSelectedClientQuoteState] = useState<string>('')
+
+  // Custom setter with guards to prevent unnecessary updates
+  const setSelectedClientQuote = React.useCallback((quoteId: string) => {
+    console.log('setSelectedClientQuote called with:', quoteId, 'current:', selectedClientQuote)
+    if (selectedClientQuote === quoteId) {
+      console.log('Same quote already selected, skipping update:', quoteId)
+      return
+    }
+    console.log('Setting selected client quote:', quoteId)
+    setSelectedClientQuoteState(quoteId)
+  }, [selectedClientQuote])
 
   // Quote Revisions State
   const [quoteRevisions, setQuoteRevisions] = useState<DatabaseQuoteRevision[]>([])
@@ -1152,11 +1163,22 @@ export const useQuoteForm = () => {
   }, [availableClients])
 
     const loadQuoteRevisions = React.useCallback(async (quoteId: string) => {
+    console.log('=== LOAD_QUOTE_REVISIONS CALLED ===')
+    console.log('loadQuoteRevisions called with quoteId:', quoteId)
+
     if (!quoteId) {
+      console.log('❌ No quoteId provided, clearing revisions')
       setQuoteRevisions([])
       return
     }
 
+    // Prevent loading revisions for the same quote multiple times
+    if (currentLoadedQuoteId === quoteId && quoteRevisions.length > 0) {
+      console.log('⚠️ Revisions already loaded for quote, skipping:', quoteId)
+      return
+    }
+
+    console.log('📥 Loading quote revisions for quote:', quoteId)
     setIsLoadingQuoteRevisions(true)
     try {
       const { data: revisions, error } = await supabase
@@ -1169,18 +1191,22 @@ export const useQuoteForm = () => {
       if (error) throw error
 
       if (revisions && revisions.length > 0) {
-        console.log('Loaded quote revisions for quote ID:', quoteId, revisions)
+        console.log('✅ Loaded quote revisions for quote ID:', quoteId, revisions)
+        console.log('📝 Setting quoteRevisions state with', revisions.length, 'revisions')
         setQuoteRevisions(revisions)
+        console.log('✅ State update triggered for quoteRevisions')
       } else {
+        console.log('❌ No revisions found for quote:', quoteId)
         setQuoteRevisions([])
       }
     } catch (error) {
-      console.error('Error loading quote revisions:', error)
+      console.error('❌ Error loading quote revisions:', error)
       setQuoteRevisions([])
     } finally {
       setIsLoadingQuoteRevisions(false)
+      console.log('🏁 Finished loading quote revisions for quote:', quoteId)
     }
-  }, [])
+  }, [currentLoadedQuoteId])
 
     const archiveQuoteRevision = React.useCallback(async (revisionId: string) => {
     try {
@@ -1261,9 +1287,25 @@ export const useQuoteForm = () => {
   }, [quoteRevisions, currentLoadedQuoteId, loadQuoteRevisions])
 
   const loadQuoteRevision = React.useCallback(async (revisionId: string) => {
-    if (!revisionId) return
+    console.log('loadQuoteRevision called with revisionId:', revisionId, 'currentLoadedRevisionId:', currentLoadedRevisionId)
+
+    if (!revisionId) {
+      console.log('No revisionId provided')
+      return
+    }
+
+    // Prevent loading the same revision multiple times
+    if (currentLoadedRevisionId === revisionId) {
+      console.log('Revision already loaded, skipping:', revisionId)
+      return
+    }
+
+    // Add a small delay to prevent rapid successive calls
+    await new Promise(resolve => setTimeout(resolve, 100))
 
     try {
+      console.log('Loading quote revision:', revisionId)
+
       // Load the specific revision with all its related data
       const { data: revision, error } = await supabase
         .from('quote_revisions')
@@ -1287,13 +1329,20 @@ export const useQuoteForm = () => {
       if (revision) {
         console.log('Loaded quote revision:', revision)
 
+        // Double-check that we haven't loaded this revision while waiting
+        if (currentLoadedRevisionId === revisionId) {
+          console.log('Revision was loaded while waiting, skipping update')
+          return
+        }
+
         // Track which revision and quote are currently loaded
+        console.log('Setting currentLoadedRevisionId to:', revisionId)
         setCurrentLoadedRevisionId(revisionId)
+        console.log('Setting currentLoadedQuoteId to:', revision.quotes.id)
         setCurrentLoadedQuoteId(revision.quotes.id)
 
-        // Update form data with the loaded revision
-        setFormData(prev => ({
-          ...prev,
+        // Batch form data updates to prevent multiple re-renders
+        const newFormData = {
           quoteNumber: revision.quotes.quote_number,
           clientName: revision.quotes.clients?.name || '',
           clientEmail: revision.quotes.clients?.email || '',
@@ -1318,25 +1367,27 @@ export const useQuoteForm = () => {
           })) || [{ id: 'ps-1', percentage: 100, description: 'net 30 days' }],
           legalTerms: revision.legal_terms?.[0]?.terms || '',
           clientComments: revision.client_comments?.[0]?.comment || ''
-        }))
+        }
 
         // Recalculate totals
-        const items = revision.quote_items?.map((item: DatabaseQuoteItem) => ({
-          id: item.id,
-          description: item.description || '',
-          quantity: item.quantity || 1,
-          unitPrice: item.unit_price || 0,
-          total: item.total || 0
-        })) || [{ id: '1', description: '', quantity: 1, unitPrice: 0, total: 0 }]
+        const items = newFormData.items
+        const { subtotal, tax, total } = recalc(items, newFormData.isTaxEnabled, newFormData.taxRate)
 
-        const { subtotal, tax, total } = recalc(items, revision.is_tax_enabled, revision.tax_rate)
-        setFormData(prev => ({ ...prev, subtotal, tax, total }))
+        console.log('Updating form data with new revision data')
+        // Update form data in one batch
+        setFormData(prev => ({
+          ...prev,
+          ...newFormData,
+          subtotal,
+          tax,
+          total
+        }))
       }
     } catch (error) {
       console.error('Error loading quote revision:', error)
       setSaveMessage({ type: 'error', text: `Error loading quote revision: ${error instanceof Error ? error.message : 'Unknown error'}` })
     }
-  }, [])
+  }, [currentLoadedRevisionId])
 
   return {
     formData,

@@ -78,24 +78,138 @@ interface Props {
 }
 
 export const QuoteFormView: React.FC<Props> = (props) => {
-  // Load quote revisions when a quote is selected
-  React.useEffect(() => {
-    if (props.selectedClientQuote) {
-      props.loadQuoteRevisions(props.selectedClientQuote)
-    }
-  }, [props.selectedClientQuote, props.loadQuoteRevisions])
+  // Track which quote we've already auto-loaded for to prevent infinite loops
+  const autoLoadedQuoteRef = React.useRef<string | null>(null)
+  const loadTimeoutRef = React.useRef<NodeJS.Timeout | null>(null)
+  const lastProcessedQuoteRef = React.useRef<string | null>(null)
+  const loadQuoteRevisionRef = React.useRef(props.loadQuoteRevision)
+  const loadQuoteRevisionsRef = React.useRef(props.loadQuoteRevisions)
+  const clearLoadedRevisionStateRef = React.useRef(props.clearLoadedRevisionState)
+  const isProcessingRef = React.useRef<boolean>(false)
 
-  // Automatically load the most recent revision when revisions are loaded
+  // Update the refs when the functions change
   React.useEffect(() => {
-    if (props.quoteRevisions.length > 0 && !props.currentLoadedRevisionId) {
-      // Get the most recent revision (first in the list since they're ordered by revision number descending)
+    loadQuoteRevisionRef.current = props.loadQuoteRevision
+  }, [props.loadQuoteRevision])
+
+  React.useEffect(() => {
+    loadQuoteRevisionsRef.current = props.loadQuoteRevisions
+  }, [props.loadQuoteRevisions])
+
+  React.useEffect(() => {
+    clearLoadedRevisionStateRef.current = props.clearLoadedRevisionState
+  }, [props.clearLoadedRevisionState])
+
+  // Single useEffect to handle quote selection and revision loading
+  React.useEffect(() => {
+    console.log('=== QUOTE SELECTION USE_EFFECT TRIGGERED ===')
+    console.log('useEffect triggered with selectedClientQuote:', props.selectedClientQuote)
+
+    // Prevent processing if already in progress
+    if (isProcessingRef.current) {
+      console.log('❌ Already processing, skipping')
+      return
+    }
+
+    if (!props.selectedClientQuote) {
+      console.log('❌ No quote selected, clearing state')
+      clearLoadedRevisionStateRef.current()
+      autoLoadedQuoteRef.current = null
+      lastProcessedQuoteRef.current = null
+      return
+    }
+
+    // Prevent processing the same quote multiple times
+    if (lastProcessedQuoteRef.current === props.selectedClientQuote) {
+      console.log('❌ Same quote already processed, skipping:', props.selectedClientQuote)
+      return
+    }
+
+    console.log('✅ Processing new quote selection:', props.selectedClientQuote)
+    isProcessingRef.current = true
+    lastProcessedQuoteRef.current = props.selectedClientQuote
+
+    // Clear any existing timeout
+    if (loadTimeoutRef.current) {
+      clearTimeout(loadTimeoutRef.current)
+    }
+
+    // Clear previous revision state
+    console.log('🧹 Clearing previous revision state')
+    clearLoadedRevisionStateRef.current()
+    autoLoadedQuoteRef.current = null
+
+    // Load quote revisions with a delay to prevent rapid successive calls
+    loadTimeoutRef.current = setTimeout(async () => {
+      console.log('📥 Loading quote revisions for quote:', props.selectedClientQuote)
+      await loadQuoteRevisionsRef.current(props.selectedClientQuote)
+      console.log('✅ Quote revisions loaded, marking processing as complete IMMEDIATELY')
+      // Mark processing as complete IMMEDIATELY after revisions are loaded
+      isProcessingRef.current = false
+      console.log('🎯 Processing complete, auto-selection can now proceed')
+    }, 100)
+
+  }, [props.selectedClientQuote]) // Only depend on selectedClientQuote
+
+  // Separate useEffect to handle auto-loading the most recent revision
+  React.useEffect(() => {
+    console.log('=== REVISIONS USE_EFFECT TRIGGERED ===')
+    console.log('Revisions useEffect triggered:', {
+      revisionsCount: props.quoteRevisions.length,
+      currentLoadedRevisionId: props.currentLoadedRevisionId,
+      selectedClientQuote: props.selectedClientQuote,
+      autoLoadedQuote: autoLoadedQuoteRef.current,
+      isProcessing: isProcessingRef.current
+    })
+
+    // Don't auto-load if we're still processing the quote selection
+    if (isProcessingRef.current) {
+      console.log('❌ Still processing quote selection, skipping auto-load')
+      return
+    }
+
+    // Auto-load the most recent revision when revisions are available and no revision is currently loaded
+    if (props.quoteRevisions.length > 0 &&
+        !props.currentLoadedRevisionId &&
+        props.selectedClientQuote) {
+
       const mostRecentRevision = props.quoteRevisions[0]
       if (mostRecentRevision) {
-        console.log('Automatically loading most recent revision:', mostRecentRevision.id)
-        props.loadQuoteRevision(mostRecentRevision.id)
+        console.log('✅ CONDITIONS MET - Auto-loading most recent revision:', mostRecentRevision.id)
+        autoLoadedQuoteRef.current = props.selectedClientQuote
+
+        // Use a delay to ensure the previous operations complete
+        if (loadTimeoutRef.current) {
+          clearTimeout(loadTimeoutRef.current)
+        }
+        loadTimeoutRef.current = setTimeout(() => {
+          console.log('🚀 EXECUTING auto-load of revision:', mostRecentRevision.id)
+          loadQuoteRevisionRef.current(mostRecentRevision.id)
+        }, 300) // Reduced delay for better responsiveness
+      }
+    } else if (props.quoteRevisions.length > 0 && props.currentLoadedRevisionId) {
+      console.log('ℹ️ Revision already loaded, no need for auto-selection')
+    } else if (props.quoteRevisions.length === 0) {
+      console.log('❌ No revisions available for auto-selection')
+    } else if (!props.selectedClientQuote) {
+      console.log('❌ No quote selected, skipping auto-selection')
+    } else {
+      console.log('❌ Auto-selection conditions not met:', {
+        hasRevisions: props.quoteRevisions.length > 0,
+        hasCurrentRevision: !!props.currentLoadedRevisionId,
+        hasSelectedQuote: !!props.selectedClientQuote
+      })
+    }
+  }, [props.quoteRevisions, props.currentLoadedRevisionId, props.selectedClientQuote]) // Use full array to ensure effect triggers
+
+  // Cleanup timeout on unmount
+  React.useEffect(() => {
+    return () => {
+      if (loadTimeoutRef.current) {
+        clearTimeout(loadTimeoutRef.current)
       }
     }
-  }, [props.quoteRevisions, props.currentLoadedRevisionId, props.loadQuoteRevision])
+  }, [])
 
   const {
     formData,
