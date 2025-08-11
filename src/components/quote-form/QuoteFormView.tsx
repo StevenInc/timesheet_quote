@@ -80,6 +80,18 @@ export const QuoteFormView: React.FC<Props> = (props) => {
     }
   }, [props.selectedClientQuote, props.loadQuoteRevisions])
 
+  // Automatically load the most recent revision when revisions are loaded
+  React.useEffect(() => {
+    if (props.quoteRevisions.length > 0 && !props.currentLoadedRevisionId) {
+      // Get the most recent revision (first in the list since they're ordered by revision number descending)
+      const mostRecentRevision = props.quoteRevisions[0]
+      if (mostRecentRevision) {
+        console.log('Automatically loading most recent revision:', mostRecentRevision.id)
+        props.loadQuoteRevision(mostRecentRevision.id)
+      }
+    }
+  }, [props.quoteRevisions, props.currentLoadedRevisionId, props.loadQuoteRevision])
+
   const {
     formData,
     paymentScheduleTotal,

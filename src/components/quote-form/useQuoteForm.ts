@@ -1065,7 +1065,7 @@ export const useQuoteForm = () => {
     closeViewQuoteModal()
   }, [availableClients])
 
-  const loadQuoteRevisions = React.useCallback(async (quoteId: string) => {
+    const loadQuoteRevisions = React.useCallback(async (quoteId: string) => {
     if (!quoteId) {
       setQuoteRevisions([])
       return
