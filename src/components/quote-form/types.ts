@@ -20,6 +20,7 @@ export interface QuoteRevision {
   expiresOn?: string
   taxRate: number
   isTaxEnabled: boolean
+  title: string
   notes: string
   isRecurring: boolean
   billingPeriod?: 'monthly' | 'quarterly' | 'yearly' | 'one-time'
@@ -55,6 +56,7 @@ export interface QuoteFormData {
   subtotal: number
   tax: number
   total: number
+  title: string
   notes: string
   legalTerms: string
   clientComments: string
@@ -104,6 +106,7 @@ export interface DatabaseQuoteRevision {
   expires_on: string
   tax_rate: number
   is_tax_enabled: boolean
+  title: string
   notes: string
   is_recurring: boolean
   billing_period: string
@@ -145,6 +148,7 @@ export interface ClientQuote {
   updatedAt: string
   latestRevisionNumber: number
   totalRevisions: number
+  title: string
   notes: string
   lastUpdated: string
 }

@@ -20,6 +20,7 @@ export const useQuoteForm = () => {
     subtotal: 0,
     tax: 0,
     total: 0,
+    title: '',
     notes: '',
     legalTerms: '',
     clientComments: '',
@@ -245,6 +246,7 @@ export const useQuoteForm = () => {
             expires: latestRevision.expires_on || '2025-07-08',
             taxRate: latestRevision.tax_rate || 0.08,
             isTaxEnabled: latestRevision.is_tax_enabled || false,
+            title: latestRevision.title || '',
             notes: latestRevision.notes || '',
             isRecurring: latestRevision.is_recurring || false,
             billingPeriod: latestRevision.billing_period || '',
@@ -279,6 +281,7 @@ export const useQuoteForm = () => {
     setIsLoadingClientQuotes(true)
     try {
       // Get all non-archived quotes for the specified client with their latest revision notes and dates
+      console.log('Loading client quotes for client ID:', clientId)
       const { data: quotes, error } = await supabase
         .from('quotes')
         .select(`
@@ -287,7 +290,7 @@ export const useQuoteForm = () => {
           status,
           created_at,
           updated_at,
-          quote_revisions(id, revision_number, notes, updated_at)
+          quote_revisions(id, revision_number, title, notes, updated_at)
         `)
         .eq('client_id', clientId)
         .eq('archived', false)
@@ -297,11 +300,16 @@ export const useQuoteForm = () => {
 
       if (quotes && quotes.length > 0) {
         console.log('Loaded client quotes for client ID:', clientId, quotes)
+        console.log('Sample quote structure:', quotes[0])
+        console.log('Sample quote revisions:', quotes[0]?.quote_revisions)
 
         const clientQuoteItems = quotes.map((quote) => {
           const revisions = quote.quote_revisions || []
           const latestRevision = Math.max(...revisions.map(r => r.revision_number), 0)
           const latestRevisionData = revisions.find(r => r.revision_number === latestRevision)
+
+          // Debug logging to see what data we're getting
+          console.log('Quote:', quote.quote_number, 'Latest revision data:', latestRevisionData)
 
           return {
             id: quote.id,
@@ -311,6 +319,7 @@ export const useQuoteForm = () => {
             updatedAt: new Date(quote.updated_at).toLocaleDateString(),
             latestRevisionNumber: latestRevision,
             totalRevisions: revisions.length,
+            title: latestRevisionData?.title || '',
             notes: latestRevisionData?.notes || '',
             lastUpdated: latestRevisionData?.updated_at ?
               new Date(latestRevisionData.updated_at).toLocaleDateString() :
@@ -471,6 +480,7 @@ export const useQuoteForm = () => {
       subtotal: 0,
       tax: 0,
       total: 0,
+      title: '',
       notes: '',
       legalTerms: '',
       clientComments: '',
@@ -1133,18 +1143,19 @@ export const useQuoteForm = () => {
               setCurrentLoadedRevisionId(mostRecentRevision.id)
               setCurrentLoadedQuoteId(revision.quotes.id)
 
-              // Update form data with the loaded revision
-              const newFormData = {
-                quoteNumber: revision.quotes.quote_number,
-                clientName: revision.quotes.clients?.name || '',
-                clientEmail: revision.quotes.clients?.email || '',
-                expires: revision.expires_on || '2025-07-08',
-                taxRate: revision.tax_rate || 0.08,
-                isTaxEnabled: revision.is_tax_enabled || false,
-                notes: revision.notes || '',
-                isRecurring: revision.is_recurring || false,
-                billingPeriod: revision.billing_period || '',
-                recurringAmount: revision.recurring_amount || 0,
+                      // Update form data with the loaded revision
+        const newFormData = {
+          quoteNumber: revision.quotes.quote_number,
+          clientName: revision.quotes.clients?.name || '',
+          clientEmail: revision.quotes.clients?.email || '',
+          expires: revision.expires_on || '2025-07-08',
+          taxRate: revision.tax_rate || 0.08,
+          isTaxEnabled: revision.is_tax_enabled || false,
+          title: revision.title || '',
+          notes: revision.notes || '',
+          isRecurring: revision.is_recurring || false,
+          billingPeriod: revision.billing_period || '',
+          recurringAmount: revision.recurring_amount || 0,
                 items: revision.quote_items?.map((item: DatabaseQuoteItem) => ({
                   id: item.id,
                   description: item.description || '',
@@ -1220,7 +1231,7 @@ export const useQuoteForm = () => {
       // Update the revision with the title
       const { error: updateError } = await supabase
         .from('quote_revisions')
-        .update({ notes: title })
+        .update({ title: title })
         .eq('id', pendingRevisionId)
 
       if (updateError) throw updateError
@@ -1490,6 +1501,7 @@ export const useQuoteForm = () => {
           expires: revision.expires_on || '2025-07-08',
           taxRate: revision.tax_rate || 0.08,
           isTaxEnabled: revision.is_tax_enabled || false,
+          title: revision.title || '',
           notes: revision.notes || '',
           isRecurring: revision.is_recurring || false,
           billingPeriod: revision.billing_period || '',
@@ -1941,11 +1953,6 @@ export const useQuoteForm = () => {
 
       console.log('✅ Setting success message...')
       setSaveMessage({ type: 'success', text: 'Quote sent to client successfully!' })
-
-      // Play success sound
-      console.log('🔊 Playing success sound...')
-      const audio = new Audio('data:audio/wav;base64,UklGRnoGAABXQVZFZm10IBAAAAABAAEAQB8AAEAfAAABAAgAZGF0YQoGAACBhYqFbF1fdJivrJBhNjVgodDbq2EcBj+a2/LDciUFLIHO8tiJNwgZaLvt559NEAxQp+PwtmMcBjiR1/LMeSwFJHfH8N2QQAoUXrTp66hVFApGn+DyvmwhBSuBzvLZiTYIG2m98OScTgwOUarm7blmGgU7k9n1unEiBC13yO/eizEIHWq+8+OWT')
-      audio.play().catch(() => {}) // Ignore errors if audio fails
 
     } catch (error) {
       console.error('❌ Error sending quote to client:', error)

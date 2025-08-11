@@ -575,13 +575,18 @@ export const QuoteFormView: React.FC<Props> = (props) => {
                               {quote.status}
                             </span>
                           </td>
-                          <td className="notes-cell" title={quote.notes || 'No notes'}>
-                            {quote.notes ?
-                              (quote.notes.length > 30 ?
-                                `${quote.notes.substring(0, 30)}...` :
-                                quote.notes
+                          <td className="notes-cell" title={quote.title || quote.notes || 'No title'}>
+                            {quote.title ?
+                              (quote.title.length > 30 ?
+                                `${quote.title.substring(0, 30)}...` :
+                                quote.title
                               ) :
-                              'No notes'
+                              quote.notes ?
+                                (quote.notes.length > 30 ?
+                                  `${quote.notes.substring(0, 30)}...` :
+                                  quote.notes
+                                ) :
+                                'No title'
                             }
                           </td>
                           <td>{quote.lastUpdated}</td>
@@ -637,7 +642,7 @@ export const QuoteFormView: React.FC<Props> = (props) => {
                               {quoteRevisions.indexOf(revision) === 0 ? 'CURRENT' : revision.status}
                             </span>
                           </td>
-                          <td>{revision.notes || '-'}</td>
+                          <td>{revision.title || revision.notes || '-'}</td>
                           <td>{new Date(revision.created_at).toLocaleDateString()}</td>
                           <td>{new Date(revision.updated_at).toLocaleDateString()}</td>
                           <td>
