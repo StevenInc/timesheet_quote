@@ -54,6 +54,10 @@ const QuoteForm: React.FC = () => {
     isLoadingAvailableClients,
     selectedClientId,
     handleClientSelection,
+    isTitleModalOpen,
+    openTitleModal,
+    closeTitleModal,
+    submitTitleAndCompleteSave,
   } = useQuoteForm()
 
   const [isTaxModalOpen, setIsTaxModalOpen] = useState(false)
@@ -143,6 +147,10 @@ const QuoteForm: React.FC = () => {
       availableClients={availableClients}
       selectedClientId={selectedClientId}
       handleClientSelection={handleClientSelection}
+      isTitleModalOpen={isTitleModalOpen}
+      openTitleModal={openTitleModal}
+      closeTitleModal={closeTitleModal}
+      submitTitleAndCompleteSave={submitTitleAndCompleteSave}
     />
   )
 }

@@ -63,6 +63,12 @@ export const useQuoteForm = () => {
   const [isLoadingAvailableClients, setIsLoadingAvailableClients] = useState(false)
   const [selectedClientId, setSelectedClientId] = useState<string>('')
 
+  // Title modal state
+  const [isTitleModalOpen, setIsTitleModalOpen] = useState(false)
+  const [pendingQuoteData, setPendingQuoteData] = useState<QuoteFormData | null>(null)
+  const [pendingQuoteId, setPendingQuoteId] = useState<string | null>(null)
+  const [pendingRevisionId, setPendingRevisionId] = useState<string | null>(null)
+
   // Load next quote number when component mounts
   useEffect(() => {
     loadNextQuoteNumber()
@@ -959,10 +965,8 @@ export const useQuoteForm = () => {
         selectedHistoryVersion: newHistoryItem.id
       }))
 
-      setSaveMessage({ type: 'success', text: 'Quote saved successfully!' })
-
-      // Reload the quote history to include the new quote
-      await loadQuoteHistory(quoteId)
+      // Show title modal instead of immediately completing the save
+      openTitleModal(dataToSave, quoteId, revisionId)
 
       return { quoteId, success: true }
 
@@ -1042,6 +1046,58 @@ export const useQuoteForm = () => {
     // setSelectedClientId('')
     // setAvailableClients([])
   }, [])
+
+  // Title modal functions
+  const openTitleModal = React.useCallback((quoteData: QuoteFormData, quoteId: string, revisionId: string) => {
+    setPendingQuoteData(quoteData)
+    setPendingQuoteId(quoteId)
+    setPendingRevisionId(revisionId)
+    setIsTitleModalOpen(true)
+  }, [])
+
+  const closeTitleModal = React.useCallback(() => {
+    setIsTitleModalOpen(false)
+    setPendingQuoteData(null)
+    setPendingQuoteId(null)
+    setPendingRevisionId(null)
+  }, [])
+
+  const submitTitleAndCompleteSave = React.useCallback(async (title: string) => {
+    if (!pendingQuoteData || !pendingQuoteId || !pendingRevisionId) {
+      console.error('Missing pending data for title submission')
+      return
+    }
+
+    try {
+      // Update the revision with the title
+      const { error: updateError } = await supabase
+        .from('quote_revisions')
+        .update({ notes: title })
+        .eq('id', pendingRevisionId)
+
+      if (updateError) throw updateError
+
+      // Close the modal
+      closeTitleModal()
+
+      // Set success message
+      setSaveMessage({ type: 'success', text: 'Quote saved successfully!' })
+
+      // Refresh the quote revisions list
+      if (currentLoadedQuoteId) {
+        await loadQuoteRevisions(currentLoadedQuoteId)
+      }
+
+      // Refresh client quotes if we're viewing a client
+      if (selectedClientId) {
+        await loadClientQuotes(selectedClientId)
+      }
+
+    } catch (error) {
+      console.error('Error updating revision with title:', error)
+      setSaveMessage({ type: 'error', text: `Error saving title: ${error instanceof Error ? error.message : 'Unknown error'}` })
+    }
+  }, [pendingQuoteData, pendingQuoteId, pendingRevisionId, currentLoadedQuoteId, selectedClientId])
 
   const loadAvailableClients = async () => {
     setIsLoadingAvailableClients(true)
@@ -1342,5 +1398,10 @@ export const useQuoteForm = () => {
     // Utility functions
     clearLoadedRevisionState,
     resetForm,
+    // Title Modal
+    isTitleModalOpen,
+    openTitleModal,
+    closeTitleModal,
+    submitTitleAndCompleteSave,
   }
 }

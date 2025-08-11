@@ -70,6 +70,11 @@ interface Props {
   availableClients: { id: string; name: string; email: string }[]
   selectedClientId: string
   handleClientSelection: (clientId: string) => void
+  // title modal
+  isTitleModalOpen: boolean
+  openTitleModal: (quoteData: QuoteFormData, quoteId: string, revisionId: string) => void
+  closeTitleModal: () => void
+  submitTitleAndCompleteSave: (title: string) => void
 }
 
 export const QuoteFormView: React.FC<Props> = (props) => {
@@ -733,6 +738,51 @@ export const QuoteFormView: React.FC<Props> = (props) => {
             <div className="modal-actions">
               <button type="button" className="btn btn-secondary" onClick={closeViewQuoteModal}>
                 Cancel
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Title Modal */}
+      {props.isTitleModalOpen && (
+        <div className="modal-overlay" role="dialog" aria-modal="true" aria-label="Enter quote title">
+          <div className="modal">
+            <h3>Enter Quote Title</h3>
+            <div className="form-group">
+              <label htmlFor="quoteTitle">Title</label>
+              <input
+                id="quoteTitle"
+                type="text"
+                maxLength={100}
+                placeholder="Enter a short title for this quote revision (max 100 characters)"
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter') {
+                    e.preventDefault()
+                    const title = (e.target as HTMLInputElement).value.trim()
+                    if (title) {
+                      props.submitTitleAndCompleteSave(title)
+                    }
+                  }
+                }}
+              />
+              <small className="form-help">This title will be saved with the quote revision</small>
+            </div>
+            <div className="modal-actions">
+              <button type="button" className="btn btn-secondary" onClick={props.closeTitleModal}>
+                Cancel
+              </button>
+              <button
+                type="button"
+                className="btn btn-primary"
+                onClick={() => {
+                  const title = (document.getElementById('quoteTitle') as HTMLInputElement)?.value.trim()
+                  if (title) {
+                    props.submitTitleAndCompleteSave(title)
+                  }
+                }}
+              >
+                Save Title
               </button>
             </div>
           </div>
