@@ -1,0 +1,7 @@
+---
+description: "general rules for Cursor to follow"
+globs:
+alwaysApply: true
+---
+
+Stay focused on one task at a time. I want you to ask to proceed when you add additional features.

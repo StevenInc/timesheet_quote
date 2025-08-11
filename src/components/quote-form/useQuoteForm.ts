@@ -694,9 +694,21 @@ export const useQuoteForm = () => {
           revisionId = newRevision.id
           console.log('Created new revision with ID:', revisionId)
 
+          // Set success message for new revision creation
+          setSaveMessage({ type: 'success', text: `New revision v${nextRevisionNumber} created successfully!` })
+
           // Clear the loaded revision tracking since we're now working with a new revision
           setCurrentLoadedRevisionId(null)
           setCurrentLoadedQuoteId(null)
+
+          // Refresh the quote revisions list to show the new revision
+          await loadQuoteRevisions(quoteId)
+
+          // Update the form to show we're working with a new revision
+          setFormData(prev => ({
+            ...prev,
+            quoteNumber: `${prev.quoteNumber}-v${nextRevisionNumber}`
+          }))
         } else {
           // Regular update of existing quote - update the first revision
           console.log('Updating existing quote...')
@@ -789,6 +801,9 @@ export const useQuoteForm = () => {
 
           revisionId = existingRevision.id
           console.log('Using existing revision ID:', revisionId)
+
+          // Refresh the quote revisions list to show any updates
+          await loadQuoteRevisions(quoteId)
         }
       } else {
         // Quote doesn't exist - create a new one
@@ -850,6 +865,20 @@ export const useQuoteForm = () => {
         }
 
         revisionId = quoteRevision.id
+
+        // For new quotes, we need to refresh the client quotes list if we're currently viewing a client
+        if (selectedClientQuote) {
+          // Get the client ID from the current selected quote to refresh the client quotes
+          const { data: currentQuote } = await supabase
+            .from('quotes')
+            .select('client_id')
+            .eq('id', selectedClientQuote)
+            .single()
+
+          if (currentQuote?.client_id) {
+            await loadClientQuotes(currentQuote.client_id)
+          }
+        }
       }
 
       // At this point, revisionId is set for both new and existing quotes
