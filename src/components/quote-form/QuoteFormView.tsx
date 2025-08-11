@@ -621,7 +621,6 @@ export const QuoteFormView: React.FC<Props> = (props) => {
                         <th>Version</th>
                         <th>Status</th>
                         <th>Title</th>
-                        <th>Created</th>
                         <th>Updated</th>
                         <th>Archive</th>
                       </tr>
@@ -652,7 +651,6 @@ export const QuoteFormView: React.FC<Props> = (props) => {
                             </span>
                           </td>
                           <td>{revision.title || revision.notes || '-'}</td>
-                          <td>{new Date(revision.created_at).toLocaleDateString()}</td>
                           <td>{new Date(revision.updated_at).toLocaleDateString()}</td>
                           <td>
                             <i
