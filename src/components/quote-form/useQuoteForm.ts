@@ -1073,6 +1073,140 @@ export const useQuoteForm = () => {
     setPendingRevisionId(null)
   }, [])
 
+  const refreshCurrentView = React.useCallback(async () => {
+    console.log('Refreshing current view...')
+
+    try {
+      // Refresh quote revisions if we have a selected quote
+      if (selectedClientQuote) {
+        console.log('Refreshing quote revisions for selected quote:', selectedClientQuote)
+
+        // Force refresh by clearing state first
+        console.log('Force refresh requested, clearing current revision ID')
+        setCurrentLoadedRevisionId(null)
+        setCurrentLoadedQuoteId(null)
+
+        // Get the latest revisions directly from the database
+        console.log('Force refresh completed, manually triggering auto-selection')
+        const { data: latestRevisions } = await supabase
+          .from('quote_revisions')
+          .select('*')
+          .eq('quote_id', selectedClientQuote)
+          .eq('archived', false)
+          .order('revision_number', { ascending: false })
+
+        if (latestRevisions && latestRevisions.length > 0) {
+          console.log('Setting quoteRevisions state with', latestRevisions.length, 'revisions')
+          setQuoteRevisions(latestRevisions)
+
+          const mostRecentRevision = latestRevisions[0]
+          console.log('Manually loading most recent revision:', mostRecentRevision.id)
+
+          // Load the revision data directly without calling loadQuoteRevision
+          try {
+            console.log('Loading quote revision:', mostRecentRevision.id)
+
+            const { data: revision, error } = await supabase
+              .from('quote_revisions')
+              .select(`
+                *,
+                quotes!inner(
+                  id,
+                  quote_number,
+                  clients(name, email)
+                ),
+                quote_items(*),
+                payment_terms(*),
+                legal_terms(*),
+                client_comments(*)
+              `)
+              .eq('id', mostRecentRevision.id)
+              .single()
+
+            if (error) throw error
+
+            if (revision) {
+              console.log('Loaded quote revision:', revision)
+
+              // Track which revision and quote are currently loaded
+              setCurrentLoadedRevisionId(mostRecentRevision.id)
+              setCurrentLoadedQuoteId(revision.quotes.id)
+
+              // Update form data with the loaded revision
+              const newFormData = {
+                quoteNumber: revision.quotes.quote_number,
+                clientName: revision.quotes.clients?.name || '',
+                clientEmail: revision.quotes.clients?.email || '',
+                expires: revision.expires_on || '2025-07-08',
+                taxRate: revision.tax_rate || 0.08,
+                isTaxEnabled: revision.is_tax_enabled || false,
+                notes: revision.notes || '',
+                isRecurring: revision.is_recurring || false,
+                billingPeriod: revision.billing_period || '',
+                recurringAmount: revision.recurring_amount || 0,
+                items: revision.quote_items?.map((item: DatabaseQuoteItem) => ({
+                  id: item.id,
+                  description: item.description || '',
+                  quantity: item.quantity || 1,
+                  unitPrice: item.unit_price || 0,
+                  total: item.total || 0
+                })) || [{ id: '1', description: '', quantity: 1, unitPrice: 0, total: 0 }],
+                paymentSchedule: revision.payment_terms?.map((term: DatabasePaymentTerm) => ({
+                  id: term.id,
+                  percentage: term.percentage || 100,
+                  description: term.description || ''
+                })) || [{ id: 'ps-1', percentage: 100, description: 'net 30 days' }],
+                legalTerms: revision.legal_terms?.[0]?.terms || '',
+                clientComments: revision.client_comments?.[0]?.comment || ''
+              }
+
+              // Recalculate totals
+              const items = newFormData.items
+              const { subtotal, tax, total } = recalc(items, newFormData.isTaxEnabled, newFormData.taxRate)
+
+              console.log('Updating form data with new revision data')
+              // Update form data in one batch
+              setFormData(prev => ({
+                ...prev,
+                ...newFormData,
+                subtotal,
+                tax,
+                total
+              }))
+            }
+          } catch (error) {
+            console.error('Error loading quote revision:', error)
+          }
+        }
+      }
+
+      // Refresh client quotes if we have a selected client
+      if (selectedClientId) {
+        console.log('Refreshing client quotes for selected client:', selectedClientId)
+        await loadClientQuotes(selectedClientId)
+      }
+
+      // Also refresh client quotes if we have a selected client quote but no selected client
+      if (selectedClientQuote && !selectedClientId) {
+        console.log('Getting client ID from selected quote to refresh client quotes')
+        const { data: quoteData } = await supabase
+          .from('quotes')
+          .select('client_id')
+          .eq('id', selectedClientQuote)
+          .single()
+
+        if (quoteData?.client_id) {
+          console.log('Refreshing client quotes for client:', quoteData.client_id)
+          await loadClientQuotes(quoteData.client_id)
+        }
+      }
+
+      console.log('Current view refresh completed')
+    } catch (error) {
+      console.error('Error refreshing current view:', error)
+    }
+  }, [selectedClientQuote, selectedClientId, loadClientQuotes, recalc])
+
   const submitTitleAndCompleteSave = React.useCallback(async (title: string) => {
     if (!pendingQuoteData || !pendingQuoteId || !pendingRevisionId) {
       console.error('Missing pending data for title submission')
@@ -1080,6 +1214,8 @@ export const useQuoteForm = () => {
     }
 
     try {
+      console.log('Updating revision with title:', title)
+
       // Update the revision with the title
       const { error: updateError } = await supabase
         .from('quote_revisions')
@@ -1088,27 +1224,23 @@ export const useQuoteForm = () => {
 
       if (updateError) throw updateError
 
+      console.log('Revision updated successfully, closing modal')
       // Close the modal
       closeTitleModal()
 
       // Set success message
       setSaveMessage({ type: 'success', text: 'Quote saved successfully!' })
 
-      // Refresh the quote revisions list
-      if (currentLoadedQuoteId) {
-        await loadQuoteRevisions(currentLoadedQuoteId)
-      }
+      // Refresh the current view to show updated data
+      await refreshCurrentView()
 
-      // Refresh client quotes if we're viewing a client
-      if (selectedClientId) {
-        await loadClientQuotes(selectedClientId)
-      }
+      console.log('All refresh operations completed')
 
     } catch (error) {
       console.error('Error updating revision with title:', error)
       setSaveMessage({ type: 'error', text: `Error saving title: ${error instanceof Error ? error.message : 'Unknown error'}` })
     }
-  }, [pendingQuoteData, pendingQuoteId, pendingRevisionId, currentLoadedQuoteId, selectedClientId])
+  }, [pendingQuoteData, pendingQuoteId, pendingRevisionId, refreshCurrentView])
 
   const loadAvailableClients = async () => {
     setIsLoadingAvailableClients(true)
@@ -1162,9 +1294,9 @@ export const useQuoteForm = () => {
     closeViewQuoteModal()
   }, [availableClients])
 
-    const loadQuoteRevisions = React.useCallback(async (quoteId: string) => {
+    const loadQuoteRevisions = React.useCallback(async (quoteId: string, forceRefresh: boolean = false) => {
     console.log('=== LOAD_QUOTE_REVISIONS CALLED ===')
-    console.log('loadQuoteRevisions called with quoteId:', quoteId)
+    console.log('loadQuoteRevisions called with quoteId:', quoteId, 'forceRefresh:', forceRefresh)
 
     if (!quoteId) {
       console.log('❌ No quoteId provided, clearing revisions')
@@ -1172,10 +1304,18 @@ export const useQuoteForm = () => {
       return
     }
 
-    // Prevent loading revisions for the same quote multiple times
-    if (currentLoadedQuoteId === quoteId && quoteRevisions.length > 0) {
+    // Prevent loading revisions for the same quote multiple times, UNLESS forceRefresh is true
+    if (!forceRefresh && currentLoadedQuoteId === quoteId && quoteRevisions.length > 0) {
       console.log('⚠️ Revisions already loaded for quote, skipping:', quoteId)
       return
+    }
+
+    // If forcing refresh, clear the current revision ID so auto-selection can work
+    if (forceRefresh) {
+      console.log('🔄 Force refresh requested, clearing current revision ID')
+      setCurrentLoadedRevisionId(null)
+      // Also clear the current loaded quote ID to ensure fresh data
+      setCurrentLoadedQuoteId(null)
     }
 
     console.log('📥 Loading quote revisions for quote:', quoteId)
@@ -1206,7 +1346,7 @@ export const useQuoteForm = () => {
       setIsLoadingQuoteRevisions(false)
       console.log('🏁 Finished loading quote revisions for quote:', quoteId)
     }
-  }, [currentLoadedQuoteId])
+  }, [currentLoadedQuoteId, quoteRevisions.length, setCurrentLoadedRevisionId, setQuoteRevisions, setIsLoadingQuoteRevisions])
 
     const archiveQuoteRevision = React.useCallback(async (revisionId: string) => {
     try {
@@ -1454,5 +1594,6 @@ export const useQuoteForm = () => {
     openTitleModal,
     closeTitleModal,
     submitTitleAndCompleteSave,
+    refreshCurrentView,
   }
 }
