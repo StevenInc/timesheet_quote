@@ -810,6 +810,23 @@ export const QuoteFormView: React.FC<Props> = (props) => {
               </div>
               <small className="form-help">Type to search existing clients or enter a new client name</small>
             </div>
+            <div className="form-group">
+              <label htmlFor="newClientEmailInput">Client Email</label>
+              <input
+                id="newClientEmailInput"
+                type="email"
+                value={newQuoteData.clientEmail}
+                onChange={(e) => updateNewQuoteData('clientEmail', e.target.value)}
+                placeholder="client@company.com"
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter') {
+                    e.preventDefault()
+                    createNewQuote()
+                  }
+                }}
+              />
+              <small className="form-help">Enter the client's email address</small>
+            </div>
             <div className="modal-actions">
               <button type="button" className="btn btn-secondary" onClick={closeNewQuoteModal} disabled={isCreatingQuote}>
                 Cancel

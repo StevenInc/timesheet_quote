@@ -84,6 +84,16 @@ const QuoteForm: React.FC = () => {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
+
+    // Validate client email if provided
+    if (formData.clientEmail && formData.clientEmail.trim()) {
+      const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
+      if (!emailRegex.test(formData.clientEmail.trim())) {
+        alert('Please enter a valid email address for the client.')
+        return
+      }
+    }
+
     try {
       const saved = await saveQuote()
       console.log('Saved quote:', saved)

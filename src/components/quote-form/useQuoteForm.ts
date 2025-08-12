@@ -12,6 +12,12 @@ export const useQuoteForm = () => {
     return thirtyDaysFromNow.toISOString().split('T')[0] // Format as YYYY-MM-DD
   }
 
+  // Helper function to validate email format
+  const isValidEmail = (email: string): boolean => {
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
+    return emailRegex.test(email)
+  }
+
   const [formData, setFormData] = useState<QuoteFormData>({
     owner: '',
     clientName: '',
@@ -72,7 +78,8 @@ export const useQuoteForm = () => {
   const [isNewQuoteModalOpen, setIsNewQuoteModalOpen] = useState(false)
   const [newQuoteData, setNewQuoteData] = useState<NewQuoteModalData>({
     quoteNumber: '',
-    clientName: ''
+    clientName: '',
+    clientEmail: ''
   })
   const [clientSuggestions, setClientSuggestions] = useState<string[]>([])
   const [isLoadingClients, setIsLoadingClients] = useState(false)
@@ -92,6 +99,7 @@ export const useQuoteForm = () => {
 
   // Load next quote number when component mounts
   useEffect(() => {
+    console.log('Component mounted, initial newQuoteData:', newQuoteData)
     loadNextQuoteNumber()
   }, [])
 
@@ -173,6 +181,7 @@ export const useQuoteForm = () => {
   }
 
   const loadNextQuoteNumber = async () => {
+    console.log('loadNextQuoteNumber called, current newQuoteData:', newQuoteData)
     try {
       // Get all quote numbers to determine the next available one
       const { data: quoteNumbers, error } = await supabase
@@ -198,12 +207,17 @@ export const useQuoteForm = () => {
         quoteNumber: nextQuoteNumber
       }))
 
-      setNewQuoteData(prev => ({
-        ...prev,
-        quoteNumber: nextQuoteNumber
-      }))
+      setNewQuoteData(prev => {
+        const newData = {
+          ...prev,
+          quoteNumber: nextQuoteNumber
+        }
+        console.log('loadNextQuoteNumber: updating newQuoteData from', prev, 'to', newData)
+        return newData
+      })
 
       console.log('Next available quote number:', nextQuoteNumber)
+      console.log('loadNextQuoteNumber completed successfully')
     } catch (error) {
       console.error('Error loading next quote number:', error)
       // Set default quote number on error
@@ -212,10 +226,15 @@ export const useQuoteForm = () => {
         ...prev,
         quoteNumber: defaultNumber
       }))
-      setNewQuoteData(prev => ({
-        ...prev,
-        quoteNumber: defaultNumber
-      }))
+      setNewQuoteData(prev => {
+        const newData = {
+          ...prev,
+          quoteNumber: defaultNumber
+        }
+        console.log('loadNextQuoteNumber error case: updating newQuoteData from', prev, 'to', newData)
+        return newData
+      })
+      console.log('loadNextQuoteNumber completed with error')
     }
   }
 
@@ -384,15 +403,22 @@ export const useQuoteForm = () => {
   // New Quote Modal Functions
   const openNewQuoteModal = React.useCallback(async () => {
     // Always get a fresh, unique quote number when opening the modal
+    console.log('Opening new quote modal, current newQuoteData:', newQuoteData)
+    console.log('About to call loadNextQuoteNumber...')
     await loadNextQuoteNumber()
+    console.log('After loading next quote number, newQuoteData:', newQuoteData)
+    console.log('Setting modal to open...')
     setIsNewQuoteModalOpen(true)
-  }, [])
+    console.log('Modal should now be open')
+  }, [newQuoteData])
 
   const closeNewQuoteModal = React.useCallback(() => {
+    console.log('Closing new quote modal, current newQuoteData:', newQuoteData)
     setIsNewQuoteModalOpen(false)
-    setNewQuoteData({ quoteNumber: '', clientName: '' })
+    setNewQuoteData({ quoteNumber: '', clientName: '', clientEmail: '' })
+    console.log('Reset newQuoteData to empty values')
     setClientSuggestions([])
-  }, [])
+  }, [newQuoteData])
 
   const searchClients = async (searchTerm: string) => {
     if (searchTerm.length < 2) {
@@ -421,13 +447,22 @@ export const useQuoteForm = () => {
   }
 
   const updateNewQuoteData = (field: keyof NewQuoteModalData, value: string) => {
-    setNewQuoteData(prev => ({ ...prev, [field]: value }))
+    console.log('updateNewQuoteData called with field:', field, 'value:', value)
+    setNewQuoteData(prev => {
+      const newData = { ...prev, [field]: value }
+      console.log('New quote data after update:', newData)
+      return newData
+    })
   }
 
   const createNewQuote = async () => {
     setIsCreatingQuote(true)
     try {
       console.log('Creating new quote with data:', newQuoteData)
+      console.log('Form data before save:', formData)
+      console.log('Email from modal:', newQuoteData.clientEmail)
+      console.log('Email type:', typeof newQuoteData.clientEmail)
+      console.log('Email length:', newQuoteData.clientEmail?.length)
 
       // Validate required fields
       if (!newQuoteData.quoteNumber?.trim()) {
@@ -437,20 +472,32 @@ export const useQuoteForm = () => {
         throw new Error('Client name is required')
       }
 
+      // Validate client email if provided
+      if (newQuoteData.clientEmail && newQuoteData.clientEmail.trim()) {
+        const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
+        if (!emailRegex.test(newQuoteData.clientEmail.trim())) {
+          throw new Error('Please enter a valid email address for the client.')
+        }
+      }
+
       // Clear any loaded revision state
       clearLoadedRevisionState()
 
       // Create the quote using the existing saveQuote function
-      const result = await saveQuote({
+      const dataToPass = {
         ...formData,
         quoteNumber: newQuoteData.quoteNumber,
         clientName: newQuoteData.clientName,
-        clientEmail: '',
+        clientEmail: newQuoteData.clientEmail || '',
         items: [{ id: '1', description: '', quantity: 1, unitPrice: 0, total: 0 }],
         subtotal: 0,
         tax: 0,
         total: 0
-      }, false) // Don't open title modal for new quotes
+      }
+      console.log('Data being passed to saveQuote:', dataToPass)
+      console.log('Client email being passed:', dataToPass.clientEmail)
+
+      const result = await saveQuote(dataToPass, false) // Don't open title modal for new quotes
 
       if (result.success) {
         console.log('New quote created successfully:', result.quoteId)
@@ -462,7 +509,7 @@ export const useQuoteForm = () => {
           ...prev,
           quoteNumber: newQuoteData.quoteNumber,
           clientName: newQuoteData.clientName,
-          clientEmail: '',
+          clientEmail: newQuoteData.clientEmail || '',
           expires: getDefaultExpirationDate(), // Set fresh expiration date
           items: [{ id: '1', description: '', quantity: 1, unitPrice: 0, total: 0 }],
           subtotal: 0,
@@ -628,12 +675,20 @@ export const useQuoteForm = () => {
         throw new Error('At least one quote item is required')
       }
 
-      // First, create or get the client
+      // First, create or get the client (SAVEQUOTE FUNCTION)
       let clientId = null
+      console.log('About to process client creation...')
+      console.log('Client name from dataToSave:', dataToSave.clientName)
+      console.log('Client email from dataToSave:', dataToSave.clientEmail)
+      console.log('Client email type:', typeof dataToSave.clientEmail)
+      console.log('Client email length:', dataToSave.clientEmail?.length)
+      console.log('Client email trimmed:', dataToSave.clientEmail?.trim())
+      console.log('Will create client:', !!(dataToSave.clientName || dataToSave.clientEmail))
+
       if (dataToSave.clientName || dataToSave.clientEmail) {
         console.log('Processing client:', { name: dataToSave.clientName, email: dataToSave.clientEmail })
 
-        // Try to find existing client by name first
+        // Try to find existing client by name first (SAVEQUOTE FUNCTION)
         const { data: existingClients, error: searchError } = await supabase
           .from('clients')
           .select('id')
@@ -649,8 +704,26 @@ export const useQuoteForm = () => {
           console.log('Found existing client with ID:', clientId)
         } else {
           console.log('Creating new client...')
-          // Create new client - ensure we have a valid email
-          const clientEmail = dataToSave.clientEmail || `${dataToSave.clientName.toLowerCase().replace(/\s+/g, '.')}@example.com`
+          // Create new client - ensure we have a valid email (SAVEQUOTE FUNCTION)
+          console.log('Raw client email before trim:', dataToSave.clientEmail)
+          console.log('Client email after trim:', dataToSave.clientEmail?.trim())
+          console.log('Fallback email:', `${dataToSave.clientName.toLowerCase().replace(/\s+/g, '.')}@example.com`)
+
+          // Better email validation - check if email is actually provided and valid
+          const providedEmail = dataToSave.clientEmail?.trim()
+          const clientEmail = providedEmail && providedEmail.length > 0 && isValidEmail(providedEmail)
+            ? providedEmail
+            : `${dataToSave.clientName.toLowerCase().replace(/\s+/g, '.')}@example.com`
+
+          if (clientEmail !== providedEmail) {
+            console.log('⚠️ Using fallback email because provided email was invalid or empty')
+            console.log('Provided email:', JSON.stringify(providedEmail))
+            console.log('Fallback email:', clientEmail)
+          }
+
+          console.log('Final client email to use:', clientEmail)
+          console.log('Creating client with email:', clientEmail, 'from form data:', dataToSave.clientEmail)
+
           const { data: newClient, error: createError } = await supabase
             .from('clients')
             .insert({
@@ -1628,10 +1701,18 @@ export const useQuoteForm = () => {
 
       // First, create or get the client
       let clientId = null
+      console.log('About to process client creation in saveQuoteForEmail...')
+      console.log('Client name from dataToSave:', dataToSave.clientName)
+      console.log('Client email from dataToSave:', dataToSave.clientEmail)
+      console.log('Client email type:', typeof dataToSave.clientEmail)
+      console.log('Client email length:', dataToSave.clientEmail?.length)
+      console.log('Client email trimmed:', dataToSave.clientEmail?.trim())
+      console.log('Will create client:', !!(dataToSave.clientName || dataToSave.clientEmail))
+
       if (dataToSave.clientName || dataToSave.clientEmail) {
         console.log('Processing client:', { name: dataToSave.clientName, email: dataToSave.clientEmail })
 
-        // Try to find existing client by name first
+        // Try to find existing client by name first (SAVEQUOTEFOREMAIL FUNCTION)
         const { data: existingClients, error: searchError } = await supabase
           .from('clients')
           .select('id')
@@ -1647,8 +1728,26 @@ export const useQuoteForm = () => {
           console.log('Found existing client with ID:', clientId)
         } else {
           console.log('Creating new client...')
-          // Create new client - ensure we have a valid email
-          const clientEmail = dataToSave.clientEmail || `${dataToSave.clientName.toLowerCase().replace(/\s+/g, '.')}@example.com`
+          // Create new client - ensure we have a valid email (SAVEQUOTEFOREMAIL FUNCTION)
+          console.log('Raw client email before trim:', dataToSave.clientEmail)
+          console.log('Client email after trim:', dataToSave.clientEmail?.trim())
+          console.log('Fallback email:', `${dataToSave.clientName.toLowerCase().replace(/\s+/g, '.')}@example.com`)
+
+          // Better email validation - check if email is actually provided and valid
+          const providedEmail = dataToSave.clientEmail?.trim()
+          const clientEmail = providedEmail && providedEmail.length > 0 && isValidEmail(providedEmail)
+            ? providedEmail
+            : `${dataToSave.clientName.toLowerCase().replace(/\s+/g, '.')}@example.com`
+
+          if (clientEmail !== providedEmail) {
+            console.log('⚠️ Using fallback email because provided email was invalid or empty')
+            console.log('Provided email:', JSON.stringify(providedEmail))
+            console.log('Fallback email:', clientEmail)
+          }
+
+          console.log('Final client email to use:', clientEmail)
+          console.log('Creating client with email:', clientEmail, 'from form data:', dataToSave.clientEmail)
+
           const { data: newClient, error: createError } = await supabase
             .from('clients')
             .insert({
