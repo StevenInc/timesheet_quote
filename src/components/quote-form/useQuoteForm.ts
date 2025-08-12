@@ -1,7 +1,7 @@
 import React, { useMemo, useState, useEffect } from 'react'
 import type { QuoteFormData, QuoteItem, PaymentTermItem, NewQuoteModalData, QuoteHistory, DatabaseQuote, DatabaseQuoteRevision, DatabaseQuoteItem, DatabasePaymentTerm, ClientQuote, DatabaseClient } from './types'
 import { supabase } from '../../lib/supabaseClient'
-import EmailService from '../../lib/emailService'
+import { EmailService } from '../../lib/emailService'
 
 export const useQuoteForm = () => {
   // Helper function to get default expiration date (30 days from today)

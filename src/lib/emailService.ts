@@ -1,4 +1,6 @@
-interface EmailData {
+import { supabase } from './supabaseClient'
+
+export interface EmailData {
   quoteId: string
   clientEmail: string
   clientName: string
@@ -11,8 +13,6 @@ interface EmailData {
 export class EmailService {
   private static instance: EmailService
 
-  private constructor() {}
-
   static getInstance(): EmailService {
     if (!EmailService.instance) {
       EmailService.instance = new EmailService()
@@ -21,53 +21,28 @@ export class EmailService {
   }
 
   async sendQuoteEmail(emailData: EmailData): Promise<void> {
-    console.log('🚀 EmailService.sendQuoteEmail called with:', emailData)
+    try {
+      console.log('📧 Sending quote email via Supabase Edge Function...')
 
-    // For now, we'll use a mock implementation
-    // In production, this would integrate with a real email service like:
-    // - SendGrid
-    // - Mailgun
-    // - AWS SES
-    // - Or Supabase's built-in email functionality
+      // Call the Supabase Edge Function
+      const { data, error } = await supabase.functions.invoke('resend-email', {
+        body: emailData
+      })
 
-    console.log('Sending quote email:', emailData)
+      if (error) {
+        console.error('❌ Edge function error:', error)
+        throw new Error(`Email sending failed: ${error.message}`)
+      }
 
-    // Simulate email sending delay
-    console.log('⏳ Simulating email sending delay...')
-    await new Promise(resolve => setTimeout(resolve, 1000))
+      if (!data?.success) {
+        throw new Error('Email function returned unsuccessful response')
+      }
 
-    // Mock success - in real implementation, this would return the email service response
-    console.log(`✅ Quote email sent successfully to ${emailData.clientEmail}`)
+      console.log('✅ Email queued successfully:', data)
 
-    // For development/testing, you could also:
-    // 1. Open the user's default email client with a pre-filled email
-    // 2. Show a success message
-    // 3. Log the email details for debugging
-  }
-
-  // Alternative implementation that opens the user's default email client
-  async openEmailClient(emailData: EmailData): Promise<void> {
-    const subject = `Quote ${emailData.quoteNumber} - ${emailData.clientName}`
-    const body = `Dear ${emailData.clientName},
-
-Thank you for your interest in our services. Please find attached our quote ${emailData.quoteNumber}.
-
-Quote Details:
-- Quote Number: ${emailData.quoteNumber}
-- Total Amount: $${emailData.total.toFixed(2)}
-- Expires: ${emailData.expires}
-- View Online: ${emailData.quoteUrl}
-
-Please review the quote and let us know if you have any questions.
-
-Best regards,
-Your Company Name`
-
-    const mailtoLink = `mailto:${emailData.clientEmail}?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`
-
-    // Open the user's default email client
-    window.open(mailtoLink, '_blank')
+    } catch (error) {
+      console.error('❌ Email service error:', error)
+      throw error
+    }
   }
 }
-
-export default EmailService

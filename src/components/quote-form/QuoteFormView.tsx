@@ -442,16 +442,7 @@ export const QuoteFormView: React.FC<Props> = (props) => {
                   />
                 </div>
               </div>
-              <div className="form-group">
-                <label htmlFor="paymentTerms">Payment Terms</label>
-                <input
-                  type="text"
-                  id="paymentTerms"
-                  value={formData.paymentTerms}
-                  onChange={(e) => handleInputChange('paymentTerms', e.target.value)}
-                  placeholder="Net 30"
-                />
-              </div>
+
 
               <div className="form-group">
                 <label>Payment Schedule</label>
