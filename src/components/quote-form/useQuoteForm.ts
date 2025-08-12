@@ -702,6 +702,85 @@ export const useQuoteForm = () => {
         if (existingClients && existingClients.length > 0) {
           clientId = existingClients[0].id
           console.log('Found existing client with ID:', clientId)
+
+          // Check if the client's email has changed and update it
+          const { data: currentClient, error: clientFetchError } = await supabase
+            .from('clients')
+            .select('email')
+            .eq('id', clientId)
+            .single()
+
+          if (clientFetchError) {
+            console.error('Error fetching current client data:', clientFetchError)
+          } else {
+            console.log('🔍 DEBUG: Checking if client email needs update...')
+            console.log('🔍 Current client email in DB:', currentClient?.email)
+            console.log('🔍 New email from form:', dataToSave.clientEmail)
+            console.log('🔍 Trimmed new email:', dataToSave.clientEmail?.trim())
+            console.log('🔍 Emails are different?', currentClient?.email !== dataToSave.clientEmail?.trim())
+            console.log('🔍 New email is empty?', dataToSave.clientEmail?.trim() === '')
+            console.log('🔍 New email is valid?', dataToSave.clientEmail?.trim() ? isValidEmail(dataToSave.clientEmail.trim()) : 'N/A')
+
+            // Test if we can actually update this client record
+            console.log('🧪 Testing database permissions...')
+            const testUpdate = await supabase
+              .from('clients')
+              .update({ updated_at: new Date().toISOString() })
+              .eq('id', clientId)
+              .select('id, updated_at')
+
+            if (testUpdate.error) {
+              console.error('❌ Database permission test failed:', testUpdate.error)
+              console.error('❌ This suggests an RLS policy or permission issue')
+            } else {
+              console.log('✅ Database permission test passed, can update client records')
+            }
+
+            if (currentClient &&
+                dataToSave.clientEmail?.trim() !== currentClient.email &&
+                (dataToSave.clientEmail?.trim() === '' || isValidEmail(dataToSave.clientEmail.trim()))) {
+              console.log('✅ Client email has changed, updating client record...')
+              console.log('📧 Old email:', currentClient.email)
+              console.log('📧 New email:', dataToSave.clientEmail?.trim() || '(empty)')
+
+              const { error: updateError } = await supabase
+                .from('clients')
+                .update({ email: dataToSave.clientEmail?.trim() || '' })
+                .eq('id', clientId)
+
+              if (updateError) {
+                console.error('❌ Error updating client email:', updateError)
+              } else {
+                console.log('✅ Successfully updated client email in database')
+
+                // Verify the update actually worked by fetching the client again
+                const { data: verifyClient, error: verifyError } = await supabase
+                  .from('clients')
+                  .select('email')
+                  .eq('id', clientId)
+                  .single()
+
+                if (verifyError) {
+                  console.error('❌ Error verifying client update:', verifyError)
+                } else {
+                  console.log('🔍 Verification - Client email in DB after update:', verifyClient?.email)
+                  console.log('🔍 Verification - Expected email:', dataToSave.clientEmail?.trim() || '(empty)')
+                  console.log('🔍 Verification - Update successful?', verifyClient?.email === (dataToSave.clientEmail?.trim() || ''))
+                }
+
+                // Show a brief success message for email update
+                const newEmail = dataToSave.clientEmail?.trim() || '(empty)'
+                setSaveMessage({ type: 'success', text: `Client email updated to ${newEmail}` })
+              }
+            } else {
+              console.log('ℹ️ No email update needed or email validation failed')
+              if (currentClient && dataToSave.clientEmail?.trim() === currentClient.email) {
+                console.log('ℹ️ Emails are identical, no update needed')
+              } else if (dataToSave.clientEmail?.trim() && !isValidEmail(dataToSave.clientEmail.trim())) {
+                console.log('⚠️ New email format is invalid, skipping update')
+              }
+            }
+          }
         } else {
           console.log('Creating new client...')
           // Create new client - ensure we have a valid email (SAVEQUOTE FUNCTION)
@@ -1726,6 +1805,85 @@ export const useQuoteForm = () => {
         if (existingClients && existingClients.length > 0) {
           clientId = existingClients[0].id
           console.log('Found existing client with ID:', clientId)
+
+          // Check if the client's email has changed and update it
+          const { data: currentClient, error: clientFetchError } = await supabase
+            .from('clients')
+            .select('email')
+            .eq('id', clientId)
+            .single()
+
+          if (clientFetchError) {
+            console.error('Error fetching current client data:', clientFetchError)
+          } else {
+            console.log('🔍 DEBUG: Checking if client email needs update...')
+            console.log('🔍 Current client email in DB:', currentClient?.email)
+            console.log('🔍 New email from form:', dataToSave.clientEmail)
+            console.log('🔍 Trimmed new email:', dataToSave.clientEmail?.trim())
+            console.log('🔍 Emails are different?', currentClient?.email !== dataToSave.clientEmail?.trim())
+            console.log('🔍 New email is empty?', dataToSave.clientEmail?.trim() === '')
+            console.log('🔍 New email is valid?', dataToSave.clientEmail?.trim() ? isValidEmail(dataToSave.clientEmail.trim()) : 'N/A')
+
+            // Test if we can actually update this client record
+            console.log('🧪 Testing database permissions...')
+            const testUpdate = await supabase
+              .from('clients')
+              .update({ updated_at: new Date().toISOString() })
+              .eq('id', clientId)
+              .select('id, updated_at')
+
+            if (testUpdate.error) {
+              console.error('❌ Database permission test failed:', testUpdate.error)
+              console.error('❌ This suggests an RLS policy or permission issue')
+            } else {
+              console.log('✅ Database permission test passed, can update client records')
+            }
+
+            if (currentClient &&
+                dataToSave.clientEmail?.trim() !== currentClient.email &&
+                (dataToSave.clientEmail?.trim() === '' || isValidEmail(dataToSave.clientEmail.trim()))) {
+              console.log('✅ Client email has changed, updating client record...')
+              console.log('📧 Old email:', currentClient.email)
+              console.log('📧 New email:', dataToSave.clientEmail?.trim() || '(empty)')
+
+              const { error: updateError } = await supabase
+                .from('clients')
+                .update({ email: dataToSave.clientEmail?.trim() || '' })
+                .eq('id', clientId)
+
+              if (updateError) {
+                console.error('❌ Error updating client email:', updateError)
+              } else {
+                console.log('✅ Successfully updated client email in database')
+
+                // Verify the update actually worked by fetching the client again
+                const { data: verifyClient, error: verifyError } = await supabase
+                  .from('clients')
+                  .select('email')
+                  .eq('id', clientId)
+                  .single()
+
+                if (verifyError) {
+                  console.error('❌ Error verifying client update:', verifyError)
+                } else {
+                  console.log('🔍 Verification - Client email in DB after update:', verifyClient?.email)
+                  console.log('🔍 Verification - Expected email:', dataToSave.clientEmail?.trim() || '(empty)')
+                  console.log('🔍 Verification - Update successful?', verifyClient?.email === (dataToSave.clientEmail?.trim() || ''))
+                }
+
+                // Show a brief success message for email update
+                const newEmail = dataToSave.clientEmail?.trim() || '(empty)'
+                setSaveMessage({ type: 'success', text: `Client email updated to ${newEmail}` })
+              }
+            } else {
+              console.log('ℹ️ No email update needed or email validation failed')
+              if (currentClient && dataToSave.clientEmail?.trim() === currentClient.email) {
+                console.log('ℹ️ Emails are identical, no update needed')
+              } else if (dataToSave.clientEmail?.trim() && !isValidEmail(dataToSave.clientEmail.trim())) {
+                console.log('⚠️ New email format is invalid, skipping update')
+              }
+            }
+          }
         } else {
           console.log('Creating new client...')
           // Create new client - ensure we have a valid email (SAVEQUOTEFOREMAIL FUNCTION)
