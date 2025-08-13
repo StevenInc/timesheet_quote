@@ -53,6 +53,7 @@ interface Props {
   isLoadingClientQuotes: boolean
   selectedClientQuote: string
   setSelectedClientQuote: (quoteId: string) => void
+  handleQuoteSelection: (quoteId: string) => Promise<void>
   // quote revisions
   quoteRevisions: DatabaseQuoteRevision[]
   isLoadingQuoteRevisions: boolean
@@ -71,6 +72,7 @@ interface Props {
   isLoadingAvailableClients: boolean
   availableClients: { id: string; name: string; email: string }[]
   selectedClientId: string
+  setSelectedClientId: (clientId: string) => void
   handleClientSelection: (clientId: string) => void
   // title modal
   isTitleModalOpen: boolean
@@ -253,6 +255,7 @@ export const QuoteFormView: React.FC<Props> = (props) => {
     isLoadingClientQuotes,
     selectedClientQuote,
     setSelectedClientQuote,
+    handleQuoteSelection,
     // quote revisions
     quoteRevisions,
     isLoadingQuoteRevisions,
@@ -264,6 +267,7 @@ export const QuoteFormView: React.FC<Props> = (props) => {
     availableClients,
     selectedClientId,
     handleClientSelection,
+    setSelectedClientId,
     // title modal
     // isTitleModalOpen,
     // openTitleModal,
@@ -527,83 +531,11 @@ export const QuoteFormView: React.FC<Props> = (props) => {
 
           <div className="form-column right-column">
             <div className="form-section">
-              <h3>
-                Company Quote History
-                {selectedClientId && availableClients.length > 0 && (
-                  <span className="company-name">
-                    {' '}- {availableClients.find(client => client.id === selectedClientId)?.name}
-                  </span>
-                )}
-              </h3>
-              <div className="history-table-container">
-                {isLoadingClientQuotes ? (
-                  <div className="history-loading">
-                    <div className="loading-spinner"></div>
-                    <span>Loading quotes...</span>
-                  </div>
-                ) : clientQuotes.length === 0 ? (
-                  <div className="history-empty">
-                    <span>No quotes found for selected company</span>
-                    <button
-                      type="button"
-                      className="btn btn-link"
-                      onClick={() => selectedClientId && loadClientQuotes(selectedClientId)}
-                    >
-                      Load Quotes
-                    </button>
-                  </div>
-                ) : (
-                  <table className="history-table">
-                    <thead>
-                      <tr>
-                        <th>Quote #</th>
-                        <th>Status</th>
-                        <th>Title</th>
-                        <th>Last Updated</th>
-                      </tr>
-                    </thead>
-                    <tbody>
-                      {clientQuotes.map((quote) => (
-                        <tr
-                          key={quote.id}
-                          className={`history-row ${selectedClientQuote === quote.id ? 'selected' : ''}`}
-                          onClick={() => setSelectedClientQuote(quote.id)}
-                        >
-                          <td>{quote.quoteNumber}</td>
-                          <td>
-                                                     <span className={`status-badge ${quote.status.toLowerCase()}`}>
-                           {quote.status === 'EMAILED' ? 'EMAIL SENT' : quote.status}
-                         </span>
-                          </td>
-                          <td className="notes-cell" title={quote.title || quote.notes || 'No title'}>
-                            {quote.title ?
-                              (quote.title.length > 30 ?
-                                `${quote.title.substring(0, 30)}...` :
-                                quote.title
-                              ) :
-                              quote.notes ?
-                                (quote.notes.length > 30 ?
-                                  `${quote.notes.substring(0, 30)}...` :
-                                  quote.notes
-                                ) :
-                                'No title'
-                            }
-                          </td>
-                          <td>{quote.lastUpdated}</td>
-                        </tr>
-                      ))}
-                    </tbody>
-                  </table>
-                )}
-              </div>
-            </div>
-
-            <div className="form-section">
               <h3>Quote Versions</h3>
               <div className="quote-versions-container">
                 {!selectedClientQuote ? (
                   <div className="quote-versions-empty">
-                    <span>Select a quote from Company Quote History to view its versions</span>
+                    <span>Click "View Quotes" to select a company and view quote versions</span>
                   </div>
                 ) : isLoadingQuoteRevisions ? (
                   <div className="quote-versions-loading">
@@ -644,7 +576,7 @@ export const QuoteFormView: React.FC<Props> = (props) => {
                               {(revision.sent_via_email || revision.status === 'EMAILED')
                                 ? 'EMAIL SENT'
                                 : (quoteRevisions.indexOf(revision) === 0
-                                    ? 'CURRENT'
+                                    ? 'current'
                                     : revision.status
                                   )
                               }
@@ -929,6 +861,139 @@ export const QuoteFormView: React.FC<Props> = (props) => {
                 }}
               >
                 Save Title
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Company Quote History Modal */}
+      {isViewQuoteModalOpen && (
+        <div className="modal-overlay" role="dialog" aria-modal="true" aria-label="Company Quote History">
+          <div className="modal company-quote-history-modal">
+            <h3>Company Quote History</h3>
+
+            {/* Client Selection Section */}
+            <div className="form-section">
+              <h4>Select Company</h4>
+              <div className="form-group">
+                <label>Available Companies</label>
+                <div className="clients-list-container">
+                  {isLoadingAvailableClients ? (
+                    <div className="clients-loading">
+                      <div className="loading-spinner"></div>
+                      <span>Loading companies...</span>
+                    </div>
+                  ) : availableClients.length === 0 ? (
+                    <div className="clients-empty">
+                      <span>No companies found in database</span>
+                    </div>
+                  ) : (
+                    <div className="clients-list">
+                      {availableClients.map((client) => (
+                        <div
+                          key={client.id}
+                          className={`client-item ${selectedClientId === client.id ? 'selected' : ''}`}
+                          onClick={() => handleClientSelection(client.id)}
+                        >
+                          <div className="client-name">{client.name}</div>
+                          <div className="client-email">{client.email}</div>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              </div>
+            </div>
+
+            {/* Company Quotes Section */}
+            {selectedClientId && (
+              <div className="form-section">
+                <div className="section-header-with-back">
+                  <h4>
+                    Quotes for {availableClients.find(client => client.id === selectedClientId)?.name}
+                  </h4>
+                  <button
+                    type="button"
+                    className="btn btn-link btn-small"
+                    onClick={() => {
+                      setSelectedClientId('')
+                      setSelectedClientQuote('')
+                    }}
+                  >
+                    ← Change Company
+                  </button>
+                </div>
+                <div className="history-table-container">
+                  {isLoadingClientQuotes ? (
+                    <div className="history-loading">
+                      <div className="loading-spinner"></div>
+                      <span>Loading quotes for {availableClients.find(client => client.id === selectedClientId)?.name}...</span>
+                    </div>
+                  ) : clientQuotes.length === 0 ? (
+                    <div className="history-empty">
+                      <span>No quotes found for {availableClients.find(client => client.id === selectedClientId)?.name}</span>
+                      <button
+                        type="button"
+                        className="btn btn-link"
+                        onClick={() => selectedClientId && loadClientQuotes(selectedClientId)}
+                      >
+                        Load Quotes
+                      </button>
+                    </div>
+                  ) : (
+                    <div className="quotes-selection-info">
+                      <p className="selection-help">Click on a quote below to load it into the form:</p>
+                      <table className="history-table">
+                        <thead>
+                          <tr>
+                            <th>Quote #</th>
+                            <th>Status</th>
+                            <th>Title</th>
+                            <th>Last Updated</th>
+                          </tr>
+                        </thead>
+                        <tbody>
+                          {clientQuotes.map((quote) => (
+                            <tr
+                              key={quote.id}
+                              className={`history-row ${selectedClientQuote === quote.id ? 'selected' : ''}`}
+                              onClick={() => handleQuoteSelection(quote.id)}
+                            >
+                              <td>{quote.quoteNumber}</td>
+                              <td>
+                                <span className={`status-badge ${quote.status.toLowerCase()}`}>
+                                  {quote.status === 'EMAILED' ? 'EMAIL SENT' : quote.status}
+                                </span>
+                              </td>
+                              <td className="notes-cell" title={quote.title || quote.notes || 'No title'}>
+                                {quote.title ?
+                                  (quote.title.length > 30 ?
+                                    `${quote.title.substring(0, 30)}...` :
+                                    quote.title
+                                  ) :
+                                  quote.notes ?
+                                    (quote.notes.length > 30 ?
+                                      `${quote.notes.substring(0, 30)}...` :
+                                      quote.notes
+                                    ) :
+                                    'No title'
+                                }
+                              </td>
+                              <td>{quote.lastUpdated}</td>
+                            </tr>
+                          ))}
+                        </tbody>
+                      </table>
+                    </div>
+                  )}
+                </div>
+              </div>
+            )}
+
+            <div className="modal-actions">
+              <button type="button" className="btn btn-secondary" onClick={closeViewQuoteModal}>
+                Cancel
               </button>
             </div>
           </div>

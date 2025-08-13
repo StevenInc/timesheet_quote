@@ -1605,13 +1605,20 @@ export const useQuoteForm = () => {
     // Load quotes for this client
     await loadClientQuotes(clientId)
 
-    // If there are existing quotes, load the most recent one to get additional context
-    if (clientQuotes.length > 0) {
-      await loadQuote(clientQuotes[0].id)
-    }
-
-    closeViewQuoteModal()
+    // Don't close the modal - let users see the quotes and select one
+    // closeViewQuoteModal()
   }, [availableClients])
+
+  const handleQuoteSelection = React.useCallback(async (quoteId: string) => {
+    // Set the selected quote
+    setSelectedClientQuote(quoteId)
+    
+    // Close the modal after quote selection
+    closeViewQuoteModal()
+    
+    // The quote revisions will be loaded automatically by the existing useEffect
+    // that watches selectedClientQuote changes
+  }, [])
 
     const loadQuoteRevisions = React.useCallback(async (quoteId: string, forceRefresh: boolean = false) => {
     console.log('=== LOAD_QUOTE_REVISIONS CALLED ===')
@@ -2490,6 +2497,7 @@ export const useQuoteForm = () => {
     setSelectedClientQuote,
     loadClientQuotes,
     handleClientSelection,
+    handleQuoteSelection,
     loadClientQuotesByName,
     // Quote Revisions
     quoteRevisions,

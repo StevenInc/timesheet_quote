@@ -831,6 +831,253 @@
   background-color: #e5e7eb;
 }
 
+/* Company Quote History Modal */
+.company-quote-history-modal {
+  max-width: 900px;
+  max-height: 80vh;
+  overflow-y: auto;
+}
+
+.company-quote-history-modal h3 {
+  margin-bottom: 1.5rem;
+  color: #1e293b;
+  font-size: 1.5rem;
+  font-weight: 600;
+}
+
+.company-quote-history-modal h4 {
+  margin: 1.5rem 0 1rem 0;
+  color: #374151;
+  font-size: 1.125rem;
+  font-weight: 500;
+  border-bottom: 1px solid #e5e7eb;
+  padding-bottom: 0.5rem;
+}
+
+.company-quote-history-modal .form-section {
+  margin-bottom: 2rem;
+}
+
+.company-quote-history-modal .form-section:last-of-type {
+  margin-bottom: 1rem;
+}
+
+.company-quote-history-modal .history-table-container {
+  margin-top: 1rem;
+  border: 1px solid #e5e7eb;
+  border-radius: 6px;
+  overflow: hidden;
+}
+
+.company-quote-history-modal .history-table {
+  margin: 0;
+}
+
+.company-quote-history-modal .history-table th {
+  background-color: #f8fafc;
+  font-weight: 600;
+  color: #374151;
+}
+
+.company-quote-history-modal .history-table td {
+  padding: 0.75rem 0.5rem;
+  border-bottom: 1px solid #f3f4f6;
+}
+
+.company-quote-history-modal .history-row:hover {
+  background-color: #f9fafb;
+}
+
+.company-quote-history-modal .history-row.selected {
+  background-color: #eff6ff;
+  border-left: 3px solid #3b82f6;
+}
+
+.company-quote-history-modal .history-row.selected td {
+  font-weight: 500;
+}
+
+.company-quote-history-modal .notes-cell {
+  max-width: 180px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  color: #6b7280;
+  font-style: italic;
+}
+
+.company-quote-history-modal .notes-cell:hover {
+  color: #374151;
+}
+
+.company-quote-history-modal .status-badge {
+  display: inline-block;
+  padding: 0.25rem 0.5rem;
+  border-radius: 4px;
+  font-size: 0.75rem;
+  font-weight: 500;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.company-quote-history-modal .status-badge.draft {
+  background-color: #f3f4f6;
+  color: #6b7280;
+}
+
+.company-quote-history-modal .status-badge.emailed {
+  background-color: #dbeafe;
+  color: #1e40af;
+}
+
+.company-quote-history-modal .status-badge.accepted {
+  background-color: #d1fae5;
+  color: #065f46;
+}
+
+.company-quote-history-modal .status-badge.rejected {
+  background-color: #fee2e2;
+  color: #991b1b;
+}
+
+.company-quote-history-modal .status-badge.expired {
+  background-color: #fef3c7;
+  color: #92400e;
+}
+
+.company-quote-history-modal .status-badge.paid {
+  background-color: #d1fae5;
+  color: #065f46;
+}
+
+.company-quote-history-modal .clients-list-container {
+  max-height: 200px;
+  overflow-y: auto;
+  border: 1px solid #e5e7eb;
+  border-radius: 6px;
+  background: white;
+}
+
+.company-quote-history-modal .clients-list {
+  display: flex;
+  flex-direction: column;
+}
+
+.company-quote-history-modal .client-item {
+  padding: 0.75rem 1rem;
+  border-bottom: 1px solid #f3f4f6;
+  cursor: pointer;
+  transition: background-color 0.15s ease;
+}
+
+.company-quote-history-modal .client-item:last-child {
+  border-bottom: none;
+}
+
+.company-quote-history-modal .client-item:hover {
+  background-color: #f9fafb;
+}
+
+.company-quote-history-modal .client-item.selected {
+  background-color: #eff6ff;
+  border-left: 3px solid #3b82f6;
+}
+
+.company-quote-history-modal .client-name {
+  font-weight: 500;
+  color: #1e293b;
+  margin-bottom: 0.25rem;
+}
+
+.company-quote-history-modal .client-email {
+  font-size: 0.875rem;
+  color: #6b7280;
+}
+
+.company-quote-history-modal .clients-loading,
+.company-quote-history-modal .clients-empty {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 2rem;
+  color: #6b7280;
+  text-align: center;
+}
+
+.company-quote-history-modal .clients-loading {
+  gap: 1rem;
+}
+
+.company-quote-history-modal .clients-empty {
+  gap: 0.5rem;
+}
+
+.company-quote-history-modal .btn-link {
+  background: none;
+  border: none;
+  color: #3b82f6;
+  text-decoration: underline;
+  cursor: pointer;
+  font-size: 0.875rem;
+  padding: 0.25rem 0;
+}
+
+.company-quote-history-modal .btn-link:hover {
+  color: #2563eb;
+}
+
+.company-quote-history-modal .btn-link:active {
+  color: #1d4ed8;
+}
+
+.company-quote-history-modal .quotes-selection-info {
+  margin-top: 1rem;
+}
+
+.company-quote-history-modal .selection-help {
+  margin: 0 0 1rem 0;
+  padding: 0.75rem;
+  background-color: #f0f9ff;
+  border: 1px solid #bae6fd;
+  border-radius: 6px;
+  color: #0c4a6e;
+  font-size: 0.875rem;
+  text-align: center;
+}
+
+.company-quote-history-modal .section-header-with-back {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 1rem;
+  border-bottom: 1px solid #e5e7eb;
+  padding-bottom: 0.5rem;
+}
+
+.company-quote-history-modal .section-header-with-back h4 {
+  margin: 0;
+  border-bottom: none;
+  padding-bottom: 0;
+}
+
+.company-quote-history-modal .btn-small {
+  font-size: 0.75rem;
+  padding: 0.25rem 0.5rem;
+  color: #6b7280;
+  text-decoration: none;
+  border: 1px solid #d1d5db;
+  border-radius: 4px;
+  background: white;
+  transition: all 0.15s ease;
+}
+
+.company-quote-history-modal .btn-small:hover {
+  color: #374151;
+  border-color: #9ca3af;
+  background: #f9fafb;
+}
+
 /* Payment schedule */
 .schedule-table {
   margin-top: 0.5rem;
