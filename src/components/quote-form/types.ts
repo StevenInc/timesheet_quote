@@ -66,6 +66,7 @@ export interface QuoteFormData {
   paymentSchedule: PaymentTermItem[]
   quoteHistory: QuoteHistory[]
   selectedHistoryVersion: string
+  sentViaEmail?: boolean
 }
 
 export interface NewQuoteModalData {

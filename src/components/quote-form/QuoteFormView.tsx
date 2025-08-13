@@ -77,6 +77,8 @@ interface Props {
   openTitleModal: (quoteData: QuoteFormData, quoteId: string, revisionId: string) => void
   closeTitleModal: () => void
   submitTitleAndCompleteSave: (title: string) => void
+  // Change tracking
+  hasUnsavedChanges: boolean
 }
 
 export const QuoteFormView: React.FC<Props> = (props) => {
@@ -262,6 +264,13 @@ export const QuoteFormView: React.FC<Props> = (props) => {
     availableClients,
     selectedClientId,
     handleClientSelection,
+    // title modal
+    isTitleModalOpen,
+    openTitleModal,
+    closeTitleModal,
+    submitTitleAndCompleteSave,
+    // change tracking
+    hasUnsavedChanges,
   } = props
 
   return (
@@ -704,7 +713,7 @@ export const QuoteFormView: React.FC<Props> = (props) => {
             <Save size={16} />
             {props.isSaving ? 'Saving...' : 'Save'}
           </button>
-          <button type="button" className="btn btn-primary" onClick={props.sendQuoteToClient} disabled={props.isSaving}>
+          <button type="button" className="btn btn-primary" onClick={props.sendQuoteToClient} disabled={props.isSaving || (hasUnsavedChanges && !formData.sentViaEmail)}>
             <Send size={16} />
             {props.isSaving ? 'Sending...' : 'Send to Client'}
           </button>

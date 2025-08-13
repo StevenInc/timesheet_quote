@@ -18,6 +18,30 @@ export const useQuoteForm = () => {
     return emailRegex.test(email)
   }
 
+  // Helper function to check if form data has changed from original
+  const checkFormChanges = (currentData: QuoteFormData, originalData: QuoteFormData | null): boolean => {
+    if (!originalData) return false
+
+    // Deep comparison of key fields that would affect the quote
+    return (
+      currentData.owner !== originalData.owner ||
+      currentData.clientName !== originalData.clientName ||
+      currentData.clientEmail !== originalData.clientEmail ||
+      currentData.expires !== originalData.expires ||
+      currentData.taxRate !== originalData.taxRate ||
+      currentData.isTaxEnabled !== originalData.isTaxEnabled ||
+      currentData.notes !== originalData.notes ||
+      currentData.legalTerms !== originalData.legalTerms ||
+      currentData.clientComments !== originalData.clientComments ||
+      currentData.isRecurring !== originalData.isRecurring ||
+      currentData.billingPeriod !== originalData.billingPeriod ||
+      currentData.recurringAmount !== originalData.recurringAmount ||
+      currentData.sentViaEmail !== originalData.sentViaEmail ||
+      JSON.stringify(currentData.items) !== JSON.stringify(originalData.items) ||
+      JSON.stringify(currentData.paymentSchedule) !== JSON.stringify(originalData.paymentSchedule)
+    )
+  }
+
   const [formData, setFormData] = useState<QuoteFormData>({
     owner: '',
     clientName: '',
@@ -46,6 +70,7 @@ export const useQuoteForm = () => {
     paymentSchedule: [
       { id: 'ps-1', percentage: 100, description: 'net 30 days' },
     ],
+    sentViaEmail: false
   })
 
   const [isSaving, setIsSaving] = useState(false)
@@ -96,6 +121,10 @@ export const useQuoteForm = () => {
   const [pendingQuoteData, setPendingQuoteData] = useState<QuoteFormData | null>(null)
   const [pendingQuoteId, setPendingQuoteId] = useState<string | null>(null)
   const [pendingRevisionId, setPendingRevisionId] = useState<string | null>(null)
+
+  // Track original form data to detect changes
+  const [originalFormData, setOriginalFormData] = useState<QuoteFormData | null>(null)
+  const [hasUnsavedChanges, setHasUnsavedChanges] = useState(false)
 
   // Load next quote number when component mounts
   useEffect(() => {
@@ -523,6 +552,28 @@ export const useQuoteForm = () => {
           recurringAmount: 0,
           paymentSchedule: [{ id: 'ps-1', percentage: 100, description: 'net 30 days' }]
         }))
+
+        // Reset change tracking for new quote
+        const newFormData = {
+          ...prev,
+          quoteNumber: newQuoteData.quoteNumber,
+          clientName: newQuoteData.clientName,
+          clientEmail: newQuoteData.clientEmail || '',
+          expires: getDefaultExpirationDate(),
+          items: [{ id: '1', description: '', quantity: 1, unitPrice: 0, total: 0 }],
+          subtotal: 0,
+          tax: 0,
+          total: 0,
+          notes: '',
+          legalTerms: '',
+          clientComments: '',
+          isRecurring: false,
+          billingPeriod: '',
+          recurringAmount: 0,
+          paymentSchedule: [{ id: 'ps-1', percentage: 100, description: 'net 30 days' }]
+        }
+        setOriginalFormData(newFormData)
+        setHasUnsavedChanges(false)
       }
     } catch (error) {
       console.error('Error creating new quote:', error)
@@ -549,7 +600,7 @@ export const useQuoteForm = () => {
   }
 
   const resetForm = () => {
-    setFormData({
+    const defaultFormData = {
       owner: '',
       clientName: '',
       clientEmail: '',
@@ -577,8 +628,15 @@ export const useQuoteForm = () => {
       paymentSchedule: [
         { id: 'ps-1', percentage: 100, description: 'net 30 days' },
       ],
-    })
+      sentViaEmail: false
+    }
+
+    setFormData(defaultFormData)
     clearLoadedRevisionState()
+
+    // Reset change tracking
+    setOriginalFormData(defaultFormData)
+    setHasUnsavedChanges(false)
   }
 
   const updateItem = (id: string, field: keyof QuoteItem, value: string | number) => {
@@ -595,7 +653,13 @@ export const useQuoteForm = () => {
 
     const { subtotal, tax, total } = recalc(updatedItems)
 
-    setFormData({ ...formData, items: updatedItems, subtotal, tax, total })
+    const newFormData = { ...formData, items: updatedItems, subtotal, tax, total }
+
+    // Check if this change creates unsaved changes
+    const hasChanges = checkFormChanges(newFormData, originalFormData)
+    setHasUnsavedChanges(hasChanges)
+
+    setFormData(newFormData)
   }
 
   const addItem = () => {
@@ -606,18 +670,38 @@ export const useQuoteForm = () => {
       unitPrice: 0,
       total: 0,
     }
-    setFormData({ ...formData, items: [...formData.items, newItem] })
+    const newFormData = { ...formData, items: [...formData.items, newItem] }
+
+    // Check if this change creates unsaved changes
+    const hasChanges = checkFormChanges(newFormData, originalFormData)
+    setHasUnsavedChanges(hasChanges)
+
+    setFormData(newFormData)
   }
 
   const removeItem = (id: string) => {
     if (formData.items.length <= 1) return
     const updatedItems = formData.items.filter((item) => item.id !== id)
     const { subtotal, tax, total } = recalc(updatedItems)
-    setFormData({ ...formData, items: updatedItems, subtotal, tax, total })
+    const newFormData = { ...formData, items: updatedItems, subtotal, tax, total }
+
+    // Check if this change creates unsaved changes
+    const hasChanges = checkFormChanges(newFormData, originalFormData)
+    setHasUnsavedChanges(hasChanges)
+
+    setFormData(newFormData)
   }
 
   const handleInputChange = (field: keyof QuoteFormData, value: string | number | boolean) => {
-    setFormData(prev => ({ ...prev, [field]: value }))
+    setFormData(prev => {
+      const newData = { ...prev, [field]: value }
+
+      // Check if this change creates unsaved changes
+      const hasChanges = checkFormChanges(newData, originalFormData)
+      setHasUnsavedChanges(hasChanges)
+
+      return newData
+    })
 
     // If client name changes, load their quotes
     if (field === 'clientName' && typeof value === 'string' && value.trim()) {
@@ -628,10 +712,23 @@ export const useQuoteForm = () => {
   const handleCheckboxChange = (field: keyof QuoteFormData, value: boolean) => {
     if (field === 'isTaxEnabled') {
       const { subtotal, tax, total } = recalc(formData.items, value, formData.taxRate)
-      setFormData({ ...formData, isTaxEnabled: value, subtotal, tax, total })
+      const newFormData = { ...formData, isTaxEnabled: value, subtotal, tax, total }
+
+      // Check if this change creates unsaved changes
+      const hasChanges = checkFormChanges(newFormData, originalFormData)
+      setHasUnsavedChanges(hasChanges)
+
+      setFormData(newFormData)
       return
     }
-    setFormData({ ...formData, [field]: value })
+
+    const newFormData = { ...formData, [field]: value }
+
+    // Check if this change creates unsaved changes
+    const hasChanges = checkFormChanges(newFormData, originalFormData)
+    setHasUnsavedChanges(hasChanges)
+
+    setFormData(newFormData)
   }
 
   // Payment schedule helpers
@@ -639,16 +736,34 @@ export const useQuoteForm = () => {
     const updated = formData.paymentSchedule.map((t) =>
       t.id === id ? { ...t, [field]: field === 'percentage' ? Number(value) : value } : t
     )
-    setFormData({ ...formData, paymentSchedule: updated })
+    const newFormData = { ...formData, paymentSchedule: updated }
+
+    // Check if this change creates unsaved changes
+    const hasChanges = checkFormChanges(newFormData, originalFormData)
+    setHasUnsavedChanges(hasChanges)
+
+    setFormData(newFormData)
   }
 
   const addPaymentTerm = () => {
     const newTerm: PaymentTermItem = { id: `ps-${Date.now()}`, percentage: 0, description: '' }
-    setFormData({ ...formData, paymentSchedule: [...formData.paymentSchedule, newTerm] })
+    const newFormData = { ...formData, paymentSchedule: [...formData.paymentSchedule, newTerm] }
+
+    // Check if this change creates unsaved changes
+    const hasChanges = checkFormChanges(newFormData, originalFormData)
+    setHasUnsavedChanges(hasChanges)
+
+    setFormData(newFormData)
   }
 
   const removePaymentTerm = (id: string) => {
-    setFormData({ ...formData, paymentSchedule: formData.paymentSchedule.filter((t) => t.id !== id) })
+    const newFormData = { ...formData, paymentSchedule: formData.paymentSchedule.filter((t) => t !== id) }
+
+    // Check if this change creates unsaved changes
+    const hasChanges = checkFormChanges(newFormData, originalFormData)
+    setHasUnsavedChanges(hasChanges)
+
+    setFormData(newFormData)
   }
 
   const paymentScheduleTotal = useMemo(
@@ -1182,6 +1297,10 @@ export const useQuoteForm = () => {
         openTitleModal(dataToSave, quoteId, revisionId)
       }
 
+      // Reset change tracking since quote was saved
+      setOriginalFormData(formData)
+      setHasUnsavedChanges(false)
+
       return { quoteId, success: true }
 
     } catch (error) {
@@ -1335,19 +1454,19 @@ export const useQuoteForm = () => {
               setCurrentLoadedRevisionId(mostRecentRevision.id)
               setCurrentLoadedQuoteId(revision.quotes.id)
 
-                      // Update form data with the loaded revision
-        const newFormData = {
-          quoteNumber: revision.quotes.quote_number,
-          clientName: revision.quotes.clients?.name || '',
-          clientEmail: revision.quotes.clients?.email || '',
-          expires: revision.expires_on || getDefaultExpirationDate(),
-          taxRate: revision.tax_rate || 0.08,
-          isTaxEnabled: revision.is_tax_enabled || false,
-          title: revision.title || '',
-          notes: revision.notes || '',
-          isRecurring: revision.is_recurring || false,
-          billingPeriod: revision.billing_period || '',
-          recurringAmount: revision.recurring_amount || 0,
+              // Update form data with the loaded revision
+              const newFormData = {
+                quoteNumber: revision.quotes.quote_number,
+                clientName: revision.quotes.clients?.name || '',
+                clientEmail: revision.quotes.clients?.email || '',
+                expires: revision.expires_on || getDefaultExpirationDate(),
+                taxRate: revision.tax_rate || 0.08,
+                isTaxEnabled: revision.is_tax_enabled || false,
+                title: revision.title || '',
+                notes: revision.notes || '',
+                isRecurring: revision.is_recurring || false,
+                billingPeriod: revision.billing_period || '',
+                recurringAmount: revision.recurring_amount || 0,
                 items: revision.quote_items?.map((item: DatabaseQuoteItem) => ({
                   id: item.id,
                   description: item.description || '',
@@ -1361,7 +1480,8 @@ export const useQuoteForm = () => {
                   description: term.description || ''
                 })) || [{ id: 'ps-1', percentage: 100, description: 'net 30 days' }],
                 legalTerms: revision.legal_terms?.[0]?.terms || '',
-                clientComments: revision.client_comments?.[0]?.comment || ''
+                clientComments: revision.client_comments?.[0]?.comment || '',
+                sentViaEmail: revision.sent_via_email || false
               }
 
               // Recalculate totals
@@ -1377,6 +1497,17 @@ export const useQuoteForm = () => {
                 tax,
                 total
               }))
+
+              // Set the original form data to track changes
+              const finalFormData = {
+                ...prev,
+                ...newFormData,
+                subtotal,
+                tax,
+                total
+              }
+              setOriginalFormData(finalFormData)
+              setHasUnsavedChanges(false)
             }
           } catch (error) {
             console.error('Error loading quote revision:', error)
@@ -1739,7 +1870,8 @@ export const useQuoteForm = () => {
             description: term.description || ''
           })) || [{ id: 'ps-1', percentage: 100, description: 'net 30 days' }],
           legalTerms: revision.legal_terms?.[0]?.terms || '',
-          clientComments: revision.client_comments?.[0]?.comment || ''
+          clientComments: revision.client_comments?.[0]?.comment || '',
+          sentViaEmail: revision.sent_via_email || false
         }
 
         // Recalculate totals
@@ -1755,6 +1887,17 @@ export const useQuoteForm = () => {
           tax,
           total
         }))
+
+        // Set the original form data to track changes
+        const finalFormData = {
+          ...prev,
+          ...newFormData,
+          subtotal,
+          tax,
+          total
+        }
+        setOriginalFormData(finalFormData)
+        setHasUnsavedChanges(false)
       }
     } catch (error) {
       console.error('Error loading quote revision:', error)
@@ -2277,6 +2420,16 @@ export const useQuoteForm = () => {
           console.warn('⚠️ Failed to update revision sent status:', revisionUpdateError)
         } else {
           console.log('✅ Marked revision as sent via email:', currentLoadedRevisionId)
+
+          // Update the form data to reflect that this revision has been sent
+          setFormData(prev => ({
+            ...prev,
+            sentViaEmail: true
+          }))
+
+          // Reset change tracking since the quote was just sent
+          setOriginalFormData(prev => prev ? { ...prev, sentViaEmail: true } : null)
+          setHasUnsavedChanges(false)
         }
       }
 
@@ -2372,5 +2525,7 @@ export const useQuoteForm = () => {
     closeTitleModal,
     submitTitleAndCompleteSave,
     refreshCurrentView,
+    // Change tracking
+    hasUnsavedChanges,
   }
 }

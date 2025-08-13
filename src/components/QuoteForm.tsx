@@ -59,6 +59,8 @@ const QuoteForm: React.FC = () => {
     openTitleModal,
     closeTitleModal,
     submitTitleAndCompleteSave,
+    // Change tracking
+    hasUnsavedChanges,
   } = useQuoteForm()
 
   const [isTaxModalOpen, setIsTaxModalOpen] = useState(false)
@@ -164,6 +166,7 @@ const QuoteForm: React.FC = () => {
       openTitleModal={openTitleModal}
       closeTitleModal={closeTitleModal}
       submitTitleAndCompleteSave={submitTitleAndCompleteSave}
+      hasUnsavedChanges={hasUnsavedChanges}
     />
   )
 }
