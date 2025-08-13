@@ -115,7 +115,6 @@ export interface DatabaseQuoteRevision {
   recurring_amount: number
   created_at: string
   updated_at: string
-  archived: boolean
   sent_via_email?: boolean
   sent_at?: string
   currentQuoteStatus?: string

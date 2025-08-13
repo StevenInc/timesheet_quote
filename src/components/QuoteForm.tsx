@@ -42,7 +42,6 @@ const QuoteForm: React.FC = () => {
     isLoadingQuoteRevisions,
     loadQuoteRevisions,
     loadQuoteRevision,
-    archiveQuoteRevision,
     currentLoadedRevisionId,
     currentLoadedQuoteId,
     clearLoadedRevisionState,
@@ -152,7 +151,6 @@ const QuoteForm: React.FC = () => {
       isLoadingQuoteRevisions={isLoadingQuoteRevisions}
       loadQuoteRevisions={loadQuoteRevisions}
       loadQuoteRevision={loadQuoteRevision}
-      archiveQuoteRevision={archiveQuoteRevision}
       currentLoadedRevisionId={currentLoadedRevisionId}
       currentLoadedQuoteId={currentLoadedQuoteId}
       clearLoadedRevisionState={clearLoadedRevisionState}

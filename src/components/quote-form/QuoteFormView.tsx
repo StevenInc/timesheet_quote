@@ -1,5 +1,5 @@
 import React from 'react'
-import { Trash2, Save, Send, Archive, Copy, Download, Plus, Eye } from 'lucide-react'
+import { Trash2, Save, Send, Copy, Download, Plus, Eye } from 'lucide-react'
 import '../QuoteForm.css'
 import type { QuoteFormData, QuoteItem, PaymentTermItem, NewQuoteModalData, ClientQuote, DatabaseQuoteRevision } from './types'
 
@@ -59,7 +59,6 @@ interface Props {
   isLoadingQuoteRevisions: boolean
   loadQuoteRevisions: (quoteId: string) => void
   loadQuoteRevision: (revisionId: string) => void
-  archiveQuoteRevision: (revisionId: string) => void
   // revision state tracking
   currentLoadedRevisionId: string | null
   currentLoadedQuoteId: string | null
@@ -259,7 +258,6 @@ export const QuoteFormView: React.FC<Props> = (props) => {
     // quote revisions
     quoteRevisions,
     isLoadingQuoteRevisions,
-    archiveQuoteRevision,
     isViewQuoteModalOpen,
     openViewQuoteModal,
     closeViewQuoteModal,
@@ -554,7 +552,6 @@ export const QuoteFormView: React.FC<Props> = (props) => {
                         <th>Status</th>
                         <th>Title</th>
                         <th>Updated</th>
-                        <th>Archive</th>
                       </tr>
                     </thead>
                     <tbody>
@@ -584,16 +581,6 @@ export const QuoteFormView: React.FC<Props> = (props) => {
                           </td>
                           <td>{revision.title || revision.notes || '-'}</td>
                           <td>{new Date(revision.updated_at).toLocaleDateString()}</td>
-                          <td>
-                            <i
-                              className="fa-solid fa-box-archive"
-                              onClick={(e) => {
-                                e.stopPropagation();
-                                archiveQuoteRevision(revision.id);
-                              }}
-                              style={{ cursor: 'pointer' }}
-                            ></i>
-                          </td>
                         </tr>
                       ))}
                     </tbody>
@@ -649,10 +636,7 @@ export const QuoteFormView: React.FC<Props> = (props) => {
             <Send size={16} />
             {props.isSaving ? 'Sending...' : 'Send to Client'}
           </button>
-          <button type="button" className="btn btn-secondary">
-            <Archive size={16} />
-            Archive
-          </button>
+
         </div>
       </form>
 

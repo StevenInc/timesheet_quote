@@ -349,7 +349,6 @@ export const useQuoteForm = () => {
           quote_revisions(id, revision_number, title, notes, updated_at, status, sent_via_email)
         `)
         .eq('client_id', clientId)
-        .eq('archived', false)
         .order('created_at', { ascending: false })
 
       if (error) throw error
@@ -1398,7 +1397,6 @@ export const useQuoteForm = () => {
           .from('quote_revisions')
           .select('*')
           .eq('quote_id', selectedClientQuote)
-          .eq('archived', false)
           .order('revision_number', { ascending: false })
 
         if (latestRevisions && latestRevisions.length > 0) {
@@ -1612,10 +1610,10 @@ export const useQuoteForm = () => {
   const handleQuoteSelection = React.useCallback(async (quoteId: string) => {
     // Set the selected quote
     setSelectedClientQuote(quoteId)
-    
+
     // Close the modal after quote selection
     closeViewQuoteModal()
-    
+
     // The quote revisions will be loaded automatically by the existing useEffect
     // that watches selectedClientQuote changes
   }, [])
@@ -1666,7 +1664,6 @@ export const useQuoteForm = () => {
         .from('quote_revisions')
         .select('*, sent_via_email, sent_at')
         .eq('quote_id', quoteId)
-        .eq('archived', false)
         .order('revision_number', { ascending: false })
 
       if (error) throw error
@@ -1702,83 +1699,7 @@ export const useQuoteForm = () => {
     }
   }, [currentLoadedQuoteId, quoteRevisions.length, setCurrentLoadedRevisionId, setQuoteRevisions, setIsLoadingQuoteRevisions])
 
-    const archiveQuoteRevision = React.useCallback(async (revisionId: string) => {
-    try {
-      console.log('Starting archive process for revision:', revisionId)
 
-      // Find the revision to archive
-      const revisionToArchive = quoteRevisions.find(r => r.id === revisionId)
-      if (!revisionToArchive) {
-        console.error('Revision not found:', revisionId)
-        return
-      }
-
-      console.log('Revision to archive:', revisionToArchive)
-
-      // Check if this is the CURRENT revision (first in the list)
-      const isCurrentRevision = quoteRevisions.indexOf(revisionToArchive) === 0
-      console.log('Is current revision:', isCurrentRevision)
-
-      // Archive the revision in the database
-      const { error: archiveError } = await supabase
-        .from('quote_revisions')
-        .update({ archived: true })
-        .eq('id', revisionId)
-
-      if (archiveError) throw archiveError
-
-      // Check if this was the last remaining revision for this quote
-      const remainingRevisions = quoteRevisions.filter(r => r.id !== revisionId)
-      if (remainingRevisions.length === 0) {
-        // This was the last revision - archive the base quote
-        console.log('Last revision archived - archiving base quote:', revisionToArchive.quote_id)
-
-        const { error: quoteArchiveError } = await supabase
-          .from('quotes')
-          .update({ archived: true })
-          .eq('id', revisionToArchive.quote_id)
-
-        if (quoteArchiveError) {
-          console.error('Error archiving base quote:', quoteArchiveError)
-          // Don't throw here - the revision was archived successfully
-        } else {
-          console.log('Base quote archived successfully')
-
-          // Remove the archived quote from the client quotes list
-          setClientQuotes(prev => prev.filter(quote => quote.id !== revisionToArchive.quote_id))
-
-          // If this was the currently selected quote, clear the selection
-          if (selectedClientQuote === revisionToArchive.quote_id) {
-            setSelectedClientQuote('')
-            setQuoteRevisions([])
-          }
-        }
-      } else {
-        // If this was the CURRENT revision, we don't need to update any database fields
-        // The "CURRENT" status is just a UI concept - the first non-archived revision will be shown as current
-        if (isCurrentRevision) {
-          console.log('Archived CURRENT revision - UI will automatically show next revision as current')
-        }
-
-        // Refresh the revisions list to show the updated state
-        if (currentLoadedQuoteId) {
-          await loadQuoteRevisions(currentLoadedQuoteId)
-        }
-      }
-
-      setSaveMessage({
-        type: 'success',
-        text: 'Revision archived successfully'
-      })
-
-    } catch (error) {
-      console.error('Error archiving revision:', error)
-      setSaveMessage({
-        type: 'error',
-        text: `Error archiving revision: ${error instanceof Error ? error.message : 'Unknown error'}`
-      })
-    }
-  }, [quoteRevisions, currentLoadedQuoteId, loadQuoteRevisions])
 
   const loadQuoteRevision = React.useCallback(async (revisionId: string) => {
     console.log('loadQuoteRevision called with revisionId:', revisionId, 'currentLoadedRevisionId:', currentLoadedRevisionId)
@@ -2504,7 +2425,6 @@ export const useQuoteForm = () => {
     isLoadingQuoteRevisions,
     loadQuoteRevisions,
     loadQuoteRevision,
-    archiveQuoteRevision,
     // Revision state tracking
     currentLoadedRevisionId,
     currentLoadedQuoteId,
