@@ -534,8 +534,8 @@ export const useQuoteForm = () => {
         closeNewQuoteModal()
 
         // Reset form data to defaults
-        setFormData(prev => ({
-          ...prev,
+        const newFormData = {
+          ...formData,
           quoteNumber: newQuoteData.quoteNumber,
           clientName: newQuoteData.clientName,
           clientEmail: newQuoteData.clientEmail || '',
@@ -551,27 +551,11 @@ export const useQuoteForm = () => {
           billingPeriod: '',
           recurringAmount: 0,
           paymentSchedule: [{ id: 'ps-1', percentage: 100, description: 'net 30 days' }]
-        }))
+        }
+
+        setFormData(newFormData)
 
         // Reset change tracking for new quote
-        const newFormData = {
-          ...prev,
-          quoteNumber: newQuoteData.quoteNumber,
-          clientName: newQuoteData.clientName,
-          clientEmail: newQuoteData.clientEmail || '',
-          expires: getDefaultExpirationDate(),
-          items: [{ id: '1', description: '', quantity: 1, unitPrice: 0, total: 0 }],
-          subtotal: 0,
-          tax: 0,
-          total: 0,
-          notes: '',
-          legalTerms: '',
-          clientComments: '',
-          isRecurring: false,
-          billingPeriod: '',
-          recurringAmount: 0,
-          paymentSchedule: [{ id: 'ps-1', percentage: 100, description: 'net 30 days' }]
-        }
         setOriginalFormData(newFormData)
         setHasUnsavedChanges(false)
       }
@@ -757,7 +741,7 @@ export const useQuoteForm = () => {
   }
 
   const removePaymentTerm = (id: string) => {
-    const newFormData = { ...formData, paymentSchedule: formData.paymentSchedule.filter((t) => t !== id) }
+    const newFormData = { ...formData, paymentSchedule: formData.paymentSchedule.filter((t) => t.id !== id) }
 
     // Check if this change creates unsaved changes
     const hasChanges = checkFormChanges(newFormData, originalFormData)
@@ -1500,7 +1484,7 @@ export const useQuoteForm = () => {
 
               // Set the original form data to track changes
               const finalFormData = {
-                ...prev,
+                ...formData,
                 ...newFormData,
                 subtotal,
                 tax,
@@ -1890,7 +1874,7 @@ export const useQuoteForm = () => {
 
         // Set the original form data to track changes
         const finalFormData = {
-          ...prev,
+          ...formData,
           ...newFormData,
           subtotal,
           tax,

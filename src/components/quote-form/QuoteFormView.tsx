@@ -265,10 +265,10 @@ export const QuoteFormView: React.FC<Props> = (props) => {
     selectedClientId,
     handleClientSelection,
     // title modal
-    isTitleModalOpen,
-    openTitleModal,
-    closeTitleModal,
-    submitTitleAndCompleteSave,
+    // isTitleModalOpen,
+    // openTitleModal,
+    // closeTitleModal,
+    // submitTitleAndCompleteSave,
     // change tracking
     hasUnsavedChanges,
   } = props
