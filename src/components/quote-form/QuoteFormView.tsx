@@ -328,7 +328,7 @@ export const QuoteFormView: React.FC<Props> = (props) => {
           <div className="form-column left-column">
             <div className="form-section">
               <div className="form-group">
-                <label htmlFor="owner">Owner</label>
+                <label htmlFor="owner">Sales Person / Owner</label>
                 <select id="owner" value={formData.owner} onChange={(e) => handleInputChange('owner', e.target.value)}>
                   <option value="">-- Select One --</option>
                   <option value="owner1">Owner 1</option>
