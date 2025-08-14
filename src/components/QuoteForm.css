@@ -1474,6 +1474,11 @@
   color: #1d4ed8;
 }
 
+.status-badge.viewed {
+  background-color: #fef3c7;
+  color: #92400e;
+}
+
 .status-badge.paid {
   background-color: #dcfce7;
   color: #166534;
@@ -1556,6 +1561,199 @@
 /* Quote Versions Table */
 .quote-versions-container {
   margin-top: 1rem;
+}
+
+/* Client Quote View Styles */
+.client-quote-container {
+  max-width: 800px;
+  margin: 0 auto;
+  padding: 2rem;
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen', 'Ubuntu', 'Cantarell', sans-serif;
+  background: white;
+  border-radius: 8px;
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+}
+
+.client-quote-container .quote-header {
+  text-align: center;
+  margin-bottom: 2rem;
+  padding-bottom: 1rem;
+  border-bottom: 2px solid #e5e7eb;
+}
+
+.client-quote-container .quote-header h1 {
+  font-size: 2rem;
+  color: #1f2937;
+  margin-bottom: 1rem;
+}
+
+.client-quote-container .client-info {
+  margin-bottom: 1rem;
+}
+
+.client-quote-container .client-info p {
+  margin: 0.25rem 0;
+  color: #6b7280;
+}
+
+.client-quote-container .quote-meta {
+  display: flex;
+  justify-content: center;
+  gap: 2rem;
+  flex-wrap: wrap;
+}
+
+.client-quote-container .quote-meta p {
+  margin: 0;
+  color: #6b7280;
+  font-size: 0.875rem;
+}
+
+.client-quote-container .quote-title {
+  text-align: center;
+  margin-bottom: 1.5rem;
+}
+
+.client-quote-container .quote-title h2 {
+  color: #374151;
+  font-size: 1.5rem;
+  margin: 0;
+}
+
+.client-quote-container .quote-notes {
+  background: #f9fafb;
+  padding: 1rem;
+  border-radius: 6px;
+  margin-bottom: 2rem;
+  border-left: 4px solid #3b82f6;
+}
+
+.client-quote-container .quote-notes p {
+  margin: 0;
+  color: #374151;
+}
+
+.client-quote-container .quote-items {
+  margin-bottom: 2rem;
+}
+
+.client-quote-container .quote-items h3 {
+  color: #1f2937;
+  margin-bottom: 1rem;
+  font-size: 1.25rem;
+}
+
+.client-quote-container .items-table {
+  width: 100%;
+  border-collapse: collapse;
+  margin-bottom: 1rem;
+}
+
+.client-quote-container .items-table th,
+.client-quote-container .items-table td {
+  padding: 0.75rem;
+  text-align: left;
+  border-bottom: 1px solid #e5e7eb;
+}
+
+.client-quote-container .items-table th {
+  background: #f9fafb;
+  font-weight: 600;
+  color: #374151;
+}
+
+.client-quote-container .items-table td {
+  color: #6b7280;
+}
+
+.client-quote-container .quote-summary {
+  background: #f9fafb;
+  padding: 1.5rem;
+  border-radius: 6px;
+  margin-bottom: 2rem;
+}
+
+.client-quote-container .summary-row {
+  display: flex;
+  justify-content: space-between;
+  margin-bottom: 0.5rem;
+  font-size: 1rem;
+}
+
+.client-quote-container .summary-row.total {
+  font-weight: 600;
+  font-size: 1.125rem;
+  color: #1f2937;
+  border-top: 1px solid #d1d5db;
+  padding-top: 0.5rem;
+  margin-top: 0.5rem;
+}
+
+.client-quote-container .payment-terms {
+  margin-bottom: 2rem;
+}
+
+.client-quote-container .payment-terms h3 {
+  color: #1f2937;
+  margin-bottom: 1rem;
+  font-size: 1.25rem;
+}
+
+.client-quote-container .payment-terms ul {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+}
+
+.client-quote-container .payment-terms li {
+  padding: 0.5rem 0;
+  border-bottom: 1px solid #e5e7eb;
+  color: #6b7280;
+}
+
+.client-quote-container .recurring-info {
+  background: #f0f9ff;
+  padding: 1rem;
+  border-radius: 6px;
+  margin-bottom: 2rem;
+  border-left: 4px solid #0ea5e9;
+}
+
+.client-quote-container .recurring-info h3 {
+  color: #0c4a6e;
+  margin: 0 0 0.5rem 0;
+  font-size: 1.125rem;
+}
+
+.client-quote-container .recurring-info p {
+  margin: 0;
+  color: #0c4a6e;
+}
+
+.client-quote-container .quote-footer {
+  text-align: center;
+  padding-top: 2rem;
+  border-top: 2px solid #e5e7eb;
+  color: #6b7280;
+}
+
+.client-quote-container .quote-footer p {
+  margin: 0.5rem 0;
+}
+
+.client-quote-container .loading,
+.client-quote-container .error {
+  text-align: center;
+  padding: 3rem;
+  font-size: 1.125rem;
+}
+
+.client-quote-container .loading {
+  color: #6b7280;
+}
+
+.client-quote-container .error {
+  color: #dc2626;
 }
 
 .quote-versions-empty {

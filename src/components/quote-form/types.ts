@@ -120,6 +120,7 @@ export interface DatabaseQuoteRevision {
   updated_at: string
   sent_via_email?: boolean
   sent_at?: string
+  viewed_at?: string
   currentQuoteStatus?: string
   quote_items?: DatabaseQuoteItem[]
   payment_terms?: DatabasePaymentTerm[]

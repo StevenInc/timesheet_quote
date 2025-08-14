@@ -3,6 +3,7 @@ import { Trash2, Save, Send, Copy, Download, Plus, Eye } from 'lucide-react'
 import '../QuoteForm.css'
 import type { QuoteFormData, QuoteItem, PaymentTermItem, NewQuoteModalData, ClientQuote, DatabaseQuoteRevision } from './types'
 
+
 interface Props {
   formData: QuoteFormData
   paymentScheduleTotal: number
@@ -88,6 +89,8 @@ export const QuoteFormView: React.FC<Props> = (props) => {
   const loadQuoteRevisionsRef = React.useRef(props.loadQuoteRevisions)
   const clearLoadedRevisionStateRef = React.useRef(props.clearLoadedRevisionState)
   const isProcessingRef = React.useRef<boolean>(false)
+
+
 
   // Update the refs when the functions change
   React.useEffect(() => {
@@ -303,6 +306,20 @@ export const QuoteFormView: React.FC<Props> = (props) => {
             <button type="button" className="btn btn-icon" onClick={downloadQuote}>
               <Download size={16} />
             </button>
+            {props.currentLoadedRevisionId && (
+              <button
+                type="button"
+                className="btn btn-icon"
+                onClick={() => {
+                  const clientUrl = `${window.location.origin}?revision=${props.currentLoadedRevisionId}`
+                  navigator.clipboard.writeText(clientUrl)
+                  alert('Client quote URL copied to clipboard!')
+                }}
+                title="Copy Client URL"
+              >
+                👤
+              </button>
+            )}
           </div>
         </div>
         <div className="header-right">
@@ -604,18 +621,31 @@ export const QuoteFormView: React.FC<Props> = (props) => {
                         >
                           <td>v{revision.revision_number}</td>
                           <td>
-                            <span
-                              className={`status-badge ${(revision.sent_via_email || revision.status === 'EMAILED') ? 'emailed' : (quoteRevisions.indexOf(revision) === 0 ? 'current' : revision.status.toLowerCase())}`}
-                              title={(revision.sent_via_email && revision.sent_at) ? `Sent on ${new Date(revision.sent_at).toLocaleDateString()}` : ''}
-                            >
-                              {(revision.sent_via_email || revision.status === 'EMAILED')
-                                ? 'EMAIL SENT'
-                                : (quoteRevisions.indexOf(revision) === 0
-                                    ? 'current'
-                                    : revision.status
-                                  )
+                            {(() => {
+                              // Priority: VIEWED > SENT > blank
+                              if (revision.viewed_at) {
+                                return (
+                                  <span
+                                    className="status-badge viewed"
+                                    title={`Viewed on ${new Date(revision.viewed_at).toLocaleDateString()}`}
+                                  >
+                                    VIEWED
+                                  </span>
+                                )
                               }
-                            </span>
+                              if (revision.sent_via_email || revision.status === 'EMAILED') {
+                                return (
+                                  <span
+                                    className="status-badge emailed"
+                                    title={revision.sent_at ? `Sent on ${new Date(revision.sent_at).toLocaleDateString()}` : ''}
+                                  >
+                                    SENT
+                                  </span>
+                                )
+                              }
+                              // Return blank if never emailed
+                              return null
+                            })()}
                           </td>
                           <td>
                             {(() => {
@@ -690,6 +720,8 @@ export const QuoteFormView: React.FC<Props> = (props) => {
             <Send size={16} />
             {props.isSaving ? 'Sending...' : 'Send to Client'}
           </button>
+
+
         </div>
       </form>
 
