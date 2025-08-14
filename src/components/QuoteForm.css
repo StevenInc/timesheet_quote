@@ -1084,6 +1084,12 @@
   line-height: 1;
 }
 
+.company-quote-history-modal .never-viewed {
+  color: #999;
+  font-style: italic;
+  font-size: 0.9em;
+}
+
 
 
 .company-quote-history-modal .sent-cell:hover .sent-date-badge,
@@ -1909,6 +1915,20 @@
 
 .quote-version-row.active-revision:hover {
   background-color: #bfdbfe;
+}
+
+/* Enhanced Sent/Viewed column styles */
+.sent-viewed-info {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+}
+
+.latest-viewed-info {
+  font-size: 0.75rem;
+  color: #6b7280;
+  font-style: italic;
+  margin-top: 0.125rem;
 }
 
 /* Revision indicator */

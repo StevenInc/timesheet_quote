@@ -372,10 +372,12 @@ export const useQuoteForm = () => {
 
       if (error) throw error
 
-      if (quotes && quotes.length > 0) {
-        console.log('Loaded client quotes for client ID:', clientId, quotes)
-        console.log('Sample quote structure:', quotes[0])
-        console.log('Sample quote revisions:', quotes[0]?.quote_revisions)
+              if (quotes && quotes.length > 0) {
+          console.log('Loaded client quotes for client ID:', clientId, quotes)
+          console.log('Sample quote structure:', quotes[0])
+          console.log('Sample quote revisions:', quotes[0]?.quote_revisions)
+          console.log('Raw database response for first quote:', JSON.stringify(quotes[0], null, 2))
+          console.log('Sample revision viewed_at fields:', quotes[0]?.quote_revisions?.map(r => ({ revision: r.revision_number, viewed_at: r.viewed_at, sent_at: r.sent_at, sent_via_email: r.sent_via_email })))
 
         const clientQuoteItems = quotes.map((quote) => {
           const revisions = quote.quote_revisions || []
@@ -409,9 +411,18 @@ export const useQuoteForm = () => {
 
           const mostPrimaryStatus = determineMostPrimaryStatus(revisions)
 
-          // Find the most recent sent and viewed information across all revisions
+                    // Find the most recent sent and viewed information across all revisions
           const sentRevisions = revisions.filter(r => r.sent_via_email === true && r.sent_at)
-          const viewedRevisions = revisions.filter(r => r.viewed_at)
+          const viewedRevisions = revisions.filter(r => r.viewed_at && r.viewed_at.trim() !== '')
+
+          // Debug logging for viewed revisions
+          console.log('Quote:', quote.quote_number, 'All revisions:', revisions)
+          console.log('Viewed revisions:', viewedRevisions)
+          console.log('Viewed revisions with viewed_at:', revisions.map(r => ({ revision: r.revision_number, viewed_at: r.viewed_at, viewed_at_type: typeof r.viewed_at })))
+          console.log('All revision viewed_at values:', revisions.map(r => ({ revision: r.revision_number, viewed_at: r.viewed_at, viewed_at_null: r.viewed_at === null, viewed_at_undefined: r.viewed_at === undefined })))
+          console.log('Sent revisions:', sentRevisions.map(r => ({ revision: r.revision_number, sent_at: r.sent_at, sent_via_email: r.sent_via_email })))
+          console.log('All revision sent_via_email values:', revisions.map(r => ({ revision: r.revision_number, sent_via_email: r.sent_via_email, sent_via_email_type: typeof r.sent_via_email, sent_via_email_truthy: !!r.sent_via_email })))
+          console.log('All revision sent_at values:', revisions.map(r => ({ revision: r.revision_number, sent_at: r.sent_at, sent_at_type: typeof r.sent_at, sent_at_truthy: !!r.sent_at })))
 
           const lastSentRevision = sentRevisions.length > 0
             ? sentRevisions.reduce((latest, current) =>
@@ -424,6 +435,11 @@ export const useQuoteForm = () => {
                 new Date(current.viewed_at!) > new Date(latest.viewed_at!) ? current : latest
               )
             : null
+
+          console.log('Last sent revision:', lastSentRevision)
+          console.log('Last viewed revision:', lastViewedRevision)
+          console.log('Last viewed revision number:', lastViewedRevision?.revision_number)
+          console.log('Last sent revision number:', lastSentRevision?.revision_number)
 
           return {
             id: quote.id,
@@ -461,8 +477,19 @@ export const useQuoteForm = () => {
                 year: 'numeric'
               }) : undefined,
             lastSentViaEmail: lastSentRevision ? true : false,
-            lastSentRevisionNumber: lastSentRevision?.revision_number
+            lastSentRevisionNumber: lastSentRevision?.revision_number,
+            lastViewedRevisionNumber: lastViewedRevision?.revision_number
           }
+
+          // Debug logging for final values
+          console.log('Final values for quote:', quote.quote_number, {
+            lastSentRevisionNumber: lastSentRevision?.revision_number,
+            lastViewedRevisionNumber: lastViewedRevision?.revision_number,
+            lastSentAt: lastSentRevision?.sent_at,
+            lastViewedAt: lastViewedRevision?.viewed_at
+          })
+
+
         })
 
         setClientQuotes(clientQuoteItems)

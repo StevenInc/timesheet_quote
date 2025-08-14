@@ -179,4 +179,5 @@ export interface ClientQuote {
   lastViewedAt?: string
   lastSentViaEmail?: boolean
   lastSentRevisionNumber?: number
+  lastViewedRevisionNumber?: number
 }

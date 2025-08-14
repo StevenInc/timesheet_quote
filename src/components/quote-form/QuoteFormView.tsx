@@ -621,31 +621,43 @@ export const QuoteFormView: React.FC<Props> = (props) => {
                         >
                           <td>v{revision.revision_number}</td>
                           <td>
-                            {(() => {
-                              // Priority: VIEWED > SENT > blank
-                              if (revision.viewed_at) {
-                                return (
-                                  <span
-                                    className="status-badge viewed"
-                                    title={`Viewed on ${new Date(revision.viewed_at).toLocaleDateString()}`}
-                                  >
-                                    VIEWED
-                                  </span>
-                                )
-                              }
-                              if (revision.sent_via_email || revision.status === 'EMAILED') {
-                                return (
-                                  <span
-                                    className="status-badge emailed"
-                                    title={revision.sent_at ? `Sent on ${new Date(revision.sent_at).toLocaleDateString()}` : ''}
-                                  >
-                                    SENT
-                                  </span>
-                                )
-                              }
-                              // Return blank if never emailed
-                              return null
-                            })()}
+                            <div className="sent-viewed-info">
+                              {(() => {
+                                // Priority: VIEWED > SENT > blank
+                                if (revision.viewed_at) {
+                                  return (
+                                    <span
+                                      className="status-badge viewed"
+                                      title={`Viewed on ${new Date(revision.viewed_at).toLocaleDateString()}`}
+                                    >
+                                      VIEWED
+                                    </span>
+                                  )
+                                }
+                                if (revision.sent_via_email || revision.status === 'EMAILED') {
+                                  return (
+                                    <span
+                                      className="status-badge emailed"
+                                      title={revision.sent_at ? `Sent on ${new Date(revision.sent_at).toLocaleDateString()}` : ''}
+                                    >
+                                      SENT
+                                    </span>
+                                  )
+                                }
+                                // Return blank if never emailed
+                                return null
+                              })()}
+                              {/* Show latest viewed version info */}
+                              {(() => {
+                                // Find the latest viewed version for this quote
+                                const latestViewedRevision = quoteRevisions
+                                  .filter(r => r.viewed_at)
+                                  .sort((a, b) => new Date(b.viewed_at!).getTime() - new Date(a.viewed_at!).getTime())[0];
+
+
+                                return null;
+                              })()}
+                            </div>
                           </td>
                           <td>
                             {(() => {
@@ -915,12 +927,21 @@ export const QuoteFormView: React.FC<Props> = (props) => {
                             </tr>
                           </thead>
                           <tbody>
-                            {clientQuotes.map((quote) => (
-                              <tr
-                                key={quote.id}
-                                className={`history-row ${selectedClientQuote === quote.id ? 'selected' : ''}`}
-                                onClick={() => handleQuoteSelection(quote.id)}
-                              >
+                            {clientQuotes.map((quote) => {
+                              // Debug logging for quote data
+                              console.log('Rendering quote:', quote.quoteNumber, {
+                                lastViewedRevisionNumber: quote.lastViewedRevisionNumber,
+                                lastSentRevisionNumber: quote.lastSentRevisionNumber,
+                                lastViewedAt: quote.lastViewedAt,
+                                lastSentAt: quote.lastSentAt
+                              })
+
+                              return (
+                                <tr
+                                  key={quote.id}
+                                  className={`history-row ${selectedClientQuote === quote.id ? 'selected' : ''}`}
+                                  onClick={() => handleQuoteSelection(quote.id)}
+                                >
                                 <td>{quote.quoteNumber}</td>
                                 <td>
                                   <div className="status-info">
@@ -973,18 +994,26 @@ export const QuoteFormView: React.FC<Props> = (props) => {
                                     </div>
                                   )}
                                 </td>
-                                <td className="viewed-cell" title={quote.lastViewedAt ? `Last viewed on ${quote.lastViewedAt}` : ''}>
-                                  {quote.lastViewedAt && (
-                                    <span className="sent-date-badge">
-                                      {quote.lastViewedAt}
-                                    </span>
+                                <td className="viewed-cell" title={quote.lastViewedAt ? `Last viewed on ${quote.lastViewedAt}` : 'Never viewed'}>
+                                  {quote.lastViewedAt ? (
+                                    <div className="sent-badge-container">
+                                      <span className="sent-date-badge">
+                                        {quote.lastViewedAt}
+                                      </span>
+                                      {quote.lastViewedRevisionNumber && (
+                                        <span className="revision-badge">v{quote.lastViewedRevisionNumber}</span>
+                                      )}
+                                    </div>
+                                  ) : (
+                                    <span className="never-viewed">Never viewed</span>
                                   )}
                                 </td>
                                 <td className="expiration-cell">
                                   {quote.expirationDate || 'Not set'}
                                 </td>
                               </tr>
-                            ))}
+                              )
+                            })}
                           </tbody>
                         </table>
                       </div>
