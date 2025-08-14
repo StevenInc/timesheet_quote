@@ -648,15 +648,7 @@ export const QuoteFormView: React.FC<Props> = (props) => {
                                 return null
                               })()}
                               {/* Show latest viewed version info */}
-                              {(() => {
-                                // Find the latest viewed version for this quote
-                                const latestViewedRevision = quoteRevisions
-                                  .filter(r => r.viewed_at)
-                                  .sort((a, b) => new Date(b.viewed_at!).getTime() - new Date(a.viewed_at!).getTime())[0];
-
-
-                                return null;
-                              })()}
+                              {/* Commented out unused code for now */}
                             </div>
                           </td>
                           <td>
@@ -997,7 +989,7 @@ export const QuoteFormView: React.FC<Props> = (props) => {
                                 <td className="viewed-cell" title={quote.lastViewedAt ? `Last viewed on ${quote.lastViewedAt}` : 'Never viewed'}>
                                   {quote.lastViewedAt ? (
                                     <div className="sent-badge-container">
-                                      <span className="sent-date-badge">
+                                      <span className="viewed-date-badge">
                                         {quote.lastViewedAt}
                                       </span>
                                       {quote.lastViewedRevisionNumber && (

@@ -1061,12 +1061,22 @@
   gap: 0.25rem;
 }
 
-.company-quote-history-modal .sent-date-badge,
-.company-quote-history-modal .viewed-date-badge {
+.company-quote-history-modal .sent-date-badge {
   display: inline-block;
   padding: 0.25rem 0.5rem;
   background-color: #d1fae5;
   color: #065f46;
+  border-radius: 4px;
+  font-size: 0.75rem;
+  font-weight: 500;
+  line-height: 1;
+}
+
+.company-quote-history-modal .viewed-date-badge {
+  display: inline-block;
+  padding: 0.25rem 0.5rem;
+  background-color: #fef3c7;
+  color: #92400e;
   border-radius: 4px;
   font-size: 0.75rem;
   font-weight: 500;
@@ -1092,10 +1102,14 @@
 
 
 
-.company-quote-history-modal .sent-cell:hover .sent-date-badge,
-.company-quote-history-modal .viewed-cell:hover .viewed-date-badge {
+.company-quote-history-modal .sent-cell:hover .sent-date-badge {
   background-color: #a7f3d0;
   color: #047857;
+}
+
+.company-quote-history-modal .viewed-cell:hover .viewed-date-badge {
+  background-color: #fde68a;
+  color: #78350f;
 }
 
 .company-quote-history-modal .clients-list {
