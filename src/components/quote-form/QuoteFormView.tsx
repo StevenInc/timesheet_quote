@@ -909,11 +909,11 @@ export const QuoteFormView: React.FC<Props> = (props) => {
                           <thead>
                             <tr>
                               <th>Quote #</th>
-                              <th>Status</th>
                               <th>Title</th>
                               <th>Created By</th>
                               <th>Last Updated</th>
                               <th>Sent/Viewed</th>
+                              <th>Status</th>
                               <th>Expiration Date</th>
                             </tr>
                           </thead>
@@ -934,20 +934,6 @@ export const QuoteFormView: React.FC<Props> = (props) => {
                                   onClick={() => handleQuoteSelection(quote.id)}
                                 >
                                 <td>{quote.quoteNumber}</td>
-                                <td>
-                                  <div className="status-info">
-                                    {quote.status && (
-                                      <span className={`status-badge ${quote.status.toLowerCase()}`}>
-                                        {quote.status}
-                                      </span>
-                                    )}
-                                    {quote.lastSentViaEmail && (
-                                      <span className="email-status-badge">
-                                        Sent
-                                      </span>
-                                    )}
-                                  </div>
-                                </td>
                                 <td className="notes-cell" title={quote.title || quote.notes || 'No title'}>
                                   <div className="title-info">
                                     <span className="title-text">
@@ -993,6 +979,20 @@ export const QuoteFormView: React.FC<Props> = (props) => {
                                       )}
                                     </div>
                                   ) : null}
+                                </td>
+                                <td>
+                                  <div className="status-info">
+                                    {quote.status && (
+                                      <span className={`status-badge ${quote.status.toLowerCase()}`}>
+                                        {quote.status}
+                                      </span>
+                                    )}
+                                    {quote.lastSentViaEmail && (
+                                      <span className="email-status-badge">
+                                        Sent
+                                      </span>
+                                    )}
+                                  </div>
                                 </td>
                                 <td className="expiration-cell">
                                   {quote.expirationDate || 'Not set'}
