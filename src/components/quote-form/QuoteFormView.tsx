@@ -1004,9 +1004,7 @@ export const QuoteFormView: React.FC<Props> = (props) => {
                                         <span className="revision-badge">v{quote.lastViewedRevisionNumber}</span>
                                       )}
                                     </div>
-                                  ) : (
-                                    <span className="never-viewed">Never viewed</span>
-                                  )}
+                                  ) : null}
                                 </td>
                                 <td className="expiration-cell">
                                   {quote.expirationDate || 'Not set'}
