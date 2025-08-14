@@ -44,6 +44,9 @@ export interface QuoteHistory {
 
 export interface QuoteFormData {
   owner: string
+  ownerName?: string
+  creatorName?: string
+  createdAt?: string
   clientName: string
   clientEmail: string
   quoteNumber: string
@@ -124,6 +127,8 @@ export interface DatabaseQuoteRevision {
   client_comments?: DatabaseClientComment[]
   quotes?: {
     quote_number: string
+    owner_id?: string
+    created_at?: string
     clients?: {
       name: string
       email: string
@@ -137,10 +142,20 @@ export interface DatabaseClient {
   email: string
 }
 
+export interface DatabaseOwner {
+  id: string
+  name: string
+  email?: string
+  role?: string
+}
+
 export interface DatabaseQuote {
   id: string
   quote_number: string
+  owner_id: string
+  created_at: string
   clients: DatabaseClient
+  owners?: DatabaseOwner
   quote_revisions: DatabaseQuoteRevision[]
 }
 
@@ -155,4 +170,7 @@ export interface ClientQuote {
   title: string
   notes: string
   lastUpdated: string
+  creatorName?: string
+  ownerId?: string
+  expirationDate?: string
 }

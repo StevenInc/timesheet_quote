@@ -283,6 +283,37 @@ export const QuoteFormView: React.FC<Props> = (props) => {
             <span className="quote-number-label">Quote #</span>
             <span className="quote-number-value">{formData.quoteNumber}</span>
           </div>
+          {formData.creatorName && (
+            <div className="quote-creator-display">
+              <span className="quote-creator-label">Created By:</span>
+              <span className="quote-creator-value">{formData.creatorName}</span>
+              {formData.createdAt && (
+                <span className="quote-created-date">
+                  on {new Date(formData.createdAt).toLocaleDateString()}
+                </span>
+              )}
+            </div>
+          )}
+          {/* Temporary debug display */}
+          <div style={{ fontSize: '12px', color: '#666', marginBottom: '10px', padding: '5px', background: '#f0f0f0', borderRadius: '4px' }}>
+            Debug - Owner: {formData.owner || 'empty'} | Creator: {formData.creatorName || 'empty'} | Created: {formData.createdAt || 'empty'}
+            <button
+              onClick={() => {
+                const testData = {
+                  owner: '11111111-1111-1111-1111-111111111111',
+                  ownerName: 'Owner 1',
+                  creatorName: 'Owner 1',
+                  createdAt: new Date().toISOString()
+                }
+                Object.entries(testData).forEach(([key, value]) => {
+                  handleInputChange(key as keyof QuoteFormData, value)
+                })
+              }}
+              style={{ marginLeft: '10px', padding: '2px 8px', fontSize: '10px' }}
+            >
+              Test Creator Data
+            </button>
+          </div>
           <div className="quote-url-section">
             <span className="quote-url">{formData.quoteUrl}</span>
             <button type="button" className="btn btn-icon" onClick={copyQuoteUrl}>
@@ -330,9 +361,12 @@ export const QuoteFormView: React.FC<Props> = (props) => {
                 <label htmlFor="owner">Sales Person / Owner</label>
                 <select id="owner" value={formData.owner} onChange={(e) => handleInputChange('owner', e.target.value)}>
                   <option value="">-- Select One --</option>
-                  <option value="owner1">Owner 1</option>
-                  <option value="owner2">Owner 2</option>
+                  <option value="11111111-1111-1111-1111-111111111111">Owner 1</option>
+                  <option value="22222222-2222-2222-2222-222222222222">Owner 2</option>
                 </select>
+                {formData.ownerName && formData.ownerName !== 'Unknown Owner' && (
+                  <small className="form-help">Current: {formData.ownerName}</small>
+                )}
               </div>
               <div className="form-group">
                 <label htmlFor="clientName">Client Name</label>
@@ -658,11 +692,8 @@ export const QuoteFormView: React.FC<Props> = (props) => {
             <Send size={16} />
             {props.isSaving ? 'Sending...' : 'Send to Client'}
           </button>
-
         </div>
       </form>
-
-
 
       {/* New Quote Modal */}
       {isNewQuoteModalOpen && (
@@ -930,7 +961,9 @@ export const QuoteFormView: React.FC<Props> = (props) => {
                             <th>Quote #</th>
                             <th>Status</th>
                             <th>Title</th>
+                            <th>Created By</th>
                             <th>Last Updated</th>
+                            <th>Expiration Date</th>
                           </tr>
                         </thead>
                         <tbody>
@@ -960,7 +993,13 @@ export const QuoteFormView: React.FC<Props> = (props) => {
                                     'No title'
                                 }
                               </td>
+                              <td className="creator-cell">
+                                {quote.creatorName || 'Unknown'}
+                              </td>
                               <td>{quote.lastUpdated}</td>
+                              <td className="expiration-cell">
+                                {quote.expirationDate || 'Not set'}
+                              </td>
                             </tr>
                           ))}
                         </tbody>

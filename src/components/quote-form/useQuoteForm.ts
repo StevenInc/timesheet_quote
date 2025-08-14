@@ -12,6 +12,16 @@ export const useQuoteForm = () => {
     return thirtyDaysFromNow.toISOString().split('T')[0] // Format as YYYY-MM-DD
   }
 
+  // Helper function to map owner IDs to readable names
+  const getOwnerDisplayName = (ownerId: string): string => {
+    const ownerMap: Record<string, string> = {
+      '11111111-1111-1111-1111-111111111111': 'Owner 1',
+      '22222222-2222-2222-2222-222222222222': 'Owner 2',
+      // Add more owner mappings as needed
+    }
+    return ownerMap[ownerId] || `Owner (${ownerId.slice(0, 8)}...)`
+  }
+
   // Helper function to validate email format
   const isValidEmail = (email: string): boolean => {
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
@@ -25,6 +35,9 @@ export const useQuoteForm = () => {
     // Deep comparison of key fields that would affect the quote
     return (
       currentData.owner !== originalData.owner ||
+      currentData.ownerName !== originalData.ownerName ||
+      currentData.creatorName !== originalData.creatorName ||
+      currentData.createdAt !== originalData.createdAt ||
       currentData.clientName !== originalData.clientName ||
       currentData.clientEmail !== originalData.clientEmail ||
       currentData.expires !== originalData.expires ||
@@ -44,6 +57,9 @@ export const useQuoteForm = () => {
 
   const [formData, setFormData] = useState<QuoteFormData>({
     owner: '',
+    ownerName: '',
+    creatorName: '',
+    createdAt: '',
     clientName: '',
     clientEmail: '',
     quoteNumber: '1000',
@@ -346,7 +362,8 @@ export const useQuoteForm = () => {
           status,
           created_at,
           updated_at,
-          quote_revisions(id, revision_number, title, notes, updated_at, status, sent_via_email)
+          owner_id,
+          quote_revisions(id, revision_number, title, notes, updated_at, status, sent_via_email, expires_on)
         `)
         .eq('client_id', clientId)
         .order('created_at', { ascending: false })
@@ -407,7 +424,16 @@ export const useQuoteForm = () => {
             notes: latestRevisionData?.notes || '',
             lastUpdated: latestRevisionData?.updated_at ?
               new Date(latestRevisionData.updated_at).toLocaleDateString() :
-              new Date(quote.updated_at).toLocaleDateString()
+              new Date(quote.updated_at).toLocaleDateString(),
+            creatorName: quote.owner_id ? getOwnerDisplayName(quote.owner_id) : 'Unknown',
+            ownerId: quote.owner_id || '',
+            expirationDate: latestRevisionData?.expires_on ?
+              new Date(latestRevisionData.expires_on).toLocaleDateString('en-US', {
+                month: 'short',
+                day: 'numeric',
+                year: 'numeric'
+              }) :
+              undefined
           }
         })
 
@@ -585,6 +611,9 @@ export const useQuoteForm = () => {
   const resetForm = () => {
     const defaultFormData = {
       owner: '',
+      ownerName: '',
+      creatorName: '',
+      createdAt: '',
       clientName: '',
       clientEmail: '',
       quoteNumber: '1000',
@@ -1135,7 +1164,7 @@ export const useQuoteForm = () => {
         const { data: quote, error } = await supabase
           .from('quotes')
           .insert({
-            owner_id: '11111111-1111-1111-1111-111111111111', // Temporary placeholder - replace with actual auth.uid() when auth is implemented
+            owner_id: dataToSave.owner || '11111111-1111-1111-1111-111111111111', // Use form data or fallback to default
             client_id: clientId,
             status: 'DRAFT',
             quote_number: dataToSave.quoteNumber
@@ -1423,6 +1452,8 @@ export const useQuoteForm = () => {
                 quotes!inner(
                   id,
                   quote_number,
+                  owner_id,
+                  created_at,
                   clients(name, email)
                 ),
                 quote_items(*),
@@ -1437,6 +1468,8 @@ export const useQuoteForm = () => {
 
             if (revision) {
               console.log('Loaded quote revision:', revision)
+              console.log('Quote owner_id:', revision.quotes?.owner_id)
+              console.log('Quote created_at:', revision.quotes?.created_at)
 
               // Track which revision and quote are currently loaded
               setCurrentLoadedRevisionId(mostRecentRevision.id)
@@ -1444,6 +1477,10 @@ export const useQuoteForm = () => {
 
               // Update form data with the loaded revision
               const newFormData = {
+                owner: revision.quotes.owner_id || '',
+                ownerName: revision.quotes.owner_id ? getOwnerDisplayName(revision.quotes.owner_id) : 'Unknown Owner',
+                creatorName: revision.quotes.owner_id ? getOwnerDisplayName(revision.quotes.owner_id) : 'Unknown Creator',
+                createdAt: revision.quotes.created_at || '',
                 quoteNumber: revision.quotes.quote_number,
                 clientName: revision.quotes.clients?.name || '',
                 clientEmail: revision.quotes.clients?.email || '',
@@ -1471,6 +1508,13 @@ export const useQuoteForm = () => {
                 clientComments: revision.client_comments?.[0]?.comment || '',
                 sentViaEmail: revision.sent_via_email || false
               }
+
+              console.log('New form data with creator info:', {
+                owner: newFormData.owner,
+                ownerName: newFormData.ownerName,
+                creatorName: newFormData.creatorName,
+                createdAt: newFormData.createdAt
+              })
 
               // Recalculate totals
               const items = newFormData.items
@@ -1735,6 +1779,8 @@ export const useQuoteForm = () => {
           quotes!inner(
             id,
             quote_number,
+            owner_id,
+            created_at,
             clients(name, email)
           ),
           quote_items(*),
@@ -1749,6 +1795,8 @@ export const useQuoteForm = () => {
 
       if (revision) {
         console.log('Loaded quote revision:', revision)
+        console.log('Quote owner_id:', revision.quotes?.owner_id)
+        console.log('Quote created_at:', revision.quotes?.created_at)
 
         // Double-check that we haven't loaded this revision while waiting
         if (currentLoadedRevisionId === revisionId) {
@@ -1764,6 +1812,10 @@ export const useQuoteForm = () => {
 
         // Batch form data updates to prevent multiple re-renders
         const newFormData = {
+          owner: revision.quotes.owner_id || '',
+          ownerName: revision.quotes.owner_id ? getOwnerDisplayName(revision.quotes.owner_id) : 'Unknown Owner',
+          creatorName: revision.quotes.owner_id ? getOwnerDisplayName(revision.quotes.owner_id) : 'Unknown Creator',
+          createdAt: revision.quotes.created_at || '',
           quoteNumber: revision.quotes.quote_number,
           clientName: revision.quotes.clients?.name || '',
           clientEmail: revision.quotes.clients?.email || '',
