@@ -163,7 +163,7 @@ export interface DatabaseQuote {
 export interface ClientQuote {
   id: string
   quoteNumber: string
-  status: string
+  status?: string
   createdAt: string
   updatedAt: string
   latestRevisionNumber: number
@@ -174,4 +174,9 @@ export interface ClientQuote {
   creatorName?: string
   ownerId?: string
   expirationDate?: string
+  // New fields for tracking sent/viewed information
+  lastSentAt?: string
+  lastViewedAt?: string
+  lastSentViaEmail?: boolean
+  lastSentRevisionNumber?: number
 }

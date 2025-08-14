@@ -980,22 +980,12 @@
   letter-spacing: 0.05em;
 }
 
-.company-quote-history-modal .status-badge.draft {
-  background-color: #f3f4f6;
-  color: #6b7280;
-}
-
-.company-quote-history-modal .status-badge.emailed {
-  background-color: #dbeafe;
-  color: #1e40af;
-}
-
 .company-quote-history-modal .status-badge.accepted {
   background-color: #d1fae5;
   color: #065f46;
 }
 
-.company-quote-history-modal .status-badge.rejected {
+.company-quote-history-modal .status-badge.declined {
   background-color: #fee2e2;
   color: #991b1b;
 }
@@ -1005,10 +995,7 @@
   color: #92400e;
 }
 
-.company-quote-history-modal .status-badge.paid {
-  background-color: #d1fae5;
-  color: #065f46;
-}
+
 
 .company-quote-history-modal .clients-list-container {
   max-height: 200px;
@@ -1016,6 +1003,93 @@
   border: 1px solid #e5e7eb;
   border-radius: 6px;
   background: white;
+}
+
+/* Enhanced badge styles for quote history */
+.company-quote-history-modal .status-info {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+  align-items: flex-start;
+}
+
+.company-quote-history-modal .email-status-badge {
+  display: inline-block;
+  padding: 0.125rem 0.375rem;
+  background-color: #dbeafe;
+  color: #1e40af;
+  border-radius: 3px;
+  font-size: 0.75rem;
+  font-weight: 500;
+  line-height: 1;
+}
+
+.company-quote-history-modal .title-info {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+}
+
+.company-quote-history-modal .title-text {
+  color: #6b7280;
+  font-style: italic;
+}
+
+.company-quote-history-modal .revision-count-badge {
+  display: inline-block;
+  padding: 0.125rem 0.375rem;
+  background-color: #f3f4f6;
+  color: #6b7280;
+  border-radius: 3px;
+  font-size: 0.75rem;
+  font-weight: 500;
+  line-height: 1;
+  align-self: flex-start;
+}
+
+.company-quote-history-modal .sent-cell,
+.company-quote-history-modal .viewed-cell {
+  max-width: 120px;
+  text-align: center;
+  font-size: 0.875rem;
+}
+
+.company-quote-history-modal .sent-badge-container {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.25rem;
+}
+
+.company-quote-history-modal .sent-date-badge,
+.company-quote-history-modal .viewed-date-badge {
+  display: inline-block;
+  padding: 0.25rem 0.5rem;
+  background-color: #d1fae5;
+  color: #065f46;
+  border-radius: 4px;
+  font-size: 0.75rem;
+  font-weight: 500;
+  line-height: 1;
+}
+
+.company-quote-history-modal .revision-badge {
+  display: inline-block;
+  padding: 0.125rem 0.375rem;
+  background-color: #e0e7ff;
+  color: #3730a3;
+  border-radius: 3px;
+  font-size: 0.75rem;
+  font-weight: 500;
+  line-height: 1;
+}
+
+
+
+.company-quote-history-modal .sent-cell:hover .sent-date-badge,
+.company-quote-history-modal .viewed-cell:hover .viewed-date-badge {
+  background-color: #a7f3d0;
+  color: #047857;
 }
 
 .company-quote-history-modal .clients-list {

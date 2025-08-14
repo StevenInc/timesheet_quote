@@ -365,7 +365,7 @@ export const useQuoteForm = () => {
           created_at,
           updated_at,
           owner_id,
-          quote_revisions(id, revision_number, title, notes, updated_at, status, sent_via_email, expires_on)
+          quote_revisions(id, revision_number, title, notes, updated_at, status, sent_via_email, sent_at, viewed_at, expires_on)
         `)
         .eq('client_id', clientId)
         .order('created_at', { ascending: false })
@@ -387,32 +387,43 @@ export const useQuoteForm = () => {
 
           // Determine the most primary status from all revisions
           const determineMostPrimaryStatus = (revisions: Array<{status: string, sent_via_email?: boolean}>) => {
-            // Priority order: PAID > ACCEPTED > REJECTED > EXPIRED > EMAIL SENT > DRAFT
-            const priorityOrder = ['PAID', 'ACCEPTED', 'REJECTED', 'EXPIRED', 'EMAILED', 'DRAFT']
+            // Only show these three statuses: ACCEPTED, DECLINED, EXPIRED
+            const allowedStatuses = ['ACCEPTED', 'DECLINED', 'EXPIRED']
 
-            // Check if any revision was sent via email
-            const hasEmailSent = revisions.some(r => r.sent_via_email === true)
+            // Get all statuses from revisions only and map REJECTED to DECLINED
+            const revisionStatuses = revisions.map(r => {
+              if (r.status === 'REJECTED') return 'DECLINED'
+              return r.status
+            }).filter(Boolean)
 
-            // Get all statuses from revisions only
-            const revisionStatuses = revisions.map(r => r.status).filter(Boolean)
-
-            // If any revision was sent via email, return EMAILED
-            if (hasEmailSent) {
-              return 'EMAILED'
-            }
-
-            // Find the highest priority status from revisions only
-            for (const priorityStatus of priorityOrder) {
-              if (revisionStatuses.includes(priorityStatus)) {
-                return priorityStatus
+            // Find the highest priority status from allowed statuses only
+            for (const status of allowedStatuses) {
+              if (revisionStatuses.includes(status)) {
+                return status
               }
             }
 
-            // Default to DRAFT if no statuses found
-            return 'DRAFT'
+            // If no allowed statuses found, return undefined (will be handled in UI)
+            return undefined
           }
 
           const mostPrimaryStatus = determineMostPrimaryStatus(revisions)
+
+          // Find the most recent sent and viewed information across all revisions
+          const sentRevisions = revisions.filter(r => r.sent_via_email === true && r.sent_at)
+          const viewedRevisions = revisions.filter(r => r.viewed_at)
+
+          const lastSentRevision = sentRevisions.length > 0
+            ? sentRevisions.reduce((latest, current) =>
+                new Date(current.sent_at!) > new Date(latest.sent_at!) ? current : latest
+              )
+            : null
+
+          const lastViewedRevision = viewedRevisions.length > 0
+            ? viewedRevisions.reduce((latest, current) =>
+                new Date(current.viewed_at!) > new Date(latest.viewed_at!) ? current : latest
+              )
+            : null
 
           return {
             id: quote.id,
@@ -435,7 +446,22 @@ export const useQuoteForm = () => {
                 day: 'numeric',
                 year: 'numeric'
               }) :
-              undefined
+              undefined,
+            // New fields for tracking sent/viewed information
+            lastSentAt: lastSentRevision?.sent_at ?
+              new Date(lastSentRevision.sent_at).toLocaleDateString('en-US', {
+                month: 'short',
+                day: 'numeric',
+                year: 'numeric'
+              }) : undefined,
+            lastViewedAt: lastViewedRevision?.viewed_at ?
+              new Date(lastViewedRevision.viewed_at).toLocaleDateString('en-US', {
+                month: 'short',
+                day: 'numeric',
+                year: 'numeric'
+              }) : undefined,
+            lastSentViaEmail: lastSentRevision ? true : false,
+            lastSentRevisionNumber: lastSentRevision?.revision_number
           }
         })
 

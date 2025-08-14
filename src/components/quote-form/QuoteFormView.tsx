@@ -909,6 +909,8 @@ export const QuoteFormView: React.FC<Props> = (props) => {
                               <th>Title</th>
                               <th>Created By</th>
                               <th>Last Updated</th>
+                              <th>Last Sent</th>
+                              <th>Last Viewed</th>
                               <th>Expiration Date</th>
                             </tr>
                           </thead>
@@ -921,28 +923,63 @@ export const QuoteFormView: React.FC<Props> = (props) => {
                               >
                                 <td>{quote.quoteNumber}</td>
                                 <td>
-                                  <span className={`status-badge ${quote.status.toLowerCase()}`}>
-                                    {quote.status === 'EMAILED' ? 'EMAIL SENT' : quote.status}
-                                  </span>
+                                  <div className="status-info">
+                                    {quote.status && (
+                                      <span className={`status-badge ${quote.status.toLowerCase()}`}>
+                                        {quote.status}
+                                      </span>
+                                    )}
+                                    {quote.lastSentViaEmail && (
+                                      <span className="email-status-badge">
+                                        Sent
+                                      </span>
+                                    )}
+                                  </div>
                                 </td>
                                 <td className="notes-cell" title={quote.title || quote.notes || 'No title'}>
-                                  {quote.title ?
-                                    (quote.title.length > 30 ?
-                                      `${quote.title.substring(0, 30)}...` :
-                                      quote.title
-                                    ) :
-                                    quote.notes ?
-                                      (quote.notes.length > 30 ?
-                                        `${quote.notes.substring(0, 30)}...` :
-                                        quote.notes
-                                      ) :
-                                      'No title'
-                                  }
+                                  <div className="title-info">
+                                    <span className="title-text">
+                                      {quote.title ?
+                                        (quote.title.length > 30 ?
+                                          `${quote.title.substring(0, 30)}...` :
+                                          quote.title
+                                        ) :
+                                        quote.notes ?
+                                          (quote.notes.length > 30 ?
+                                            `${quote.notes.substring(0, 30)}...` :
+                                            quote.notes
+                                          ) :
+                                          'No title'
+                                      }
+                                    </span>
+                                    <span className="revision-count-badge">
+                                      {quote.totalRevisions} rev{quote.totalRevisions === 1 ? '' : 's'}
+                                    </span>
+                                  </div>
                                 </td>
                                 <td className="creator-cell">
                                   {quote.creatorName || 'Unknown'}
                                 </td>
                                 <td>{quote.lastUpdated}</td>
+                                <td className="sent-cell" title={quote.lastSentRevisionNumber ? `v${quote.lastSentRevisionNumber}` : ''}>
+                                  {quote.lastSentAt && (
+                                    <div className="sent-badge-container">
+                                      <span className="sent-date-badge">
+                                        {quote.lastSentAt}
+                                      </span>
+                                      {quote.lastSentRevisionNumber && (
+                                        <span className="revision-badge">v{quote.lastSentRevisionNumber}</span>
+                                      )}
+                                    </div>
+                                  )}
+                                </td>
+                                <td className="viewed-cell" title={quote.lastViewedAt ? `Last viewed on ${quote.lastViewedAt}` : ''}>
+                                  {quote.lastViewedAt && (
+                                    <span className="sent-date-badge">
+                                      {quote.lastViewedAt}
+                                    </span>
+                                  )}
+                                </td>
                                 <td className="expiration-cell">
                                   {quote.expirationDate || 'Not set'}
                                 </td>
