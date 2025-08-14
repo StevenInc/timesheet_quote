@@ -150,11 +150,7 @@ export const useQuoteForm = () => {
 
   const calculateItemTotal = (quantity: number, unitPrice: number) => quantity * unitPrice
 
-  // Generate client quote URL for a specific revision
-  const generateClientQuoteUrl = (revisionId: string) => {
-    const baseUrl = window.location.origin
-    return `${baseUrl}?revision=${revisionId}`
-  }
+
 
   const loadQuoteHistory = async (quoteId?: string) => {
     setIsLoadingHistory(true)
