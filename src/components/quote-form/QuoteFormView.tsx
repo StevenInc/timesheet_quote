@@ -294,26 +294,7 @@ export const QuoteFormView: React.FC<Props> = (props) => {
               )}
             </div>
           )}
-          {/* Temporary debug display */}
-          <div style={{ fontSize: '12px', color: '#666', marginBottom: '10px', padding: '5px', background: '#f0f0f0', borderRadius: '4px' }}>
-            Debug - Owner: {formData.owner || 'empty'} | Creator: {formData.creatorName || 'empty'} | Created: {formData.createdAt || 'empty'}
-            <button
-              onClick={() => {
-                const testData = {
-                  owner: '11111111-1111-1111-1111-111111111111',
-                  ownerName: 'Owner 1',
-                  creatorName: 'Owner 1',
-                  createdAt: new Date().toISOString()
-                }
-                Object.entries(testData).forEach(([key, value]) => {
-                  handleInputChange(key as keyof QuoteFormData, value)
-                })
-              }}
-              style={{ marginLeft: '10px', padding: '2px 8px', fontSize: '10px' }}
-            >
-              Test Creator Data
-            </button>
-          </div>
+
           <div className="quote-url-section">
             <span className="quote-url">{formData.quoteUrl}</span>
             <button type="button" className="btn btn-icon" onClick={copyQuoteUrl}>
