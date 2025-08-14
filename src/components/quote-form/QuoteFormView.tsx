@@ -913,8 +913,7 @@ export const QuoteFormView: React.FC<Props> = (props) => {
                               <th>Title</th>
                               <th>Created By</th>
                               <th>Last Updated</th>
-                              <th>Last Sent</th>
-                              <th>Last Viewed</th>
+                              <th>Sent/Viewed</th>
                               <th>Expiration Date</th>
                             </tr>
                           </thead>
@@ -974,19 +973,7 @@ export const QuoteFormView: React.FC<Props> = (props) => {
                                   {quote.creatorName || 'Unknown'}
                                 </td>
                                 <td>{quote.lastUpdated}</td>
-                                <td className="sent-cell" title={quote.lastSentRevisionNumber ? `v${quote.lastSentRevisionNumber}` : ''}>
-                                  {quote.lastSentAt && (
-                                    <div className="sent-badge-container">
-                                      <span className="sent-date-badge">
-                                        {quote.lastSentAt}
-                                      </span>
-                                      {quote.lastSentRevisionNumber && (
-                                        <span className="revision-badge">v{quote.lastSentRevisionNumber}</span>
-                                      )}
-                                    </div>
-                                  )}
-                                </td>
-                                <td className="viewed-cell" title={quote.lastViewedAt ? `Last viewed on ${quote.lastViewedAt}` : 'Never viewed'}>
+                                <td className="sent-viewed-cell">
                                   {quote.lastViewedAt ? (
                                     <div className="sent-badge-container">
                                       <span className="viewed-date-badge">
@@ -994,6 +981,15 @@ export const QuoteFormView: React.FC<Props> = (props) => {
                                       </span>
                                       {quote.lastViewedRevisionNumber && (
                                         <span className="revision-badge">v{quote.lastViewedRevisionNumber}</span>
+                                      )}
+                                    </div>
+                                  ) : quote.lastSentAt ? (
+                                    <div className="sent-badge-container">
+                                      <span className="sent-date-badge">
+                                        {quote.lastSentAt}
+                                      </span>
+                                      {quote.lastSentRevisionNumber && (
+                                        <span className="revision-badge">v{quote.lastSentRevisionNumber}</span>
                                       )}
                                     </div>
                                   ) : null}
