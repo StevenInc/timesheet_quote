@@ -987,11 +987,6 @@ export const QuoteFormView: React.FC<Props> = (props) => {
                                         {quote.status}
                                       </span>
                                     )}
-                                    {quote.lastSentViaEmail && (
-                                      <span className="email-status-badge">
-                                        Sent
-                                      </span>
-                                    )}
                                   </div>
                                 </td>
                                 <td className="expiration-cell">

@@ -380,6 +380,7 @@ export const useQuoteForm = () => {
           console.log('Sample revision viewed_at fields:', quotes[0]?.quote_revisions?.map(r => ({ revision: r.revision_number, viewed_at: r.viewed_at, sent_at: r.sent_at, sent_via_email: r.sent_via_email })))
 
         const clientQuoteItems = quotes.map((quote) => {
+          console.log('🔄 Processing quote:', quote.quote_number, 'Raw quote data:', quote)
           const revisions = quote.quote_revisions || []
           const latestRevision = Math.max(...revisions.map(r => r.revision_number), 0)
           const latestRevisionData = revisions.find(r => r.revision_number === latestRevision)
@@ -388,28 +389,43 @@ export const useQuoteForm = () => {
           console.log('Quote:', quote.quote_number, 'Latest revision data:', latestRevisionData)
 
           // Determine the most primary status from all revisions
-          const determineMostPrimaryStatus = (revisions: Array<{status: string, sent_via_email?: boolean}>) => {
-            // Only show these three statuses: ACCEPTED, DECLINED, EXPIRED
-            const allowedStatuses = ['ACCEPTED', 'DECLINED', 'EXPIRED']
+          const determineMostPrimaryStatus = (revisions: Array<{status: string, sent_via_email?: boolean, revision_number: number}>) => {
+            console.log('🔍 determineMostPrimaryStatus called with revisions:', revisions.map(r => ({ revision: r.revision_number, status: r.status })))
 
-            // Get all statuses from revisions only and map REJECTED to DECLINED
-            const revisionStatuses = revisions.map(r => {
-              if (r.status === 'REJECTED') return 'DECLINED'
-              return r.status
-            }).filter(Boolean)
+            // Sort revisions by revision number in descending order (latest first)
+            const sortedRevisions = [...revisions].sort((a, b) => b.revision_number - a.revision_number)
+            console.log('📊 Sorted revisions (latest first):', sortedRevisions.map(r => ({ revision: r.revision_number, status: r.status })))
 
-            // Find the highest priority status from allowed statuses only
-            for (const status of allowedStatuses) {
-              if (revisionStatuses.includes(status)) {
+            // Only show status badge for ACCEPTED or DECLINED statuses
+            const allowedStatuses = ['ACCEPTED', 'DECLINED']
+            console.log('✅ Allowed statuses:', allowedStatuses)
+
+            // Start with the latest revision and work backwards
+            for (const revision of sortedRevisions) {
+              let status = revision.status
+              console.log(`🔍 Checking revision ${revision.revision_number} with status: ${status}`)
+
+              // Map REJECTED to DECLINED
+              if (status === 'REJECTED') {
+                status = 'DECLINED'
+                console.log(`🔄 Mapped REJECTED to DECLINED for revision ${revision.revision_number}`)
+              }
+
+              // If we find an allowed status, return it immediately
+              if (allowedStatuses.includes(status)) {
+                console.log(`✅ Found allowed status: ${status} in revision ${revision.revision_number}`)
                 return status
               }
+              console.log(`❌ Status ${status} not in allowed list, continuing...`)
             }
 
-            // If no allowed statuses found, return undefined (will be handled in UI)
+            // If no ACCEPTED or DECLINED status found, return undefined (no badge shown)
+            console.log('❌ No ACCEPTED or DECLINED status found, returning undefined (no badge)')
             return undefined
           }
 
           const mostPrimaryStatus = determineMostPrimaryStatus(revisions)
+          console.log(`🎯 Quote ${quote.quote_number} final status:`, mostPrimaryStatus)
 
                     // Find the most recent sent and viewed information across all revisions
           const sentRevisions = revisions.filter(r => r.sent_via_email === true && r.sent_at)
@@ -483,6 +499,7 @@ export const useQuoteForm = () => {
 
           // Debug logging for final values
           console.log('Final values for quote:', quote.quote_number, {
+            status: mostPrimaryStatus,
             lastSentRevisionNumber: lastSentRevision?.revision_number,
             lastViewedRevisionNumber: lastViewedRevision?.revision_number,
             lastSentAt: lastSentRevision?.sent_at,
