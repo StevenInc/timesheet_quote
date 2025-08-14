@@ -1319,6 +1319,12 @@ export const useQuoteForm = () => {
       setOriginalFormData(formData)
       setHasUnsavedChanges(false)
 
+      // Always refresh the quote versions UI after saving to show the latest data
+      if (quoteId) {
+        console.log('🔄 Refreshing quote versions UI after save...')
+        await loadQuoteRevisions(quoteId, true)
+      }
+
       return { quoteId, success: true }
 
     } catch (error) {

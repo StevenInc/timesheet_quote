@@ -586,6 +586,7 @@ export const QuoteFormView: React.FC<Props> = (props) => {
                     <thead>
                       <tr>
                         <th>Version</th>
+                        <th>Sent/Viewed</th>
                         <th>Status</th>
                         <th>Title</th>
                         <th>Updated</th>
@@ -615,6 +616,22 @@ export const QuoteFormView: React.FC<Props> = (props) => {
                                   )
                               }
                             </span>
+                          </td>
+                          <td>
+                            {(() => {
+                              // Priority order: ACCEPTED > DECLINED > EXPIRED
+                              if (revision.status === 'APPROVED') {
+                                return <span className="status-badge accepted">ACCEPTED</span>
+                              }
+                              if (revision.status === 'REJECTED') {
+                                return <span className="status-badge declined">DECLINED</span>
+                              }
+                              // Check if expired (not approved/declined and past expiration date)
+                              if (revision.expires_on && new Date(revision.expires_on) < new Date()) {
+                                return <span className="status-badge expired">EXPIRED</span>
+                              }
+                              return null
+                            })()}
                           </td>
                           <td>{revision.title || revision.notes || '-'}</td>
                           <td>{new Date(revision.updated_at).toLocaleDateString()}</td>
