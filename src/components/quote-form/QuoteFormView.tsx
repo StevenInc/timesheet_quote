@@ -270,9 +270,8 @@ export const QuoteFormView: React.FC<Props> = (props) => {
   React.useEffect(() => {
     if (formData.isTaxEnabled) {
       setTaxInputValue((formData.taxRate * 100).toFixed(2))
-    } else {
-      setTaxInputValue('')
     }
+    // Don't clear taxInputValue when checkbox is unchecked - preserve the value
   }, [formData.taxRate, formData.isTaxEnabled])
 
   return (
