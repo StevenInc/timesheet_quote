@@ -77,7 +77,7 @@ interface Props {
 }
 
 export const QuoteFormView: React.FC<Props> = (props) => {
-  // Local state for tax input to prevent jumping while typing
+    // Local state for tax input to prevent jumping while typing
   const [taxInputValue, setTaxInputValue] = React.useState('')
 
   // Track which quote we've already auto-loaded for to prevent infinite loops
@@ -266,6 +266,15 @@ export const QuoteFormView: React.FC<Props> = (props) => {
     hasUnsavedChanges,
   } = props
 
+  // Initialize tax input value when form data changes
+  React.useEffect(() => {
+    if (formData.isTaxEnabled) {
+      setTaxInputValue((formData.taxRate * 100).toFixed(2))
+    } else {
+      setTaxInputValue('')
+    }
+  }, [formData.taxRate, formData.isTaxEnabled])
+
   return (
     <div className="quote-form-container">
       <div className="quote-form-header">
@@ -422,7 +431,7 @@ export const QuoteFormView: React.FC<Props> = (props) => {
                   min={0}
                   max={100}
                   step={0.01}
-                  value={taxInputValue || (formData.taxRate * 100).toFixed(2)}
+                  value={taxInputValue}
                   onChange={(e) => {
                     const value = e.target.value
                     setTaxInputValue(value)
