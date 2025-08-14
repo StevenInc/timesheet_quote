@@ -824,36 +824,139 @@ export const QuoteFormView: React.FC<Props> = (props) => {
       {/* View Quote Modal */}
       {isViewQuoteModalOpen && (
         <div className="modal-overlay" role="dialog" aria-modal="true" aria-label="Select client to view quote">
-          <div className="modal">
-            <h3>Select Client to View Quote</h3>
-            <div className="form-group">
-              <label>Available Clients</label>
-              <div className="clients-list-container">
-                {isLoadingAvailableClients ? (
-                  <div className="clients-loading">
-                    <div className="loading-spinner"></div>
-                    <span>Loading clients...</span>
+          <div className="modal company-quote-history-modal">
+            {/* Client Selection Section - Show when no client is selected */}
+            {!selectedClientId && (
+              <>
+                <h3>Select Company to View Quotes</h3>
+                <div className="form-section">
+                  <div className="form-group">
+                    <label>Available Companies</label>
+                    <div className="clients-list-container">
+                      {isLoadingAvailableClients ? (
+                        <div className="clients-loading">
+                          <div className="loading-spinner"></div>
+                          <span>Loading companies...</span>
+                        </div>
+                      ) : availableClients.length === 0 ? (
+                        <div className="clients-empty">
+                          <span>No companies found in database</span>
+                        </div>
+                      ) : (
+                        <div className="clients-list">
+                          {availableClients.map((client) => (
+                            <div
+                              key={client.id}
+                              className="client-item clickable"
+                              onClick={() => handleClientSelection(client.id)}
+                            >
+                              <div className="client-name">{client.name}</div>
+                              <div className="client-email">{client.email}</div>
+                            </div>
+                          ))}
+                        </div>
+                      )}
+                    </div>
                   </div>
-                ) : availableClients.length === 0 ? (
-                  <div className="clients-empty">
-                    <span>No clients found in database</span>
-                  </div>
-                ) : (
-                  <div className="clients-list">
-                    {availableClients.map((client) => (
-                      <div
-                        key={client.id}
-                        className={`client-item ${selectedClientId === client.id ? 'selected' : ''}`}
-                        onClick={() => handleClientSelection(client.id)}
-                      >
-                        <div className="client-name">{client.name}</div>
-                        <div className="client-email">{client.email}</div>
+                </div>
+              </>
+            )}
+
+            {/* Company Quotes Section - Show when a client is selected */}
+            {selectedClientId && (
+              <>
+                <div className="section-header-with-back">
+                  <h3>
+                    Quotes for {availableClients.find(client => client.id === selectedClientId)?.name}
+                  </h3>
+                  <button
+                    type="button"
+                    className="btn btn-link btn-small"
+                    onClick={() => {
+                      setSelectedClientId('')
+                      setSelectedClientQuote('')
+                    }}
+                  >
+                    ← Back to Company List
+                  </button>
+                </div>
+                <div className="form-section">
+                  <div className="history-table-container">
+                    {isLoadingClientQuotes ? (
+                      <div className="history-loading">
+                        <div className="loading-spinner"></div>
+                        <span>Loading quotes for {availableClients.find(client => client.id === selectedClientId)?.name}...</span>
                       </div>
-                    ))}
+                    ) : clientQuotes.length === 0 ? (
+                      <div className="history-empty">
+                        <span>No quotes found for {availableClients.find(client => client.id === selectedClientId)?.name}</span>
+                        <button
+                          type="button"
+                          className="btn btn-link"
+                          onClick={() => selectedClientId && loadClientQuotes(selectedClientId)}
+                        >
+                          Load Quotes
+                        </button>
+                      </div>
+                    ) : (
+                      <div className="quotes-selection-info">
+                        <p className="selection-help">Click on a quote below to load it into the form:</p>
+                        <table className="history-table">
+                          <thead>
+                            <tr>
+                              <th>Quote #</th>
+                              <th>Status</th>
+                              <th>Title</th>
+                              <th>Created By</th>
+                              <th>Last Updated</th>
+                              <th>Expiration Date</th>
+                            </tr>
+                          </thead>
+                          <tbody>
+                            {clientQuotes.map((quote) => (
+                              <tr
+                                key={quote.id}
+                                className={`history-row ${selectedClientQuote === quote.id ? 'selected' : ''}`}
+                                onClick={() => handleQuoteSelection(quote.id)}
+                              >
+                                <td>{quote.quoteNumber}</td>
+                                <td>
+                                  <span className={`status-badge ${quote.status.toLowerCase()}`}>
+                                    {quote.status === 'EMAILED' ? 'EMAIL SENT' : quote.status}
+                                  </span>
+                                </td>
+                                <td className="notes-cell" title={quote.title || quote.notes || 'No title'}>
+                                  {quote.title ?
+                                    (quote.title.length > 30 ?
+                                      `${quote.title.substring(0, 30)}...` :
+                                      quote.title
+                                    ) :
+                                    quote.notes ?
+                                      (quote.notes.length > 30 ?
+                                        `${quote.notes.substring(0, 30)}...` :
+                                        quote.notes
+                                      ) :
+                                      'No title'
+                                  }
+                                </td>
+                                <td className="creator-cell">
+                                  {quote.creatorName || 'Unknown'}
+                                </td>
+                                <td>{quote.lastUpdated}</td>
+                                <td className="expiration-cell">
+                                  {quote.expirationDate || 'Not set'}
+                                </td>
+                              </tr>
+                            ))}
+                          </tbody>
+                        </table>
+                      </div>
+                    )}
                   </div>
-                )}
-              </div>
-            </div>
+                </div>
+              </>
+            )}
+
             <div className="modal-actions">
               <button type="button" className="btn btn-secondary" onClick={closeViewQuoteModal}>
                 Cancel
@@ -902,147 +1005,6 @@ export const QuoteFormView: React.FC<Props> = (props) => {
                 }}
               >
                 Save Title
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
-
-      {/* Company Quote History Modal */}
-      {isViewQuoteModalOpen && (
-        <div className="modal-overlay" role="dialog" aria-modal="true" aria-label="Company Quote History">
-          <div className="modal company-quote-history-modal">
-            <h3>Company Quote History</h3>
-
-            {/* Client Selection Section */}
-            <div className="form-section">
-              <h4>Select Company</h4>
-              <div className="form-group">
-                <label>Available Companies</label>
-                <div className="clients-list-container">
-                  {isLoadingAvailableClients ? (
-                    <div className="clients-loading">
-                      <div className="loading-spinner"></div>
-                      <span>Loading companies...</span>
-                    </div>
-                  ) : availableClients.length === 0 ? (
-                    <div className="clients-empty">
-                      <span>No companies found in database</span>
-                    </div>
-                  ) : (
-                    <div className="clients-list">
-                      {availableClients.map((client) => (
-                        <div
-                          key={client.id}
-                          className={`client-item ${selectedClientId === client.id ? 'selected' : ''}`}
-                          onClick={() => handleClientSelection(client.id)}
-                        >
-                          <div className="client-name">{client.name}</div>
-                          <div className="client-email">{client.email}</div>
-                        </div>
-                      ))}
-                    </div>
-                  )}
-                </div>
-              </div>
-            </div>
-
-            {/* Company Quotes Section */}
-            {selectedClientId && (
-              <div className="form-section">
-                <div className="section-header-with-back">
-                  <h4>
-                    Quotes for {availableClients.find(client => client.id === selectedClientId)?.name}
-                  </h4>
-                  <button
-                    type="button"
-                    className="btn btn-link btn-small"
-                    onClick={() => {
-                      setSelectedClientId('')
-                      setSelectedClientQuote('')
-                    }}
-                  >
-                    ← Change Company
-                  </button>
-                </div>
-                <div className="history-table-container">
-                  {isLoadingClientQuotes ? (
-                    <div className="history-loading">
-                      <div className="loading-spinner"></div>
-                      <span>Loading quotes for {availableClients.find(client => client.id === selectedClientId)?.name}...</span>
-                    </div>
-                  ) : clientQuotes.length === 0 ? (
-                    <div className="history-empty">
-                      <span>No quotes found for {availableClients.find(client => client.id === selectedClientId)?.name}</span>
-                      <button
-                        type="button"
-                        className="btn btn-link"
-                        onClick={() => selectedClientId && loadClientQuotes(selectedClientId)}
-                      >
-                        Load Quotes
-                      </button>
-                    </div>
-                  ) : (
-                    <div className="quotes-selection-info">
-                      <p className="selection-help">Click on a quote below to load it into the form:</p>
-                      <table className="history-table">
-                        <thead>
-                          <tr>
-                            <th>Quote #</th>
-                            <th>Status</th>
-                            <th>Title</th>
-                            <th>Created By</th>
-                            <th>Last Updated</th>
-                            <th>Expiration Date</th>
-                          </tr>
-                        </thead>
-                        <tbody>
-                          {clientQuotes.map((quote) => (
-                            <tr
-                              key={quote.id}
-                              className={`history-row ${selectedClientQuote === quote.id ? 'selected' : ''}`}
-                              onClick={() => handleQuoteSelection(quote.id)}
-                            >
-                              <td>{quote.quoteNumber}</td>
-                              <td>
-                                <span className={`status-badge ${quote.status.toLowerCase()}`}>
-                                  {quote.status === 'EMAILED' ? 'EMAIL SENT' : quote.status}
-                                </span>
-                              </td>
-                              <td className="notes-cell" title={quote.title || quote.notes || 'No title'}>
-                                {quote.title ?
-                                  (quote.title.length > 30 ?
-                                    `${quote.title.substring(0, 30)}...` :
-                                    quote.title
-                                  ) :
-                                  quote.notes ?
-                                    (quote.notes.length > 30 ?
-                                      `${quote.notes.substring(0, 30)}...` :
-                                      quote.notes
-                                    ) :
-                                    'No title'
-                                }
-                              </td>
-                              <td className="creator-cell">
-                                {quote.creatorName || 'Unknown'}
-                              </td>
-                              <td>{quote.lastUpdated}</td>
-                              <td className="expiration-cell">
-                                {quote.expirationDate || 'Not set'}
-                              </td>
-                            </tr>
-                          ))}
-                        </tbody>
-                      </table>
-                    </div>
-                  )}
-                </div>
-              </div>
-            )}
-
-            <div className="modal-actions">
-              <button type="button" className="btn btn-secondary" onClick={closeViewQuoteModal}>
-                Cancel
               </button>
             </div>
           </div>

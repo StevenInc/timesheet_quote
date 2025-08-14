@@ -1073,6 +1073,24 @@
   gap: 0.5rem;
 }
 
+.company-quote-history-modal .client-item.clickable {
+  cursor: pointer;
+  transition: all 0.15s ease;
+  border-radius: 6px;
+  margin: 0.25rem 0;
+}
+
+.company-quote-history-modal .client-item.clickable:hover {
+  background-color: #f0f9ff;
+  border-left: 3px solid #3b82f6;
+  transform: translateX(2px);
+}
+
+.company-quote-history-modal .client-item.clickable:active {
+  transform: translateX(1px);
+  background-color: #e0f2fe;
+}
+
 .company-quote-history-modal .btn-link {
   background: none;
   border: none;
