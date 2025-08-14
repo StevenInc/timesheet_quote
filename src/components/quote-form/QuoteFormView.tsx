@@ -17,13 +17,7 @@ interface Props {
   updatePaymentTerm: (id: string, field: keyof PaymentTermItem, value: string | number) => void
   addPaymentTerm: () => void
   removePaymentTerm: (id: string) => void
-  // tax modal
-  isTaxModalOpen: boolean
-  openTaxModal: () => void
-  closeTaxModal: () => void
-  tempTaxRatePercent: number
-  setTempTaxRatePercent: (v: number) => void
-  applyNewTaxRate: () => void
+
   // misc
   onSubmit: (e: React.FormEvent) => void
   copyQuoteUrl: () => void
@@ -227,12 +221,6 @@ export const QuoteFormView: React.FC<Props> = (props) => {
     updatePaymentTerm,
     addPaymentTerm,
     removePaymentTerm,
-    isTaxModalOpen,
-    openTaxModal,
-    closeTaxModal,
-    tempTaxRatePercent,
-    setTempTaxRatePercent,
-    applyNewTaxRate,
     onSubmit,
     copyQuoteUrl,
     downloadQuote,
@@ -415,15 +403,24 @@ export const QuoteFormView: React.FC<Props> = (props) => {
             </div>
 
             <div className="form-section totals-section">
-              <div className="checkbox-group" style={{ marginBottom: '0.5rem' }}>
-                <label className="checkbox-label" onClick={() => formData.isTaxEnabled && openTaxModal()}>
-                  <input
-                    type="checkbox"
-                    checked={formData.isTaxEnabled}
-                    onChange={(e) => handleCheckboxChange('isTaxEnabled', e.target.checked)}
-                  />
-                  Apply Tax ({(formData.taxRate * 100).toFixed(2)}%)
-                </label>
+              <div className="form-group-horizontal" style={{ marginBottom: '0.5rem', display: 'flex', alignItems: 'baseline', gap: '0.5rem' }}>
+                <label htmlFor="taxRate" className="tax-rate-input" style={{ marginBottom: 0, whiteSpace: 'nowrap', lineHeight: '1' }}>Apply Tax (%)</label>
+                <input
+                  id="taxRate"
+                  type="number"
+                  min={0}
+                  max={100}
+                  step={0.01}
+                  value={formData.isTaxEnabled ? (formData.taxRate * 100).toFixed(2) : '0'}
+                  onChange={(e) => {
+                    const taxPercent = parseFloat(e.target.value) || 0
+                    const taxRate = taxPercent / 100
+                    const isEnabled = taxPercent > 0
+                    handleInputChange('taxRate', taxRate)
+                    handleCheckboxChange('isTaxEnabled', isEnabled)
+                  }}
+                  placeholder="0.00"
+                />
               </div>
               <div className="totals-grid">
                 <div className="total-row">
@@ -640,33 +637,7 @@ export const QuoteFormView: React.FC<Props> = (props) => {
         </div>
       </form>
 
-      {isTaxModalOpen && (
-        <div className="modal-overlay" role="dialog" aria-modal="true" aria-label="Edit tax rate">
-          <div className="modal">
-            <h3>Edit Tax Rate</h3>
-            <div className="form-group">
-              <label htmlFor="taxRateInput">Tax Rate (%)</label>
-              <input
-                id="taxRateInput"
-                type="number"
-                min={0}
-                max={100}
-                step={0.01}
-                value={Number.isNaN(tempTaxRatePercent) ? 0 : tempTaxRatePercent}
-                onChange={(e) => setTempTaxRatePercent(parseFloat(e.target.value))}
-              />
-            </div>
-            <div className="modal-actions">
-              <button type="button" className="btn btn-secondary" onClick={closeTaxModal}>
-                Cancel
-              </button>
-              <button type="button" className="btn btn-primary" onClick={applyNewTaxRate}>
-                Apply
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
+
 
       {/* New Quote Modal */}
       {isNewQuoteModalOpen && (

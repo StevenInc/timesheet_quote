@@ -677,7 +677,13 @@ export const useQuoteForm = () => {
 
   const handleInputChange = (field: keyof QuoteFormData, value: string | number | boolean) => {
     setFormData(prev => {
-      const newData = { ...prev, [field]: value }
+      let newData = { ...prev, [field]: value }
+
+      // Handle tax rate changes - recalculate totals
+      if (field === 'taxRate') {
+        const { subtotal, tax, total } = recalc(prev.items, prev.isTaxEnabled, value as number)
+        newData = { ...newData, subtotal, tax, total }
+      }
 
       // Check if this change creates unsaved changes
       const hasChanges = checkFormChanges(newData, originalFormData)
