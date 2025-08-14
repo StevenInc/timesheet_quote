@@ -1064,8 +1064,8 @@
 .company-quote-history-modal .sent-date-badge {
   display: inline-block;
   padding: 0.25rem 0.5rem;
-  background-color: #d1fae5;
-  color: #065f46;
+  background-color: #dbeafe;
+  color: #1d4ed8;
   border-radius: 4px;
   font-size: 0.75rem;
   font-weight: 500;
@@ -1103,8 +1103,8 @@
 
 
 .company-quote-history-modal .sent-cell:hover .sent-date-badge {
-  background-color: #a7f3d0;
-  color: #047857;
+  background-color: #bfdbfe;
+  color: #1e40af;
 }
 
 .company-quote-history-modal .viewed-cell:hover .viewed-date-badge {
