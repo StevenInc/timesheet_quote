@@ -77,6 +77,9 @@ interface Props {
 }
 
 export const QuoteFormView: React.FC<Props> = (props) => {
+  // Local state for tax input to prevent jumping while typing
+  const [taxInputValue, setTaxInputValue] = React.useState('')
+
   // Track which quote we've already auto-loaded for to prevent infinite loops
   const autoLoadedQuoteRef = React.useRef<string | null>(null)
   const loadTimeoutRef = React.useRef<NodeJS.Timeout | null>(null)
@@ -404,22 +407,38 @@ export const QuoteFormView: React.FC<Props> = (props) => {
 
             <div className="form-section totals-section">
               <div className="form-group-horizontal" style={{ marginBottom: '0.5rem', display: 'flex', alignItems: 'baseline', gap: '0.5rem' }}>
-                <label htmlFor="taxRate" className="tax-rate-input" style={{ marginBottom: 0, whiteSpace: 'nowrap', lineHeight: '1' }}>Apply Tax (%)</label>
+                <input
+                  type="checkbox"
+                  id="taxEnabled"
+                  className="tax-enabled-input"
+                  checked={formData.isTaxEnabled}
+                  onChange={(e) => handleCheckboxChange('isTaxEnabled', e.target.checked)}
+                  style={{ marginRight: '0.5rem' }}
+                />
+                <label htmlFor="taxEnabled" className="tax-rate-input-label" style={{ marginBottom: 0, whiteSpace: 'nowrap', lineHeight: '1' }}>Apply Tax (%)</label>
                 <input
                   id="taxRate"
                   type="number"
                   min={0}
                   max={100}
                   step={0.01}
-                  value={formData.isTaxEnabled ? (formData.taxRate * 100).toFixed(2) : '0'}
+                  value={taxInputValue || (formData.isTaxEnabled ? (formData.taxRate * 100).toFixed(2) : '')}
                   onChange={(e) => {
-                    const taxPercent = parseFloat(e.target.value) || 0
-                    const taxRate = taxPercent / 100
-                    const isEnabled = taxPercent > 0
-                    handleInputChange('taxRate', taxRate)
-                    handleCheckboxChange('isTaxEnabled', isEnabled)
+                    const value = e.target.value
+                    setTaxInputValue(value)
+                  }}
+                  onBlur={() => {
+                    if (taxInputValue === '') {
+                      handleInputChange('taxRate', 0)
+                    } else {
+                      const taxPercent = parseFloat(taxInputValue) || 0
+                      const taxRate = taxPercent / 100
+                      handleInputChange('taxRate', taxRate)
+                    }
+                    setTaxInputValue('')
                   }}
                   placeholder="0.00"
+                  disabled={!formData.isTaxEnabled}
                 />
               </div>
               <div className="totals-grid">

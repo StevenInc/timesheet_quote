@@ -183,6 +183,13 @@
   margin-bottom: 1rem;
 }
 
+.tax-enabled-input {
+  width: 16px;
+  height: 16px;
+  margin: 0;
+  margin-right: 0px !important;
+}
+
 .tax-rate-input {
   width: 80px;
   height: 32px;
@@ -193,12 +200,17 @@
   padding-top: 2px;
 }
 
+.tax-rate-input-label{
+  padding: 0px;
+}
+
 .form-group-horizontal {
   display: flex;
   flex-direction: row;
   align-items: left;
   gap: 0.5rem;
   margin-bottom: 1rem;
+  padding: 0px;
 
 }
 .form-group-horizontal label{
