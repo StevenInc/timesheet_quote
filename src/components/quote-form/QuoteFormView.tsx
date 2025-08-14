@@ -428,9 +428,7 @@ export const QuoteFormView: React.FC<Props> = (props) => {
                     setTaxInputValue(value)
                   }}
                   onBlur={() => {
-                    if (taxInputValue === '') {
-                      handleInputChange('taxRate', 0)
-                    } else {
+                    if (taxInputValue !== '') {
                       const taxPercent = parseFloat(taxInputValue) || 0
                       const taxRate = taxPercent / 100
                       handleInputChange('taxRate', taxRate)
