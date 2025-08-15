@@ -70,6 +70,7 @@ export interface QuoteFormData {
   quoteHistory: QuoteHistory[]
   selectedHistoryVersion: string
   sentViaEmail?: boolean
+  defaultLegalTerms?: string
 }
 
 export interface NewQuoteModalData {
@@ -96,6 +97,14 @@ export interface DatabasePaymentTerm {
 export interface DatabaseLegalTerm {
   id: string
   terms: string
+}
+
+export interface DefaultLegalTerms {
+  id: string
+  owner_id: string
+  terms: string
+  created_at: string
+  updated_at: string
 }
 
 export interface DatabaseClientComment {

@@ -56,8 +56,8 @@ export const useQuoteForm = () => {
   }
 
   const [formData, setFormData] = useState<QuoteFormData>({
-    owner: '',
-    ownerName: '',
+    owner: '11111111-1111-1111-1111-111111111111', // Default to Owner 1 for testing
+    ownerName: 'Owner 1',
     creatorName: '',
     createdAt: '',
     clientName: '',
@@ -86,7 +86,8 @@ export const useQuoteForm = () => {
     paymentSchedule: [
       { id: 'ps-1', percentage: 100, description: 'net 30 days' },
     ],
-    sentViaEmail: false
+    sentViaEmail: false,
+    defaultLegalTerms: ''
   })
 
   const [isSaving, setIsSaving] = useState(false)
@@ -138,6 +139,10 @@ export const useQuoteForm = () => {
   const [pendingQuoteId, setPendingQuoteId] = useState<string | null>(null)
   const [pendingRevisionId, setPendingRevisionId] = useState<string | null>(null)
 
+  // Default Legal Terms modal state
+  const [isDefaultLegalTermsModalOpen, setIsDefaultLegalTermsModalOpen] = useState(false)
+  const [defaultLegalTerms, setDefaultLegalTerms] = useState<string>('')
+
   // Track original form data to detect changes
   const [originalFormData, setOriginalFormData] = useState<QuoteFormData | null>(null)
   const [hasUnsavedChanges, setHasUnsavedChanges] = useState(false)
@@ -147,6 +152,43 @@ export const useQuoteForm = () => {
     console.log('Component mounted, initial newQuoteData:', newQuoteData)
     loadNextQuoteNumber()
   }, [])
+
+  // Default Legal Terms Functions
+  const loadDefaultLegalTerms = React.useCallback(async () => {
+    try {
+      if (!formData.owner) {
+        console.log('No owner selected, cannot load default legal terms')
+        return ''
+      }
+
+      const { data: defaultTerms, error } = await supabase
+        .from('default_legal_terms')
+        .select('terms')
+        .eq('owner_id', formData.owner)
+        .single()
+
+      if (error && error.code !== 'PGRST116') { // PGRST116 = no rows returned
+        console.error('Error loading default legal terms:', error)
+        return ''
+      }
+
+      return defaultTerms?.terms || ''
+    } catch (error) {
+      console.error('Error loading default legal terms:', error)
+      return ''
+    }
+  }, [formData.owner, supabase])
+
+  // Load default legal terms when component mounts
+  useEffect(() => {
+    if (formData.owner) {
+      loadDefaultLegalTerms().then(terms => {
+        setDefaultLegalTerms(terms)
+      }).catch(error => {
+        console.error('Error loading default legal terms on mount:', error)
+      })
+    }
+  }, [formData.owner, loadDefaultLegalTerms])
 
   const calculateItemTotal = (quantity: number, unitPrice: number) => quantity * unitPrice
 
@@ -526,6 +568,30 @@ export const useQuoteForm = () => {
     }
   }, [])
 
+  const saveDefaultLegalTerms = React.useCallback(async (terms: string) => {
+    try {
+      if (!formData.owner) {
+        console.error('No owner selected, cannot save default legal terms')
+        return false
+      }
+
+      const { error } = await supabase
+        .from('default_legal_terms')
+        .upsert({
+          owner_id: formData.owner,
+          terms: terms
+        }, {
+          onConflict: 'owner_id'
+        })
+
+      if (error) throw error
+      return true
+    } catch (error) {
+      console.error('Error saving default legal terms:', error)
+      return false
+    }
+  }, [formData.owner, supabase])
+
   // New Quote Modal Functions
   const openNewQuoteModal = React.useCallback(async () => {
     // Always get a fresh, unique quote number when opening the modal
@@ -545,6 +611,40 @@ export const useQuoteForm = () => {
     console.log('Reset newQuoteData to empty values')
     setClientSuggestions([])
   }, [newQuoteData])
+
+  // Default Legal Terms Modal Functions
+  const openDefaultLegalTermsModal = React.useCallback(async () => {
+    try {
+      const terms = await loadDefaultLegalTerms()
+      setDefaultLegalTerms(terms)
+      setIsDefaultLegalTermsModalOpen(true)
+    } catch (error) {
+      console.error('Error opening default legal terms modal:', error)
+      setDefaultLegalTerms('')
+      setIsDefaultLegalTermsModalOpen(true)
+    }
+  }, [loadDefaultLegalTerms])
+
+  const closeDefaultLegalTermsModal = React.useCallback(() => {
+    setIsDefaultLegalTermsModalOpen(false)
+    setDefaultLegalTerms('')
+  }, [])
+
+  const handleSaveDefaultLegalTerms = React.useCallback(async (terms: string) => {
+    try {
+      const success = await saveDefaultLegalTerms(terms)
+      if (success) {
+        setDefaultLegalTerms(terms)
+        setSaveMessage({ type: 'success', text: 'Default legal terms saved successfully!' })
+        closeDefaultLegalTermsModal()
+      } else {
+        setSaveMessage({ type: 'error', text: 'Failed to save default legal terms' })
+      }
+    } catch (error) {
+      console.error('Error saving default legal terms:', error)
+      setSaveMessage({ type: 'error', text: 'Error saving default legal terms' })
+    }
+  }, [saveDefaultLegalTerms, closeDefaultLegalTermsModal])
 
   const searchClients = async (searchTerm: string) => {
     if (searchTerm.length < 2) {
@@ -630,6 +730,9 @@ export const useQuoteForm = () => {
         setSaveMessage({ type: 'success', text: 'New quote created successfully!' })
         closeNewQuoteModal()
 
+        // Load default legal terms for the current user
+        const defaultLegalTerms = await loadDefaultLegalTerms()
+
         // Reset form data to defaults
         const newFormData = {
           ...formData,
@@ -642,12 +745,13 @@ export const useQuoteForm = () => {
           tax: 0,
           total: 0,
           notes: '',
-          legalTerms: '',
+          legalTerms: defaultLegalTerms, // Load default legal terms
           clientComments: '',
           isRecurring: false,
           billingPeriod: '',
           recurringAmount: 0,
-          paymentSchedule: [{ id: 'ps-1', percentage: 100, description: 'net 30 days' }]
+          paymentSchedule: [{ id: 'ps-1', percentage: 100, description: 'net 30 days' }],
+          defaultLegalTerms: defaultLegalTerms
         }
 
         setFormData(newFormData)
@@ -680,10 +784,13 @@ export const useQuoteForm = () => {
     setCurrentLoadedQuoteId(null)
   }
 
-  const resetForm = () => {
+  const resetForm = async () => {
+    // Load default legal terms for the current user
+    const defaultLegalTerms = await loadDefaultLegalTerms()
+
     const defaultFormData = {
-      owner: '',
-      ownerName: '',
+      owner: '11111111-1111-1111-1111-111111111111', // Default to Owner 1 for testing
+      ownerName: 'Owner 1',
       creatorName: '',
       createdAt: '',
       clientName: '',
@@ -702,7 +809,7 @@ export const useQuoteForm = () => {
       total: 0,
       title: '',
       notes: '',
-      legalTerms: '',
+      legalTerms: defaultLegalTerms, // Load default legal terms
       clientComments: '',
       isRecurring: false,
       billingPeriod: '',
@@ -712,7 +819,8 @@ export const useQuoteForm = () => {
       paymentSchedule: [
         { id: 'ps-1', percentage: 100, description: 'net 30 days' },
       ],
-      sentViaEmail: false
+      sentViaEmail: false,
+      defaultLegalTerms: defaultLegalTerms
     }
 
     setFormData(defaultFormData)
@@ -2573,6 +2681,12 @@ export const useQuoteForm = () => {
     closeTitleModal,
     submitTitleAndCompleteSave,
     refreshCurrentView,
+    // Default Legal Terms Modal
+    isDefaultLegalTermsModalOpen,
+    openDefaultLegalTermsModal,
+    closeDefaultLegalTermsModal,
+    saveDefaultLegalTerms: handleSaveDefaultLegalTerms,
+    defaultLegalTerms,
     // Change tracking
     hasUnsavedChanges,
   }

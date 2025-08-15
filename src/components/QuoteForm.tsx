@@ -59,6 +59,12 @@ const QuoteForm: React.FC = () => {
     openTitleModal,
     closeTitleModal,
     submitTitleAndCompleteSave,
+    // Default Legal Terms Modal
+    isDefaultLegalTermsModalOpen,
+    openDefaultLegalTermsModal,
+    closeDefaultLegalTermsModal,
+    saveDefaultLegalTerms,
+    defaultLegalTerms,
     // Change tracking
     hasUnsavedChanges,
   } = useQuoteForm()
@@ -143,6 +149,11 @@ const QuoteForm: React.FC = () => {
       openTitleModal={openTitleModal}
       closeTitleModal={closeTitleModal}
       submitTitleAndCompleteSave={submitTitleAndCompleteSave}
+      isDefaultLegalTermsModalOpen={isDefaultLegalTermsModalOpen}
+      openDefaultLegalTermsModal={openDefaultLegalTermsModal}
+      closeDefaultLegalTermsModal={closeDefaultLegalTermsModal}
+      saveDefaultLegalTerms={saveDefaultLegalTerms}
+      defaultLegalTerms={defaultLegalTerms}
       hasUnsavedChanges={hasUnsavedChanges}
     />
   )

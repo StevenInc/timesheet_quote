@@ -58,7 +58,7 @@ interface Props {
   currentLoadedRevisionId: string | null
   currentLoadedQuoteId: string | null
   clearLoadedRevisionState: () => void
-  resetForm: () => void
+  resetForm: () => Promise<void>
   // view quote modal
   isViewQuoteModalOpen: boolean
   openViewQuoteModal: () => void
@@ -73,6 +73,12 @@ interface Props {
   openTitleModal: (quoteData: QuoteFormData, quoteId: string, revisionId: string) => void
   closeTitleModal: () => void
   submitTitleAndCompleteSave: (title: string) => void
+  // Default Legal Terms modal
+  isDefaultLegalTermsModalOpen: boolean
+  openDefaultLegalTermsModal: () => void
+  closeDefaultLegalTermsModal: () => void
+  saveDefaultLegalTerms: (terms: string) => Promise<void>
+  defaultLegalTerms: string
   // Change tracking
   hasUnsavedChanges: boolean
 }
@@ -80,6 +86,9 @@ interface Props {
 export const QuoteFormView: React.FC<Props> = (props) => {
     // Local state for tax input to prevent jumping while typing
   const [taxInputValue, setTaxInputValue] = React.useState('')
+
+  // Local state for default legal terms modal
+  const [localDefaultLegalTerms, setLocalDefaultLegalTerms] = React.useState('')
 
   // Track which quote we've already auto-loaded for to prevent infinite loops
   const autoLoadedQuoteRef = React.useRef<string | null>(null)
@@ -96,6 +105,13 @@ export const QuoteFormView: React.FC<Props> = (props) => {
   React.useEffect(() => {
     loadQuoteRevisionRef.current = props.loadQuoteRevision
   }, [props.loadQuoteRevision])
+
+  // Initialize local default legal terms when modal opens
+  React.useEffect(() => {
+    if (props.isDefaultLegalTermsModalOpen) {
+      setLocalDefaultLegalTerms(props.defaultLegalTerms)
+    }
+  }, [props.isDefaultLegalTermsModalOpen, props.defaultLegalTerms])
 
   React.useEffect(() => {
     loadQuoteRevisionsRef.current = props.loadQuoteRevisions
@@ -338,6 +354,14 @@ export const QuoteFormView: React.FC<Props> = (props) => {
           >
             <Plus size={16} />
             New Quote
+          </button>
+          <button
+            type="button"
+            className="btn btn-primary"
+            onClick={props.openDefaultLegalTermsModal}
+          >
+            <Plus size={16} />
+            Default Legal Terms
           </button>
         </div>
       </div>
@@ -1007,6 +1031,62 @@ export const QuoteFormView: React.FC<Props> = (props) => {
             <div className="modal-actions">
               <button type="button" className="btn btn-secondary" onClick={closeViewQuoteModal}>
                 Cancel
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+            {/* Default Legal Terms Modal */}
+      {props.isDefaultLegalTermsModalOpen && (
+        <div className="modal-overlay" role="dialog" aria-modal="true" aria-label="Edit default legal terms">
+          <div className="modal">
+            <h3>Edit Default Legal Terms</h3>
+            <div className="form-group">
+              <label htmlFor="defaultLegalTerms">Default Legal Terms</label>
+              <textarea
+                id="defaultLegalTerms"
+                rows={10}
+                placeholder="Enter the default legal terms that will be automatically loaded for new quotes..."
+                value={localDefaultLegalTerms}
+                onChange={(e) => {
+                  setLocalDefaultLegalTerms(e.target.value)
+                }}
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter' && e.ctrlKey) {
+                    e.preventDefault()
+                    const terms = localDefaultLegalTerms.trim()
+                    if (terms) {
+                      props.saveDefaultLegalTerms(terms)
+                      setLocalDefaultLegalTerms('')
+                    }
+                  }
+                }}
+              />
+              <small className="form-help">
+                These terms will be automatically loaded when creating new quotes.
+                Press Ctrl+Enter to save.
+              </small>
+            </div>
+            <div className="modal-actions">
+              <button type="button" className="btn btn-secondary" onClick={() => {
+                setLocalDefaultLegalTerms('')
+                props.closeDefaultLegalTermsModal()
+              }}>
+                Cancel
+              </button>
+              <button
+                type="button"
+                className="btn btn-primary"
+                onClick={() => {
+                  const terms = localDefaultLegalTerms.trim()
+                  if (terms) {
+                    props.saveDefaultLegalTerms(terms)
+                    setLocalDefaultLegalTerms('')
+                  }
+                }}
+              >
+                Save Terms
               </button>
             </div>
           </div>
