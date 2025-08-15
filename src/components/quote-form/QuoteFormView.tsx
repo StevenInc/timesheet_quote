@@ -68,11 +68,6 @@ interface Props {
   selectedClientId: string
   setSelectedClientId: (clientId: string) => void
   handleClientSelection: (clientId: string) => void
-  // title modal
-  isTitleModalOpen: boolean
-  openTitleModal: (quoteData: QuoteFormData, quoteId: string, revisionId: string) => void
-  closeTitleModal: () => void
-  submitTitleAndCompleteSave: (title: string) => void
   // Default Legal Terms modal
   isDefaultLegalTermsModalOpen: boolean
   openDefaultLegalTermsModal: () => void
@@ -276,11 +271,6 @@ export const QuoteFormView: React.FC<Props> = (props) => {
     selectedClientId,
     handleClientSelection,
     setSelectedClientId,
-    // title modal
-    // isTitleModalOpen,
-    // openTitleModal,
-    // closeTitleModal,
-    // submitTitleAndCompleteSave,
     // change tracking
     hasUnsavedChanges,
   } = props
@@ -739,8 +729,23 @@ export const QuoteFormView: React.FC<Props> = (props) => {
           </div>
         </div>
 
+        <div className="form-section">
+          <div className="form-group">
+            <label htmlFor="title">Quote Title</label>
+            <input
+              id="title"
+              type="text"
+              maxLength={100}
+              value={formData.title}
+              onChange={(e) => handleInputChange('title', e.target.value)}
+              placeholder="Enter a short title for this quote revision (max 100 characters)"
+            />
+            <small className="form-help">This title will be saved with the quote revision</small>
+          </div>
+        </div>
+
         <div className="form-actions">
-          <button type="submit" className="btn btn-primary" disabled={props.isSaving}>
+          <button type="submit" className="btn btn-primary" disabled={props.isSaving || !formData.title?.trim()}>
             <Save size={16} />
             {props.isSaving ? 'Saving...' : 'Save'}
           </button>
@@ -1087,51 +1092,6 @@ export const QuoteFormView: React.FC<Props> = (props) => {
                 }}
               >
                 Save Terms
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
-
-      {/* Title Modal */}
-      {props.isTitleModalOpen && (
-        <div className="modal-overlay" role="dialog" aria-modal="true" aria-label="Enter quote title">
-          <div className="modal">
-            <h3>Enter Quote Title</h3>
-            <div className="form-group">
-              <label htmlFor="quoteTitle">Title</label>
-              <input
-                id="quoteTitle"
-                type="text"
-                maxLength={100}
-                placeholder="Enter a short title for this quote revision (max 100 characters)"
-                onKeyDown={(e) => {
-                  if (e.key === 'Enter') {
-                    e.preventDefault()
-                    const title = (e.target as HTMLInputElement).value.trim()
-                    if (title) {
-                      props.submitTitleAndCompleteSave(title)
-                    }
-                  }
-                }}
-              />
-              <small className="form-help">This title will be saved with the quote revision</small>
-            </div>
-            <div className="modal-actions">
-              <button type="button" className="btn btn-secondary" onClick={props.closeTitleModal}>
-                Cancel
-              </button>
-              <button
-                type="button"
-                className="btn btn-primary"
-                onClick={() => {
-                  const title = (document.getElementById('quoteTitle') as HTMLInputElement)?.value.trim()
-                  if (title) {
-                    props.submitTitleAndCompleteSave(title)
-                  }
-                }}
-              >
-                Save Title
               </button>
             </div>
           </div>

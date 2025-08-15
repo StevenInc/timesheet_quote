@@ -55,10 +55,6 @@ const QuoteForm: React.FC = () => {
     setSelectedClientId,
     handleClientSelection,
     handleQuoteSelection,
-    isTitleModalOpen,
-    openTitleModal,
-    closeTitleModal,
-    submitTitleAndCompleteSave,
     // Default Legal Terms Modal
     isDefaultLegalTermsModalOpen,
     openDefaultLegalTermsModal,
@@ -145,10 +141,6 @@ const QuoteForm: React.FC = () => {
       setSelectedClientId={setSelectedClientId}
       handleClientSelection={handleClientSelection}
       handleQuoteSelection={handleQuoteSelection}
-      isTitleModalOpen={isTitleModalOpen}
-      openTitleModal={openTitleModal}
-      closeTitleModal={closeTitleModal}
-      submitTitleAndCompleteSave={submitTitleAndCompleteSave}
       isDefaultLegalTermsModalOpen={isDefaultLegalTermsModalOpen}
       openDefaultLegalTermsModal={openDefaultLegalTermsModal}
       closeDefaultLegalTermsModal={closeDefaultLegalTermsModal}

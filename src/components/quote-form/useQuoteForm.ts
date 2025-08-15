@@ -133,12 +133,6 @@ export const useQuoteForm = () => {
   const [isLoadingAvailableClients, setIsLoadingAvailableClients] = useState(false)
   const [selectedClientId, setSelectedClientId] = useState<string>('')
 
-  // Title modal state
-  const [isTitleModalOpen, setIsTitleModalOpen] = useState(false)
-  const [pendingQuoteData, setPendingQuoteData] = useState<QuoteFormData | null>(null)
-  const [pendingQuoteId, setPendingQuoteId] = useState<string | null>(null)
-  const [pendingRevisionId, setPendingRevisionId] = useState<string | null>(null)
-
   // Default Legal Terms modal state
   const [isDefaultLegalTermsModalOpen, setIsDefaultLegalTermsModalOpen] = useState(false)
   const [defaultLegalTerms, setDefaultLegalTerms] = useState<string>('')
@@ -723,7 +717,7 @@ export const useQuoteForm = () => {
       console.log('Data being passed to saveQuote:', dataToPass)
       console.log('Client email being passed:', dataToPass.clientEmail)
 
-      const result = await saveQuote(dataToPass, false) // Don't open title modal for new quotes
+      const result = await saveQuote(dataToPass) // Save the new quote
 
       if (result.success) {
         console.log('New quote created successfully:', result.quoteId)
@@ -969,7 +963,7 @@ export const useQuoteForm = () => {
     [formData.paymentSchedule]
   )
 
-  const saveQuote = async (quoteData?: QuoteFormData, openTitleModalAfterSave: boolean = true) => {
+  const saveQuote = async (quoteData?: QuoteFormData) => {
     const dataToSave = quoteData || formData
     setIsSaving(true)
     setSaveMessage(null)
@@ -986,6 +980,17 @@ export const useQuoteForm = () => {
       }
       if (!dataToSave.items || dataToSave.items.length === 0) {
         throw new Error('At least one quote item is required')
+      }
+
+      // Title is only required when the quote has actual content (not just basic structure)
+      // Check if this is a new quote with minimal data vs an existing quote with content
+      const hasActualContent = dataToSave.items.some(item => item.description.trim()) ||
+                               dataToSave.notes?.trim() ||
+                               dataToSave.legalTerms?.trim() ||
+                               dataToSave.clientComments?.trim()
+
+      if (hasActualContent && !dataToSave.title?.trim()) {
+        throw new Error('Quote title is required')
       }
 
       // First, create or get the client (SAVEQUOTE FUNCTION)
@@ -1304,6 +1309,7 @@ export const useQuoteForm = () => {
               expires_on: dataToSave.expires,
               tax_rate: dataToSave.taxRate,
               is_tax_enabled: dataToSave.isTaxEnabled,
+              title: dataToSave.title,
               notes: dataToSave.notes,
               is_recurring: dataToSave.isRecurring,
               billing_period: dataToSave.billingPeriod || null,
@@ -1383,6 +1389,7 @@ export const useQuoteForm = () => {
             expires_on: dataToSave.expires,
             tax_rate: dataToSave.taxRate,
             is_tax_enabled: dataToSave.isTaxEnabled,
+            title: dataToSave.title,
             notes: dataToSave.notes,
             is_recurring: dataToSave.isRecurring,
             billing_period: dataToSave.billingPeriod || null,
@@ -1490,10 +1497,8 @@ export const useQuoteForm = () => {
         selectedHistoryVersion: newHistoryItem.id
       }))
 
-      // Show title modal only if requested
-      if (openTitleModalAfterSave) {
-        openTitleModal(dataToSave, quoteId, revisionId)
-      }
+      // Set success message
+      setSaveMessage({ type: 'success', text: 'Quote saved successfully!' })
 
       // Reset change tracking since quote was saved
       setOriginalFormData(formData)
@@ -1584,20 +1589,7 @@ export const useQuoteForm = () => {
     // setAvailableClients([])
   }, [])
 
-  // Title modal functions
-  const openTitleModal = React.useCallback((quoteData: QuoteFormData, quoteId: string, revisionId: string) => {
-    setPendingQuoteData(quoteData)
-    setPendingQuoteId(quoteId)
-    setPendingRevisionId(revisionId)
-    setIsTitleModalOpen(true)
-  }, [])
 
-  const closeTitleModal = React.useCallback(() => {
-    setIsTitleModalOpen(false)
-    setPendingQuoteData(null)
-    setPendingQuoteId(null)
-    setPendingRevisionId(null)
-  }, [])
 
   const refreshCurrentView = React.useCallback(async () => {
     console.log('Refreshing current view...')
@@ -1760,40 +1752,7 @@ export const useQuoteForm = () => {
     }
   }, [selectedClientQuote, selectedClientId, loadClientQuotes, recalc])
 
-  const submitTitleAndCompleteSave = React.useCallback(async (title: string) => {
-    if (!pendingQuoteData || !pendingQuoteId || !pendingRevisionId) {
-      console.error('Missing pending data for title submission')
-      return
-    }
 
-    try {
-      console.log('Updating revision with title:', title)
-
-      // Update the revision with the title
-      const { error: updateError } = await supabase
-        .from('quote_revisions')
-        .update({ title: title })
-        .eq('id', pendingRevisionId)
-
-      if (updateError) throw updateError
-
-      console.log('Revision updated successfully, closing modal')
-      // Close the modal
-      closeTitleModal()
-
-      // Set success message
-      setSaveMessage({ type: 'success', text: 'Quote saved successfully!' })
-
-      // Refresh the current view to show updated data
-      await refreshCurrentView()
-
-      console.log('All refresh operations completed')
-
-    } catch (error) {
-      console.error('Error updating revision with title:', error)
-      setSaveMessage({ type: 'error', text: `Error saving title: ${error instanceof Error ? error.message : 'Unknown error'}` })
-    }
-  }, [pendingQuoteData, pendingQuoteId, pendingRevisionId, refreshCurrentView])
 
   const loadAvailableClients = async () => {
     setIsLoadingAvailableClients(true)
@@ -2075,6 +2034,17 @@ export const useQuoteForm = () => {
       }
       if (!dataToSave.items || dataToSave.items.length === 0) {
         throw new Error('At least one quote item is required')
+      }
+
+      // Title is only required when the quote has actual content (not just basic structure)
+      // Check if this is a new quote with minimal data vs an existing quote with content
+      const hasActualContent = dataToSave.items.some(item => item.description.trim()) ||
+                               dataToSave.notes?.trim() ||
+                               dataToSave.legalTerms?.trim() ||
+                               dataToSave.clientComments?.trim()
+
+      if (hasActualContent && !dataToSave.title?.trim()) {
+        throw new Error('Quote title is required')
       }
 
       // First, create or get the client
@@ -2675,11 +2645,6 @@ export const useQuoteForm = () => {
     // Utility functions
     clearLoadedRevisionState,
     resetForm,
-    // Title Modal
-    isTitleModalOpen,
-    openTitleModal,
-    closeTitleModal,
-    submitTitleAndCompleteSave,
     refreshCurrentView,
     // Default Legal Terms Modal
     isDefaultLegalTermsModalOpen,
