@@ -84,7 +84,7 @@ export const useQuoteForm = () => {
     quoteHistory: [],
     selectedHistoryVersion: '',
     paymentSchedule: [
-      { id: 'ps-1', percentage: 100, description: 'net 30 days' },
+      { id: 'ps-1', percentage: 100, description: 'Net 30' },
     ],
     sentViaEmail: false,
     defaultLegalTerms: ''
@@ -370,7 +370,7 @@ export const useQuoteForm = () => {
               id: term.id,
               percentage: term.percentage || 100,
               description: term.description || ''
-            })) || [{ id: 'ps-1', percentage: 100, description: 'net 30 days' }],
+            })) || [{ id: 'ps-1', percentage: 100, description: 'Net 30' }],
             legalTerms: latestRevision.legal_terms?.[0]?.terms || '',
             clientComments: latestRevision.client_comments?.[0]?.comment || ''
           }))
@@ -828,7 +828,7 @@ export const useQuoteForm = () => {
       quoteHistory: [],
       selectedHistoryVersion: '',
       paymentSchedule: [
-        { id: 'ps-1', percentage: 100, description: 'net 30 days' },
+        { id: 'ps-1', percentage: 100, description: 'Net 30' },
       ],
       sentViaEmail: false,
       defaultLegalTerms: defaultLegalTerms
@@ -1705,7 +1705,7 @@ export const useQuoteForm = () => {
                   id: term.id,
                   percentage: term.percentage || 100,
                   description: term.description || ''
-                })) || [{ id: 'ps-1', percentage: 100, description: 'net 30 days' }],
+                })) || [{ id: 'ps-1', percentage: 100, description: 'Net 30' }],
                 legalTerms: revision.legal_terms?.[0]?.terms || '',
                 clientComments: revision.client_comments?.[0]?.comment || '',
                 sentViaEmail: revision.sent_via_email || false
@@ -1984,7 +1984,7 @@ export const useQuoteForm = () => {
             id: term.id,
             percentage: term.percentage || 100,
             description: term.description || ''
-          })) || [{ id: 'ps-1', percentage: 100, description: 'net 30 days' }],
+          })) || [{ id: 'ps-1', percentage: 100, description: 'Net 30' }],
           legalTerms: revision.legal_terms?.[0]?.terms || '',
           clientComments: revision.client_comments?.[0]?.comment || '',
           sentViaEmail: revision.sent_via_email || false

@@ -3,6 +3,22 @@ import { Trash2, Save, Send, Copy, Download, Plus } from 'lucide-react'
 import '../QuoteForm.css'
 import type { QuoteFormData, QuoteItem, PaymentTermItem, NewQuoteModalData, ClientQuote, DatabaseQuoteRevision, ClientSuggestion } from './types'
 
+// Payment Schedule Options
+const PAYMENT_SCHEDULE_OPTIONS = [
+  'Net 7',
+  'Net 15',
+  'Net 30',
+  'Net 60',
+  'Net 90',
+  '2/10 Net 30',
+  'Due Upon Receipt',
+  'End of Month',
+  'Cash in Advance',
+  'Payment in Advance',
+  'Cash on Delivery',
+  'Early Payment Discounts'
+]
+
 
 interface Props {
   formData: QuoteFormData
@@ -550,12 +566,18 @@ export const QuoteFormView: React.FC<Props> = (props) => {
                         />
                       </div>
                       <div className="table-cell">
-                        <input
-                          type="text"
+                        <select
                           value={t.description}
                           onChange={(e) => updatePaymentTerm(t.id, 'description', e.target.value)}
-                          placeholder="e.g., with order"
-                        />
+                          style={{ width: '100%' }}
+                        >
+                          <option value="">-- Select Description --</option>
+                          {PAYMENT_SCHEDULE_OPTIONS.map((option) => (
+                            <option key={option} value={option}>
+                              {option}
+                            </option>
+                          ))}
+                        </select>
                       </div>
                       <div className="table-cell">
                         <button type="button" className="btn btn-danger btn-sm" onClick={() => removePaymentTerm(t.id)}>
