@@ -591,6 +591,11 @@ export const useQuoteForm = () => {
     console.log('About to call loadNextQuoteNumber...')
     await loadNextQuoteNumber()
     console.log('After loading next quote number, newQuoteData:', newQuoteData)
+    
+    // Reset the main form to clean state when opening new quote creation
+    // This ensures all form fields are reset to defaults
+    await resetForm()
+    
     console.log('Setting modal to open...')
     setIsNewQuoteModalOpen(true)
     console.log('Modal should now be open')
@@ -749,28 +754,15 @@ export const useQuoteForm = () => {
         setSaveMessage({ type: 'success', text: 'New quote created successfully!' })
         closeNewQuoteModal()
 
-        // Load default legal terms for the current user
-        const defaultLegalTerms = await loadDefaultLegalTerms()
+        // Reset form to default state first
+        await resetForm()
 
-        // Reset form data to defaults
+        // Then set the specific values for the newly created quote
         const newFormData = {
           ...formData,
           quoteNumber: newQuoteData.quoteNumber,
           clientName: selectedClient.name,
           clientEmail: selectedClient.email,
-          expires: getDefaultExpirationDate(), // Set fresh expiration date
-          items: [{ id: '1', description: '', quantity: 1, unitPrice: 0, total: 0 }],
-          subtotal: 0,
-          tax: 0,
-          total: 0,
-          notes: '',
-          legalTerms: defaultLegalTerms, // Load default legal terms
-          clientComments: '',
-          isRecurring: false,
-          billingPeriod: '',
-          recurringAmount: 0,
-          paymentSchedule: [{ id: 'ps-1', percentage: 100, description: 'net 30 days' }],
-          defaultLegalTerms: defaultLegalTerms
         }
 
         setFormData(newFormData)
@@ -2283,7 +2275,7 @@ export const useQuoteForm = () => {
             tax_rate: dataToSave.taxRate,
             is_tax_enabled: dataToSave.isTaxEnabled,
             is_recurring: dataToSave.isRecurring,
-            billing_period: dataToSave.billingPeriod && ['monthly', 'quarterly', 'yearly', 'one-time'].includes(dataToSave.billingPeriod)
+            billing_period: dataToSave.billingPeriod && ['weekly', 'bi-weekly', 'semi-monthly', 'monthly', 'quarterly', 'semi-annually', 'annually'].includes(dataToSave.billingPeriod)
               ? dataToSave.billingPeriod
               : null,
             recurring_amount: dataToSave.recurringAmount,
@@ -2326,7 +2318,7 @@ export const useQuoteForm = () => {
             tax_rate: dataToSave.taxRate,
             is_tax_enabled: dataToSave.isTaxEnabled,
             is_recurring: dataToSave.isRecurring,
-            billing_period: dataToSave.billingPeriod && ['monthly', 'quarterly', 'yearly', 'one-time'].includes(dataToSave.billingPeriod)
+            billing_period: dataToSave.billingPeriod && ['weekly', 'bi-weekly', 'semi-monthly', 'monthly', 'quarterly', 'semi-annually', 'annually'].includes(dataToSave.billingPeriod)
               ? dataToSave.billingPeriod
               : null,
             recurring_amount: dataToSave.recurringAmount,

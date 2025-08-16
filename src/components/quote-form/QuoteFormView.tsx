@@ -404,6 +404,7 @@ export const QuoteFormView: React.FC<Props> = (props) => {
                   placeholder="name@company.com"
                 />
               </div>
+
             </div>
 
             <div className="form-section">
@@ -596,6 +597,18 @@ export const QuoteFormView: React.FC<Props> = (props) => {
                   placeholder="Legal terms and conditions..."
                 />
               </div>
+              <div className="form-group">
+                <label htmlFor="title">Quote Title</label>
+                <input
+                  id="title"
+                  type="text"
+                  maxLength={100}
+                  value={formData.title}
+                  onChange={(e) => handleInputChange('title', e.target.value)}
+                  placeholder="Enter a short title for this quote revision (max 100 characters)"
+                />
+                <small className="form-help">This title will be saved with the quote revision</small>
+              </div>
             </div>
           </div>
 
@@ -721,32 +734,26 @@ export const QuoteFormView: React.FC<Props> = (props) => {
               </div>
               <div className="form-group">
                 <label htmlFor="billingPeriod">Billing Period</label>
-                <input
-                  type="text"
+                <select
                   id="billingPeriod"
                   value={formData.billingPeriod}
                   onChange={(e) => handleInputChange('billingPeriod', e.target.value)}
-                  placeholder="e.g., Monthly, Quarterly"
-                />
+                >
+                  <option value="">-- Select Billing Period --</option>
+                  <option value="weekly">Weekly</option>
+                  <option value="bi-weekly">Bi-Weekly</option>
+                  <option value="semi-monthly">Semi-Monthly</option>
+                  <option value="monthly">Monthly</option>
+                  <option value="quarterly">Quarterly</option>
+                  <option value="semi-annually">Semi-Annually</option>
+                  <option value="annually">Annually</option>
+                </select>
               </div>
             </div>
           </div>
         </div>
 
-        <div className="form-section">
-          <div className="form-group">
-            <label htmlFor="title">Quote Title</label>
-            <input
-              id="title"
-              type="text"
-              maxLength={100}
-              value={formData.title}
-              onChange={(e) => handleInputChange('title', e.target.value)}
-              placeholder="Enter a short title for this quote revision (max 100 characters)"
-            />
-            <small className="form-help">This title will be saved with the quote revision</small>
-          </div>
-        </div>
+
 
         <div className="form-actions">
           <button type="submit" className="btn btn-primary" disabled={props.isSaving || (props.currentLoadedRevisionId ? !hasUnsavedChanges : !formData.title?.trim())}>

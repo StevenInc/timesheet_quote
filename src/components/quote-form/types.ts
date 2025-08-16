@@ -23,7 +23,7 @@ export interface QuoteRevision {
   title: string
   notes: string
   isRecurring: boolean
-  billingPeriod?: 'monthly' | 'quarterly' | 'yearly' | 'one-time'
+  billingPeriod?: 'weekly' | 'bi-weekly' | 'semi-monthly' | 'monthly' | 'quarterly' | 'semi-annually' | 'annually'
   recurringAmount?: number
   createdAt: string
   updatedAt: string
