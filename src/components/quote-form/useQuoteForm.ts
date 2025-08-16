@@ -1,5 +1,5 @@
 import React, { useMemo, useState, useEffect } from 'react'
-import type { QuoteFormData, QuoteItem, PaymentTermItem, NewQuoteModalData, QuoteHistory, DatabaseQuote, DatabaseQuoteRevision, DatabaseQuoteItem, DatabasePaymentTerm, ClientQuote, DatabaseClient } from './types'
+import type { QuoteFormData, QuoteItem, PaymentTermItem, NewQuoteModalData, QuoteHistory, DatabaseQuote, DatabaseQuoteRevision, DatabaseQuoteItem, DatabasePaymentTerm, ClientQuote, ClientSuggestion } from './types'
 import { supabase } from '../../lib/supabaseClient'
 import { EmailService } from '../../lib/emailService'
 
@@ -120,17 +120,15 @@ export const useQuoteForm = () => {
   const [isNewQuoteModalOpen, setIsNewQuoteModalOpen] = useState(false)
   const [newQuoteData, setNewQuoteData] = useState<NewQuoteModalData>({
     quoteNumber: '',
-    clientName: '',
-    clientEmail: ''
+    selectedClientId: ''
   })
-  const [clientSuggestions, setClientSuggestions] = useState<string[]>([])
+  const [clientSuggestions, setClientSuggestions] = useState<ClientSuggestion[]>([])
   const [isLoadingClients, setIsLoadingClients] = useState(false)
   const [isCreatingQuote, setIsCreatingQuote] = useState(false)
 
   // View Quote Modal State
   const [isViewQuoteModalOpen, setIsViewQuoteModalOpen] = useState(false)
-  const [availableClients, setAvailableClients] = useState<DatabaseClient[]>([])
-  const [isLoadingAvailableClients, setIsLoadingAvailableClients] = useState(false)
+
   const [selectedClientId, setSelectedClientId] = useState<string>('')
 
   // Default Legal Terms modal state
@@ -596,12 +594,14 @@ export const useQuoteForm = () => {
     console.log('Setting modal to open...')
     setIsNewQuoteModalOpen(true)
     console.log('Modal should now be open')
+    // Load available clients when opening the modal
+    await loadAvailableClients()
   }, [newQuoteData])
 
   const closeNewQuoteModal = React.useCallback(() => {
     console.log('Closing new quote modal, current newQuoteData:', newQuoteData)
     setIsNewQuoteModalOpen(false)
-    setNewQuoteData({ quoteNumber: '', clientName: '', clientEmail: '' })
+    setNewQuoteData({ quoteNumber: '', selectedClientId: '' })
     console.log('Reset newQuoteData to empty values')
     setClientSuggestions([])
   }, [newQuoteData])
@@ -640,6 +640,26 @@ export const useQuoteForm = () => {
     }
   }, [saveDefaultLegalTerms, closeDefaultLegalTermsModal])
 
+  const loadAvailableClients = React.useCallback(async () => {
+    setIsLoadingClients(true)
+    try {
+      const { data, error } = await supabase
+        .from('clients')
+        .select('id, name, email')
+        .order('name')
+
+      if (error) throw error
+
+      const clients = data || []
+      setClientSuggestions(clients)
+    } catch (error) {
+      console.error('Error loading clients:', error)
+      setClientSuggestions([])
+    } finally {
+      setIsLoadingClients(false)
+    }
+  }, [supabase])
+
   const searchClients = async (searchTerm: string) => {
     if (searchTerm.length < 2) {
       setClientSuggestions([])
@@ -648,16 +668,16 @@ export const useQuoteForm = () => {
 
     setIsLoadingClients(true)
     try {
-      const { data: clients, error } = await supabase
+      const { data, error } = await supabase
         .from('clients')
-        .select('name')
+        .select('id, name, email')
         .ilike('name', `%${searchTerm}%`)
         .limit(10)
 
       if (error) throw error
 
-      const names = clients?.map(client => client.name).filter(Boolean) || []
-      setClientSuggestions(names)
+      const clientResults = data || []
+      setClientSuggestions(clientResults)
     } catch (error) {
       console.error('Error searching clients:', error)
       setClientSuggestions([])
@@ -680,35 +700,30 @@ export const useQuoteForm = () => {
     try {
       console.log('Creating new quote with data:', newQuoteData)
       console.log('Form data before save:', formData)
-      console.log('Email from modal:', newQuoteData.clientEmail)
-      console.log('Email type:', typeof newQuoteData.clientEmail)
-      console.log('Email length:', newQuoteData.clientEmail?.length)
 
       // Validate required fields
       if (!newQuoteData.quoteNumber?.trim()) {
         throw new Error('Quote number is required')
       }
-      if (!newQuoteData.clientName?.trim()) {
-        throw new Error('Client name is required')
-      }
-
-      // Validate client email if provided
-      if (newQuoteData.clientEmail && newQuoteData.clientEmail.trim()) {
-        const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
-        if (!emailRegex.test(newQuoteData.clientEmail.trim())) {
-          throw new Error('Please enter a valid email address for the client.')
-        }
+      if (!newQuoteData.selectedClientId) {
+        throw new Error('Please select a client')
       }
 
       // Clear any loaded revision state
       clearLoadedRevisionState()
 
+      // Get the selected client information
+      const selectedClient = clientSuggestions.find(client => client.id === newQuoteData.selectedClientId)
+      if (!selectedClient) {
+        throw new Error('Selected client not found')
+      }
+
       // Create the quote using the existing saveQuote function
       const dataToPass = {
         ...formData,
         quoteNumber: newQuoteData.quoteNumber,
-        clientName: newQuoteData.clientName,
-        clientEmail: newQuoteData.clientEmail || '',
+        clientName: selectedClient.name,
+        clientEmail: selectedClient.email,
         items: [{ id: '1', description: '', quantity: 1, unitPrice: 0, total: 0 }],
         subtotal: 0,
         tax: 0,
@@ -731,8 +746,8 @@ export const useQuoteForm = () => {
         const newFormData = {
           ...formData,
           quoteNumber: newQuoteData.quoteNumber,
-          clientName: newQuoteData.clientName,
-          clientEmail: newQuoteData.clientEmail || '',
+          clientName: selectedClient.name,
+          clientEmail: selectedClient.email,
           expires: getDefaultExpirationDate(), // Set fresh expiration date
           items: [{ id: '1', description: '', quantity: 1, unitPrice: 0, total: 0 }],
           subtotal: 0,
@@ -1754,36 +1769,13 @@ export const useQuoteForm = () => {
 
 
 
-  const loadAvailableClients = async () => {
-    setIsLoadingAvailableClients(true)
-    try {
-      const { data: clients, error } = await supabase
-        .from('clients')
-        .select('id, name, email')
-        .order('name', { ascending: true })
 
-      if (error) throw error
-
-      if (clients && clients.length > 0) {
-        console.log('Loaded available clients:', clients)
-        setAvailableClients(clients)
-      } else {
-        setAvailableClients([])
-      }
-    } catch (error) {
-      console.error('Error loading available clients:', error)
-      setSaveMessage({ type: 'error', text: `Error loading clients: ${error instanceof Error ? error.message : 'Unknown error'}` })
-      setAvailableClients([])
-    } finally {
-      setIsLoadingAvailableClients(false)
-    }
-  }
 
   const handleClientSelection = React.useCallback(async (clientId: string) => {
     setSelectedClientId(clientId)
 
     // Find the selected client to get their information
-    const selectedClient = availableClients.find(client => client.id === clientId)
+    const selectedClient = clientSuggestions.find(client => client.id === clientId)
 
     if (selectedClient) {
       // Populate the form fields with the selected client's information
@@ -1800,7 +1792,7 @@ export const useQuoteForm = () => {
 
     // Don't close the modal - let users see the quotes and select one
     // closeViewQuoteModal()
-  }, [availableClients])
+  }, [clientSuggestions])
 
   const handleQuoteSelection = React.useCallback(async (quoteId: string) => {
     // Set the selected quote
@@ -2621,8 +2613,7 @@ export const useQuoteForm = () => {
     isViewQuoteModalOpen,
     openViewQuoteModal,
     closeViewQuoteModal,
-    availableClients,
-    isLoadingAvailableClients,
+
     loadAvailableClients,
     selectedClientId,
     setSelectedClientId,

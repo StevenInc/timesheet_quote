@@ -1,7 +1,7 @@
 import React from 'react'
-import { Trash2, Save, Send, Copy, Download, Plus, Eye } from 'lucide-react'
+import { Trash2, Save, Send, Copy, Download, Plus } from 'lucide-react'
 import '../QuoteForm.css'
-import type { QuoteFormData, QuoteItem, PaymentTermItem, NewQuoteModalData, ClientQuote, DatabaseQuoteRevision } from './types'
+import type { QuoteFormData, QuoteItem, PaymentTermItem, NewQuoteModalData, ClientQuote, DatabaseQuoteRevision, ClientSuggestion } from './types'
 
 
 interface Props {
@@ -37,10 +37,8 @@ interface Props {
   closeNewQuoteModal: () => void
   createNewQuote: () => void
   updateNewQuoteData: (field: keyof NewQuoteModalData, value: string) => void
-  clientSuggestions: string[]
-  setClientSuggestions: (suggestions: string[]) => void
+  clientSuggestions: ClientSuggestion[]
   isLoadingClients: boolean
-  searchClients: (searchTerm: string) => void
   isCreatingQuote: boolean
   // client quotes
   loadClientQuotes: (clientId: string) => void
@@ -63,11 +61,10 @@ interface Props {
   isViewQuoteModalOpen: boolean
   openViewQuoteModal: () => void
   closeViewQuoteModal: () => void
-  isLoadingAvailableClients: boolean
-  availableClients: { id: string; name: string; email: string }[]
+
   selectedClientId: string
   setSelectedClientId: (clientId: string) => void
-  handleClientSelection: (clientId: string) => void
+
   // Default Legal Terms modal
   isDefaultLegalTermsModalOpen: boolean
   openDefaultLegalTermsModal: () => void
@@ -250,9 +247,7 @@ export const QuoteFormView: React.FC<Props> = (props) => {
     createNewQuote,
     updateNewQuoteData,
     clientSuggestions,
-    setClientSuggestions,
     isLoadingClients,
-    searchClients,
     isCreatingQuote,
     loadClientQuotes,
     clientQuotes,
@@ -264,12 +259,11 @@ export const QuoteFormView: React.FC<Props> = (props) => {
     quoteRevisions,
     isLoadingQuoteRevisions,
     isViewQuoteModalOpen,
-    openViewQuoteModal,
+
     closeViewQuoteModal,
-    isLoadingAvailableClients,
-    availableClients,
+
     selectedClientId,
-    handleClientSelection,
+
     setSelectedClientId,
     // change tracking
     hasUnsavedChanges,
@@ -329,14 +323,7 @@ export const QuoteFormView: React.FC<Props> = (props) => {
           </div>
         </div>
         <div className="header-right">
-          <button
-            type="button"
-            className="btn btn-success"
-            onClick={openViewQuoteModal}
-          >
-            <Eye size={16} />
-            View Quotes
-          </button>
+
           <button
             type="button"
             className="btn btn-primary"
@@ -760,9 +747,9 @@ export const QuoteFormView: React.FC<Props> = (props) => {
 
       {/* New Quote Modal */}
       {isNewQuoteModalOpen && (
-        <div className="modal-overlay" role="dialog" aria-modal="true" aria-label="Create new quote">
+        <div className="modal-overlay" role="dialog" aria-modal="true" aria-label="Select client to create quote">
           <div className="modal">
-            <h3>Create New Quote</h3>
+            <h3>Select Client to Create Quote</h3>
             <div className="form-group">
               <label htmlFor="newQuoteNumberInput">Quote Number</label>
               <input
@@ -782,71 +769,40 @@ export const QuoteFormView: React.FC<Props> = (props) => {
               <small className="form-help">This will be the next available quote number by default</small>
             </div>
             <div className="form-group">
-              <label htmlFor="newClientNameInput">Client Name</label>
-              <div className="combo-box-container">
-                <input
-                  id="newClientNameInput"
-                  type="text"
-                  value={newQuoteData.clientName}
-                  onChange={(e) => {
-                    const value = e.target.value
-                    updateNewQuoteData('clientName', value)
-                    searchClients(value)
-                  }}
-                  placeholder="Type to search or enter new client name"
-                  onKeyDown={(e) => {
-                    if (e.key === 'Enter') {
-                      e.preventDefault()
-                      createNewQuote()
-                    }
-                  }}
-                />
-                {isLoadingClients && (
-                  <div className="combo-box-loading">
+              <label>Available Clients</label>
+              <div className="clients-list-container">
+                {isLoadingClients ? (
+                  <div className="clients-loading">
                     <div className="loading-spinner"></div>
+                    <span>Loading clients...</span>
                   </div>
-                )}
-                {clientSuggestions.length > 0 && (
-                  <div className="combo-box-suggestions">
-                    {clientSuggestions.map((suggestion, index) => (
+                ) : (
+                  <div className="clients-list">
+                    {clientSuggestions.map((client) => (
                       <div
-                        key={index}
-                        className="suggestion-item"
-                        onClick={() => {
-                          updateNewQuoteData('clientName', suggestion)
-                          setClientSuggestions([])
-                        }}
+                        key={client.id}
+                        className={`client-item ${newQuoteData.selectedClientId === client.id ? 'selected' : ''}`}
+                        onClick={() => updateNewQuoteData('selectedClientId', client.id)}
                       >
-                        {suggestion}
+                        <div className="client-name">{client.name}</div>
+                        <div className="client-email">{client.email}</div>
                       </div>
                     ))}
                   </div>
                 )}
               </div>
-              <small className="form-help">Type to search existing clients or enter a new client name</small>
-            </div>
-            <div className="form-group">
-              <label htmlFor="newClientEmailInput">Client Email</label>
-              <input
-                id="newClientEmailInput"
-                type="email"
-                value={newQuoteData.clientEmail}
-                onChange={(e) => updateNewQuoteData('clientEmail', e.target.value)}
-                placeholder="client@company.com"
-                onKeyDown={(e) => {
-                  if (e.key === 'Enter') {
-                    e.preventDefault()
-                    createNewQuote()
-                  }
-                }}
-              />
-              <small className="form-help">Enter the client's email address</small>
+              <small className="form-help">Click on a client to select them for the new quote</small>
             </div>
             <div className="modal-actions">
               <button type="button" className="btn btn-secondary" onClick={closeNewQuoteModal} disabled={isCreatingQuote}>
                 Cancel
               </button>
-              <button type="button" className="btn btn-primary" onClick={createNewQuote} disabled={isCreatingQuote}>
+              <button
+                type="button"
+                className="btn btn-primary"
+                onClick={createNewQuote}
+                disabled={isCreatingQuote || !newQuoteData.selectedClientId}
+              >
                 {isCreatingQuote ? 'Creating...' : 'Create Quote'}
               </button>
             </div>
@@ -866,29 +822,9 @@ export const QuoteFormView: React.FC<Props> = (props) => {
                   <div className="form-group">
                     <label>Available Companies</label>
                     <div className="clients-list-container">
-                      {isLoadingAvailableClients ? (
-                        <div className="clients-loading">
-                          <div className="loading-spinner"></div>
-                          <span>Loading companies...</span>
-                        </div>
-                      ) : availableClients.length === 0 ? (
-                        <div className="clients-empty">
-                          <span>No companies found in database</span>
-                        </div>
-                      ) : (
-                        <div className="clients-list">
-                          {availableClients.map((client) => (
-                            <div
-                              key={client.id}
-                              className="client-item clickable"
-                              onClick={() => handleClientSelection(client.id)}
-                            >
-                              <div className="client-name">{client.name}</div>
-                              <div className="client-email">{client.email}</div>
-                            </div>
-                          ))}
-                        </div>
-                      )}
+                      <div className="clients-empty">
+                        <span>Company selection not available</span>
+                      </div>
                     </div>
                   </div>
                 </div>
@@ -900,7 +836,7 @@ export const QuoteFormView: React.FC<Props> = (props) => {
               <>
                 <div className="section-header-with-back">
                   <h3>
-                    Quotes for {availableClients.find(client => client.id === selectedClientId)?.name}
+                    Quotes for Selected Client
                   </h3>
                   <button
                     type="button"
@@ -918,11 +854,11 @@ export const QuoteFormView: React.FC<Props> = (props) => {
                     {isLoadingClientQuotes ? (
                       <div className="history-loading">
                         <div className="loading-spinner"></div>
-                        <span>Loading quotes for {availableClients.find(client => client.id === selectedClientId)?.name}...</span>
+                        <span>Loading quotes...</span>
                       </div>
                     ) : clientQuotes.length === 0 ? (
                       <div className="history-empty">
-                        <span>No quotes found for {availableClients.find(client => client.id === selectedClientId)?.name}</span>
+                        <span>No quotes found for this client</span>
                         <button
                           type="button"
                           className="btn btn-link"

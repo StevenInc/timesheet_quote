@@ -27,9 +27,7 @@ const QuoteForm: React.FC = () => {
     createNewQuote,
     updateNewQuoteData,
     clientSuggestions,
-    setClientSuggestions,
     isLoadingClients,
-    searchClients,
     isCreatingQuote,
     loadClientQuotes,
     clientQuotes,
@@ -49,11 +47,10 @@ const QuoteForm: React.FC = () => {
     isViewQuoteModalOpen,
     openViewQuoteModal,
     closeViewQuoteModal,
-    availableClients,
-    isLoadingAvailableClients,
+
     selectedClientId,
     setSelectedClientId,
-    handleClientSelection,
+
     handleQuoteSelection,
     // Default Legal Terms Modal
     isDefaultLegalTermsModalOpen,
@@ -115,9 +112,7 @@ const QuoteForm: React.FC = () => {
       createNewQuote={createNewQuote}
       updateNewQuoteData={updateNewQuoteData}
       clientSuggestions={clientSuggestions}
-      setClientSuggestions={setClientSuggestions}
       isLoadingClients={isLoadingClients}
-      searchClients={searchClients}
       isCreatingQuote={isCreatingQuote}
       loadClientQuotes={loadClientQuotes}
       clientQuotes={clientQuotes}
@@ -135,11 +130,10 @@ const QuoteForm: React.FC = () => {
       isViewQuoteModalOpen={isViewQuoteModalOpen}
       openViewQuoteModal={openViewQuoteModal}
       closeViewQuoteModal={closeViewQuoteModal}
-      isLoadingAvailableClients={isLoadingAvailableClients}
-      availableClients={availableClients}
+
       selectedClientId={selectedClientId}
       setSelectedClientId={setSelectedClientId}
-      handleClientSelection={handleClientSelection}
+
       handleQuoteSelection={handleQuoteSelection}
       isDefaultLegalTermsModalOpen={isDefaultLegalTermsModalOpen}
       openDefaultLegalTermsModal={openDefaultLegalTermsModal}

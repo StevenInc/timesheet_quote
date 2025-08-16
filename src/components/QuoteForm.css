@@ -891,6 +891,59 @@
   background-color: #e5e7eb;
 }
 
+/* Client Selection Styles */
+.modal .clients-list-container {
+  margin-top: 0.5rem;
+}
+
+.modal .clients-loading {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 1rem;
+  color: #6b7280;
+  font-size: 0.875rem;
+}
+
+.modal .clients-list {
+  max-height: 300px;
+  overflow-y: auto;
+  border: 1px solid #e5e7eb;
+  border-radius: 6px;
+  background: white;
+}
+
+.modal .client-item {
+  padding: 0.75rem 1rem;
+  border-bottom: 1px solid #f3f4f6;
+  cursor: pointer;
+  transition: background-color 0.15s ease;
+}
+
+.modal .client-item:last-child {
+  border-bottom: none;
+}
+
+.modal .client-item:hover {
+  background-color: #f9fafb;
+}
+
+.modal .client-item.selected {
+  background-color: #eff6ff;
+  border-left: 3px solid #3b82f6;
+}
+
+.modal .client-name {
+  font-weight: 600;
+  color: #1e293b;
+  margin-bottom: 0.25rem;
+}
+
+.modal .client-email {
+  font-size: 0.875rem;
+  color: #6b7280;
+}
+
 /* Company Quote History Modal */
 .company-quote-history-modal {
   max-width: 900px;

@@ -75,8 +75,7 @@ export interface QuoteFormData {
 
 export interface NewQuoteModalData {
   quoteNumber: string
-  clientName: string
-  clientEmail: string
+  selectedClientId: string
 }
 
 // Database response types for Supabase queries
@@ -147,6 +146,12 @@ export interface DatabaseQuoteRevision {
 }
 
 export interface DatabaseClient {
+  id: string
+  name: string
+  email: string
+}
+
+export interface ClientSuggestion {
   id: string
   name: string
   email: string
