@@ -629,6 +629,9 @@ export const useQuoteForm = () => {
   const closeDefaultLegalTermsModal = React.useCallback(() => {
     setIsDefaultLegalTermsModalOpen(false)
     setDefaultLegalTerms('')
+    
+    // Scroll to top of the page for better user experience
+    window.scrollTo({ top: 0, behavior: 'smooth' })
   }, [])
 
   const handleSaveDefaultLegalTerms = React.useCallback(async (terms: string) => {
@@ -845,6 +848,9 @@ export const useQuoteForm = () => {
     // Reset change tracking
     setOriginalFormData(defaultFormData)
     setHasUnsavedChanges(false)
+
+    // Scroll to top of the page for better user experience
+    window.scrollTo({ top: 0, behavior: 'smooth' })
   }
 
   const updateItem = (id: string, field: keyof QuoteItem, value: string | number) => {
@@ -1610,6 +1616,9 @@ export const useQuoteForm = () => {
     // Don't clear selectedClientId and availableClients so company name stays visible
     // setSelectedClientId('')
     // setAvailableClients([])
+    
+    // Scroll to top of the page for better user experience
+    window.scrollTo({ top: 0, behavior: 'smooth' })
   }, [])
 
 
