@@ -757,8 +757,9 @@ export const QuoteFormView: React.FC<Props> = (props) => {
             <Send size={16} />
             {props.isSaving ? 'Sending...' : 'Send to Client'}
           </button>
-
-
+          <button type="button" className="btn btn-secondary" onClick={props.resetForm} disabled={props.isSaving}>
+            Cancel
+          </button>
         </div>
       </form>
 
