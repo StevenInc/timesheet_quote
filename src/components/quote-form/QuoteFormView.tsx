@@ -749,7 +749,7 @@ export const QuoteFormView: React.FC<Props> = (props) => {
         </div>
 
         <div className="form-actions">
-          <button type="submit" className="btn btn-primary" disabled={props.isSaving || !formData.title?.trim()}>
+          <button type="submit" className="btn btn-primary" disabled={props.isSaving || (props.currentLoadedRevisionId ? !hasUnsavedChanges : !formData.title?.trim())}>
             <Save size={16} />
             {props.isSaving ? 'Saving...' : 'Save'}
           </button>
