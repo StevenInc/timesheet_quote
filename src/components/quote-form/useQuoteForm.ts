@@ -598,12 +598,15 @@ export const useQuoteForm = () => {
     await loadAvailableClients()
   }, [newQuoteData])
 
-  const closeNewQuoteModal = React.useCallback(() => {
+    const closeNewQuoteModal = React.useCallback(async () => {
     console.log('Closing new quote modal, current newQuoteData:', newQuoteData)
     setIsNewQuoteModalOpen(false)
     setNewQuoteData({ quoteNumber: '', selectedClientId: '' })
     console.log('Reset newQuoteData to empty values')
     setClientSuggestions([])
+
+    // Reset the main form to clean state when canceling
+    await resetForm()
   }, [newQuoteData])
 
   // Default Legal Terms Modal Functions

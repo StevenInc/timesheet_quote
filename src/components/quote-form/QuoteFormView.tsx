@@ -753,7 +753,7 @@ export const QuoteFormView: React.FC<Props> = (props) => {
             <Save size={16} />
             {props.isSaving ? 'Saving...' : 'Save'}
           </button>
-          <button type="button" className="btn btn-primary" onClick={props.sendQuoteToClient} disabled={props.isSaving || (hasUnsavedChanges && !formData.sentViaEmail)}>
+          <button type="button" className="btn btn-primary" onClick={props.sendQuoteToClient} disabled={props.isSaving || !props.currentLoadedRevisionId || hasUnsavedChanges}>
             <Send size={16} />
             {props.isSaving ? 'Sending...' : 'Send to Client'}
           </button>
