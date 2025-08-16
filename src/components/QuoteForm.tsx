@@ -47,6 +47,8 @@ const QuoteForm: React.FC = () => {
     isViewQuoteModalOpen,
     openViewQuoteModal,
     closeViewQuoteModal,
+    loadAvailableClients,
+    handleClientSelection,
 
     selectedClientId,
     setSelectedClientId,
@@ -130,6 +132,8 @@ const QuoteForm: React.FC = () => {
       isViewQuoteModalOpen={isViewQuoteModalOpen}
       openViewQuoteModal={openViewQuoteModal}
       closeViewQuoteModal={closeViewQuoteModal}
+      loadAvailableClients={loadAvailableClients}
+      handleClientSelection={handleClientSelection}
 
       selectedClientId={selectedClientId}
       setSelectedClientId={setSelectedClientId}

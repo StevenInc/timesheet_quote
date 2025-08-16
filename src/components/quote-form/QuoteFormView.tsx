@@ -61,6 +61,8 @@ interface Props {
   isViewQuoteModalOpen: boolean
   openViewQuoteModal: () => void
   closeViewQuoteModal: () => void
+  loadAvailableClients: () => Promise<void>
+  handleClientSelection: (clientId: string) => Promise<void>
 
   selectedClientId: string
   setSelectedClientId: (clientId: string) => void
@@ -104,6 +106,13 @@ export const QuoteFormView: React.FC<Props> = (props) => {
       setLocalDefaultLegalTerms(props.defaultLegalTerms)
     }
   }, [props.isDefaultLegalTermsModalOpen, props.defaultLegalTerms])
+
+  // Load available clients when View Quotes modal opens
+  React.useEffect(() => {
+    if (props.isViewQuoteModalOpen) {
+      props.loadAvailableClients()
+    }
+  }, [props.isViewQuoteModalOpen, props.loadAvailableClients])
 
   React.useEffect(() => {
     loadQuoteRevisionsRef.current = props.loadQuoteRevisions
@@ -259,8 +268,9 @@ export const QuoteFormView: React.FC<Props> = (props) => {
     quoteRevisions,
     isLoadingQuoteRevisions,
     isViewQuoteModalOpen,
-
+    openViewQuoteModal,
     closeViewQuoteModal,
+    handleClientSelection,
 
     selectedClientId,
 
@@ -323,7 +333,14 @@ export const QuoteFormView: React.FC<Props> = (props) => {
           </div>
         </div>
         <div className="header-right">
-
+          <button
+            type="button"
+            className="btn btn-primary"
+            onClick={openViewQuoteModal}
+          >
+            👁️
+            View Quotes
+          </button>
           <button
             type="button"
             className="btn btn-primary"
@@ -822,9 +839,29 @@ export const QuoteFormView: React.FC<Props> = (props) => {
                   <div className="form-group">
                     <label>Available Companies</label>
                     <div className="clients-list-container">
-                      <div className="clients-empty">
-                        <span>Company selection not available</span>
-                      </div>
+                      {isLoadingClients ? (
+                        <div className="clients-loading">
+                          <div className="loading-spinner"></div>
+                          <span>Loading companies...</span>
+                        </div>
+                      ) : clientSuggestions.length === 0 ? (
+                        <div className="clients-empty">
+                          <span>No companies found</span>
+                        </div>
+                      ) : (
+                        <ul className="clients-list">
+                          {clientSuggestions.map((client) => (
+                            <li
+                              key={client.id}
+                              className="client-item"
+                              onClick={() => handleClientSelection(client.id)}
+                            >
+                              <div className="client-name">{client.name}</div>
+                              <div className="client-email">{client.email}</div>
+                            </li>
+                          ))}
+                        </ul>
+                      )}
                     </div>
                   </div>
                 </div>
