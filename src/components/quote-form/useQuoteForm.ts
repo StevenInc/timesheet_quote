@@ -605,8 +605,12 @@ export const useQuoteForm = () => {
     console.log('Reset newQuoteData to empty values')
     setClientSuggestions([])
 
-    // Reset the main form to clean state when canceling
+    // Reset the main form to clean state when canceling new quote creation
+    // This will clear any form data and return to default state
     await resetForm()
+
+    // Clear any success/error messages that might be showing
+    setSaveMessage(null)
   }, [newQuoteData])
 
   // Default Legal Terms Modal Functions
@@ -1002,9 +1006,10 @@ export const useQuoteForm = () => {
 
       // Title is only required when the quote has actual content (not just basic structure)
       // Check if this is a new quote with minimal data vs an existing quote with content
+      // For new quotes, we don't require a title immediately - only when user adds meaningful content
       const hasActualContent = dataToSave.items.some(item => item.description.trim()) ||
                                dataToSave.notes?.trim() ||
-                               dataToSave.legalTerms?.trim() ||
+                               (dataToSave.legalTerms?.trim() && dataToSave.legalTerms !== dataToSave.defaultLegalTerms) ||
                                dataToSave.clientComments?.trim()
 
       if (hasActualContent && !dataToSave.title?.trim()) {
@@ -2033,9 +2038,10 @@ export const useQuoteForm = () => {
 
       // Title is only required when the quote has actual content (not just basic structure)
       // Check if this is a new quote with minimal data vs an existing quote with content
+      // For new quotes, we don't require a title immediately - only when user adds meaningful content
       const hasActualContent = dataToSave.items.some(item => item.description.trim()) ||
                                dataToSave.notes?.trim() ||
-                               dataToSave.legalTerms?.trim() ||
+                               (dataToSave.legalTerms?.trim() && dataToSave.legalTerms !== dataToSave.defaultLegalTerms) ||
                                dataToSave.clientComments?.trim()
 
       if (hasActualContent && !dataToSave.title?.trim()) {
