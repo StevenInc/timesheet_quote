@@ -390,6 +390,18 @@ export const QuoteFormView: React.FC<Props> = (props) => {
           <div className="form-column left-column">
             <div className="form-section">
               <div className="form-group">
+                <label htmlFor="title">Quote Title</label>
+                <input
+                  id="title"
+                  type="text"
+                  maxLength={100}
+                  value={formData.title}
+                  onChange={(e) => handleInputChange('title', e.target.value)}
+                  placeholder="Enter a short title for this quote revision (max 100 characters)"
+                />
+                <small className="form-help">This title will be saved with the quote revision</small>
+              </div>
+              <div className="form-group">
                 <label htmlFor="owner">Sales Person / Owner</label>
                 <select id="owner" value={formData.owner} onChange={(e) => handleInputChange('owner', e.target.value)}>
                   <option value="">-- Select One --</option>
@@ -618,18 +630,6 @@ export const QuoteFormView: React.FC<Props> = (props) => {
                   rows={3}
                   placeholder="Legal terms and conditions..."
                 />
-              </div>
-              <div className="form-group">
-                <label htmlFor="title">Quote Title</label>
-                <input
-                  id="title"
-                  type="text"
-                  maxLength={100}
-                  value={formData.title}
-                  onChange={(e) => handleInputChange('title', e.target.value)}
-                  placeholder="Enter a short title for this quote revision (max 100 characters)"
-                />
-                <small className="form-help">This title will be saved with the quote revision</small>
               </div>
             </div>
           </div>
