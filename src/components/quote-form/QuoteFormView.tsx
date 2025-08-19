@@ -833,7 +833,6 @@ export const QuoteFormView: React.FC<Props> = (props) => {
                         onClick={() => updateNewQuoteData('selectedClientId', client.id)}
                       >
                         <div className="client-name">{client.name}</div>
-                        <div className="client-email">{client.email}</div>
                       </div>
                     ))}
                   </div>
@@ -905,7 +904,7 @@ export const QuoteFormView: React.FC<Props> = (props) => {
               <>
                 <div className="section-header-with-back">
                   <h3>
-                    Quotes for Selected Client
+                    Quotes
                   </h3>
                   <button
                     type="button"
@@ -944,7 +943,7 @@ export const QuoteFormView: React.FC<Props> = (props) => {
                             <tr>
                               <th>Quote #</th>
                               <th>Title</th>
-                              <th>Created By</th>
+                              <th>Owner</th>
                               <th>Last Updated</th>
                               <th>Sent/Viewed</th>
                               <th>Status</th>
