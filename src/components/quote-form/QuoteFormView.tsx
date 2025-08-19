@@ -888,7 +888,6 @@ export const QuoteFormView: React.FC<Props> = (props) => {
                               onClick={() => handleClientSelection(client.id)}
                             >
                               <div className="client-name">{client.name}</div>
-                              <div className="client-email">{client.email}</div>
                             </li>
                           ))}
                         </ul>
@@ -943,6 +942,7 @@ export const QuoteFormView: React.FC<Props> = (props) => {
                             <tr>
                               <th>Quote #</th>
                               <th>Title</th>
+                              <th>Rev</th>
                               <th>Owner</th>
                               <th>Last Updated</th>
                               <th>Sent/Viewed</th>
@@ -983,10 +983,12 @@ export const QuoteFormView: React.FC<Props> = (props) => {
                                           'No title'
                                       }
                                     </span>
-                                    <span className="revision-count-badge">
-                                      {quote.totalRevisions} rev{quote.totalRevisions === 1 ? '' : 's'}
-                                    </span>
                                   </div>
+                                </td>
+                                <td className="revision-cell">
+                                  <span className="revision-count-badge">
+                                    {quote.totalRevisions} rev{quote.totalRevisions === 1 ? '' : 's'}
+                                  </span>
                                 </td>
                                 <td className="creator-cell">
                                   {quote.creatorName || 'Unknown'}
