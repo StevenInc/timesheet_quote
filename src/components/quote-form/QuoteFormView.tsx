@@ -1,6 +1,7 @@
 import React from 'react'
 import { Trash2, Save, Send, Copy, Download, Plus } from 'lucide-react'
 import '../QuoteForm.css'
+import scopedCss from '../QuoteFormView.module.css'
 import type { QuoteFormData, QuoteItem, PaymentTermItem, NewQuoteModalData, ClientQuote, DatabaseQuoteRevision, ClientSuggestion } from './types'
 
 // Payment Schedule Options
@@ -865,7 +866,8 @@ export const QuoteFormView: React.FC<Props> = (props) => {
             {!selectedClientId && (
               <>
                 <h3>Select a customer</h3>
-                <div className="form-section">
+                <div className={`form-section ${scopedCss['customer-form-section']}`}>
+
                   <div className="form-group">
                     {/* <label>Available Companies</label> */}
                     <div className="clients-list-container">
