@@ -390,7 +390,7 @@ export const QuoteFormView: React.FC<Props> = (props) => {
           <div className="form-column left-column">
             <div className="form-section">
               <div className="form-group">
-                <label htmlFor="title">Quote Title</label>
+                <label htmlFor="title">Quote</label>
                 <input
                   id="title"
                   type="text"
@@ -864,10 +864,10 @@ export const QuoteFormView: React.FC<Props> = (props) => {
             {/* Client Selection Section - Show when no client is selected */}
             {!selectedClientId && (
               <>
-                <h3>Select Company to View Quotes</h3>
+                <h3>Select a customer</h3>
                 <div className="form-section">
                   <div className="form-group">
-                    <label>Available Companies</label>
+                    {/* <label>Available Companies</label> */}
                     <div className="clients-list-container">
                       {isLoadingClients ? (
                         <div className="clients-loading">
