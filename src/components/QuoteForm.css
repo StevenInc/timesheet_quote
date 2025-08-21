@@ -311,9 +311,19 @@
   margin-bottom: 1rem;
 }
 
+/* Quote Versions section styling */
+div.form-section.quote-version {
+  min-width: 630px !important;
+}
+
+/* Ensure proper flexbox behavior */
+.items-table .table-header,
+.items-table .table-row {
+  width: 100%;
+}
+
 .table-header {
-  display: grid;
-  grid-template-columns: 2fr 1fr 1fr 1fr 60px;
+  display: flex;
   background: #f8fafc;
   border-bottom: 1px solid #e2e8f0;
 }
@@ -332,9 +342,34 @@
   letter-spacing: 0.05em;
 }
 
+/* Column width controls for flexbox layout */
+.header-cell:first-child {
+  flex: 2;
+  min-width: 200px;
+}
+
+.header-cell:nth-child(2) {
+  flex: 0 0 120px;
+}
+
+.header-cell:nth-child(3) {
+  flex: 0 0 85px;
+}
+
+.header-cell:nth-child(4) {
+  flex: 0 0 85px;
+}
+
+.header-cell:nth-child(5) {
+  flex: 0 0 100px;
+}
+
+.header-cell:last-child {
+  flex: 0 0 60px;
+}
+
 .table-row {
-  display: grid;
-  grid-template-columns: 2fr 1fr 1fr 1fr 60px;
+  display: flex;
   border-bottom: 1px solid #f1f5f9;
   align-items: center;
 }
@@ -345,25 +380,60 @@
 
 .table-cell {
   padding: 0.5rem;
+  padding-left: 8px;
 }
 
-.table-cell.quantity-cell{
-  max-width: 85px;
+/* Column width controls for table cells */
+.table-cell:first-child {
+  flex: 2;
+  min-width: 200px;
 }
+
+.table-cell:nth-child(2) {
+  flex: 0 0 120px;
+}
+
+.table-cell:nth-child(3) {
+  flex: 0 0 85px;
+}
+
+.table-cell:nth-child(4) {
+  flex: 0 0 85px;
+}
+
+.table-cell:nth-child(5) {
+  flex: 0 0 100px;
+}
+
+.table-cell:last-child {
+  flex: 0 0 60px;
+}
+
+
 
 .table-cell input {
   width: 100%;
+  max-width: 100%;
   border: 1px solid #e2e8f0;
   border-radius: 4px;
   padding: 0.5rem;
   font-size: 0.875rem;
   background: white;
+  box-sizing: border-box;
 }
 
 .table-cell input:focus {
   outline: none;
   border-color: #3b82f6;
   box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.1);
+}
+
+/* Ensure all form elements in table cells stay within bounds */
+.table-cell select,
+.table-cell input,
+.table-cell textarea {
+  max-width: 100%;
+  box-sizing: border-box;
 }
 
 /* Archive icon styling */
@@ -610,13 +680,11 @@
   .form-section {
     padding: 1rem;
   }
-  .form-section.quote-version {
-    min-width: 630px;
-  }
+
 
   .table-header,
   .table-row {
-    grid-template-columns: 1fr;
+    flex-direction: column;
     gap: 0.5rem;
   }
 
@@ -1339,6 +1407,7 @@
 /* Recurring select box styling */
 .recurring-select {
   width: 100%;
+  max-width: 100%;
   padding: 0.5rem;
   border: 1px solid #d1d5db;
   border-radius: 4px;
@@ -1346,6 +1415,7 @@
   background-color: white;
   color: #374151;
   transition: border-color 0.15s ease;
+  box-sizing: border-box;
 }
 
 /* Client Comments textarea styling for better use of space */
@@ -1354,19 +1424,7 @@
   resize: vertical;
 }
 
-/* Quote Items table input sizing */
-.items-table .table-cell input[type="number"] {
-  max-width: 100%;
-  box-sizing: border-box;
-}
 
-.items-table .table-cell:nth-child(3) input[type="number"] {
-  max-width: 85px;
-}
-
-.items-table .table-cell:nth-child(4) input[type="number"] {
-  max-width: 85px;
-}
 
 .recurring-select:focus {
   outline: none;
