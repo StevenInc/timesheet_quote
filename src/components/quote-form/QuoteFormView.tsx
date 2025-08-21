@@ -441,6 +441,7 @@ export const QuoteFormView: React.FC<Props> = (props) => {
               <div className="items-table">
                 <div className="table-header">
                   <div className="header-cell">Description</div>
+                  <div className="header-cell">Recurring</div>
                   <div className="header-cell">Quantity</div>
                   <div className="header-cell">Unit Price</div>
                   <div className="header-cell">Item Total</div>
@@ -455,6 +456,22 @@ export const QuoteFormView: React.FC<Props> = (props) => {
                         onChange={(e) => updateItem(item.id, 'description', e.target.value)}
                         placeholder="Item description"
                       />
+                    </div>
+                    <div className="table-cell">
+                      <select
+                        value={item.recurring || 'none'}
+                        onChange={(e) => updateItem(item.id, 'recurring', e.target.value === 'none' ? false : e.target.value)}
+                        className="recurring-select"
+                      >
+                        <option value="none">None</option>
+                        <option value="weekly">Weekly</option>
+                        <option value="bi-weekly">Bi-Weekly</option>
+                        <option value="semi-monthly">Semi-Monthly</option>
+                        <option value="monthly">Monthly</option>
+                        <option value="quarterly">Quarterly</option>
+                        <option value="semi-annually">Semi-Annually</option>
+                        <option value="annually">Annually</option>
+                      </select>
                     </div>
                     <div className="table-cell">
                       <input

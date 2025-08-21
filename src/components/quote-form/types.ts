@@ -4,6 +4,7 @@ export interface QuoteItem {
   quantity: number
   unitPrice: number
   total: number
+  recurring: string | false
 }
 
 export interface PaymentTermItem {
@@ -85,6 +86,7 @@ export interface DatabaseQuoteItem {
   quantity: number
   unit_price: number
   total: number
+  recurring: string | false
 }
 
 export interface DatabasePaymentTerm {

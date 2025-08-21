@@ -591,11 +591,11 @@ export const useQuoteForm = () => {
     console.log('About to call loadNextQuoteNumber...')
     await loadNextQuoteNumber()
     console.log('After loading next quote number, newQuoteData:', newQuoteData)
-    
+
     // Reset the main form to clean state when opening new quote creation
     // This ensures all form fields are reset to defaults
     await resetForm()
-    
+
     console.log('Setting modal to open...')
     setIsNewQuoteModalOpen(true)
     console.log('Modal should now be open')
@@ -634,7 +634,7 @@ export const useQuoteForm = () => {
   const closeDefaultLegalTermsModal = React.useCallback(() => {
     setIsDefaultLegalTermsModalOpen(false)
     setDefaultLegalTerms('')
-    
+
     // Scroll to top of the page for better user experience
     window.scrollTo({ top: 0, behavior: 'smooth' })
   }, [])
@@ -813,7 +813,7 @@ export const useQuoteForm = () => {
       isTaxEnabled: false,
       paymentTerms: 'Net 30',
       items: [
-        { id: '1', description: '', quantity: 1, unitPrice: 0, total: 0 },
+        { id: '1', description: '', quantity: 1, unitPrice: 0, total: 0, recurring: 'none' },
       ],
       subtotal: 0,
       tax: 0,
@@ -845,7 +845,7 @@ export const useQuoteForm = () => {
     window.scrollTo({ top: 0, behavior: 'smooth' })
   }
 
-  const updateItem = (id: string, field: keyof QuoteItem, value: string | number) => {
+  const updateItem = (id: string, field: keyof QuoteItem, value: string | number | boolean) => {
     const updatedItems = formData.items.map((item) => {
       if (item.id === id) {
         const updatedItem = { ...item, [field]: value }
@@ -875,6 +875,7 @@ export const useQuoteForm = () => {
       quantity: 1,
       unitPrice: 0,
       total: 0,
+      recurring: 'none',
     }
     const newFormData = { ...formData, items: [...formData.items, newItem] }
 
@@ -1451,6 +1452,7 @@ export const useQuoteForm = () => {
         quantity: i.quantity,
         unit_price: i.unitPrice,
         total: i.total,
+        recurring: i.recurring,
         sort_order: 0
       }))
 
@@ -1608,7 +1610,7 @@ export const useQuoteForm = () => {
     // Don't clear selectedClientId and availableClients so company name stays visible
     // setSelectedClientId('')
     // setAvailableClients([])
-    
+
     // Scroll to top of the page for better user experience
     window.scrollTo({ top: 0, behavior: 'smooth' })
   }, [])
@@ -1978,8 +1980,9 @@ export const useQuoteForm = () => {
             description: item.description || '',
             quantity: item.quantity || 1,
             unitPrice: item.unit_price || 0,
-            total: item.total || 0
-          })) || [{ id: '1', description: '', quantity: 1, unitPrice: 0, total: 0 }],
+            total: item.total || 0,
+            recurring: item.recurring || 'none'
+          })) || [{ id: '1', description: '', quantity: 1, unitPrice: 0, total: 0, recurring: 'none' }],
           paymentSchedule: revision.payment_terms?.map((term: DatabasePaymentTerm) => ({
             id: term.id,
             percentage: term.percentage || 100,
