@@ -433,6 +433,16 @@ export const QuoteFormView: React.FC<Props> = (props) => {
                   placeholder="name@company.com"
                 />
               </div>
+              <div className="form-group">
+                <label htmlFor="clientComments">Client Comments</label>
+                <textarea
+                  id="clientComments"
+                  value={formData.clientComments}
+                  onChange={(e) => handleInputChange('clientComments', e.target.value)}
+                  rows={3}
+                  placeholder="Client feedback and comments..."
+                />
+              </div>
 
             </div>
 
@@ -449,7 +459,7 @@ export const QuoteFormView: React.FC<Props> = (props) => {
                 </div>
                 {formData.items.map((item) => (
                   <div key={item.id} className="table-row">
-                    <div className="table-cell">
+                    <div className="table-cell desc-cell">
                       <input
                         type="text"
                         value={item.description}
@@ -457,10 +467,10 @@ export const QuoteFormView: React.FC<Props> = (props) => {
                         placeholder="Item description"
                       />
                     </div>
-                    <div className="table-cell">
+                    <div className="table-cell recurring-cell">
                       <select
                         value={item.recurring || 'none'}
-                        onChange={(e) => updateItem(item.id, 'recurring', e.target.value === 'none' ? false : e.target.value)}
+                        onChange={(e) => updateItem(item.id, 'recurring', e.target.value === 'none' ? 'none' : e.target.value)}
                         className="recurring-select"
                       >
                         <option value="none">None</option>
@@ -473,7 +483,7 @@ export const QuoteFormView: React.FC<Props> = (props) => {
                         <option value="annually">Annually</option>
                       </select>
                     </div>
-                    <div className="table-cell">
+                    <div className="table-cell quantity-cell  ">
                       <input
                         type="number"
                         min="1"
@@ -481,7 +491,7 @@ export const QuoteFormView: React.FC<Props> = (props) => {
                         onChange={(e) => updateItem(item.id, 'quantity', parseInt(e.target.value) || 0)}
                       />
                     </div>
-                    <div className="table-cell">
+                    <div className="table-cell unit-price-cell">
                       <input
                         type="number"
                         min="0"
@@ -653,7 +663,7 @@ export const QuoteFormView: React.FC<Props> = (props) => {
           </div>
 
           <div className="form-column right-column">
-            <div className="form-section">
+            <div className="form-section quote-version">
               <h3>Quote Versions</h3>
               <div className="quote-versions-container">
                 {!selectedClientQuote ? (
@@ -748,48 +758,9 @@ export const QuoteFormView: React.FC<Props> = (props) => {
               </div>
             </div>
 
-            <div className="form-section">
-              <div className="form-group">
-                <label htmlFor="clientComments">Client Comments</label>
-                <textarea
-                  id="clientComments"
-                  value={formData.clientComments}
-                  onChange={(e) => handleInputChange('clientComments', e.target.value)}
-                  rows={3}
-                  placeholder="Client feedback and comments..."
-                />
-              </div>
-            </div>
 
-            <div className="form-section">
-              <div className="checkbox-group">
-                <label className="checkbox-label">
-                  <input
-                    type="checkbox"
-                    checked={formData.isRecurring}
-                    onChange={(e) => handleCheckboxChange('isRecurring', e.target.checked)}
-                  />
-                  Recurring Amount
-                </label>
-              </div>
-              <div className="form-group">
-                <label htmlFor="billingPeriod">Billing Period</label>
-                <select
-                  id="billingPeriod"
-                  value={formData.billingPeriod}
-                  onChange={(e) => handleInputChange('billingPeriod', e.target.value)}
-                >
-                  <option value="">-- Select Billing Period --</option>
-                  <option value="weekly">Weekly</option>
-                  <option value="bi-weekly">Bi-Weekly</option>
-                  <option value="semi-monthly">Semi-Monthly</option>
-                  <option value="monthly">Monthly</option>
-                  <option value="quarterly">Quarterly</option>
-                  <option value="semi-annually">Semi-Annually</option>
-                  <option value="annually">Annually</option>
-                </select>
-              </div>
-            </div>
+
+
           </div>
         </div>
 

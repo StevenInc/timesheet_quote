@@ -1,6 +1,6 @@
 /* Quote Form Styles */
 .quote-form-container {
-  max-width: 1400px;
+  max-width: 1760px;
   margin: 0 auto;
   padding: 1rem;
   font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen', 'Ubuntu', 'Cantarell', sans-serif;
@@ -167,7 +167,7 @@
 
 .form-content {
   display: grid;
-  grid-template-columns: 1fr 1fr;
+  grid-template-columns: 2fr 1fr;
   gap: 0;
 }
 
@@ -267,6 +267,8 @@
   border-radius: 6px;
   font-size: 0.875rem;
   transition: all 0.2s ease;
+  width: 100%;
+  box-sizing: border-box;
   background: white;
 }
 
@@ -343,6 +345,10 @@
 
 .table-cell {
   padding: 0.5rem;
+}
+
+.table-cell.quantity-cell{
+  max-width: 85px;
 }
 
 .table-cell input {
@@ -603,6 +609,9 @@
 
   .form-section {
     padding: 1rem;
+  }
+  .form-section.quote-version {
+    min-width: 630px;
   }
 
   .table-header,
@@ -1337,6 +1346,26 @@
   background-color: white;
   color: #374151;
   transition: border-color 0.15s ease;
+}
+
+/* Client Comments textarea styling for better use of space */
+.form-group textarea {
+  min-height: 80px;
+  resize: vertical;
+}
+
+/* Quote Items table input sizing */
+.items-table .table-cell input[type="number"] {
+  max-width: 100%;
+  box-sizing: border-box;
+}
+
+.items-table .table-cell:nth-child(3) input[type="number"] {
+  max-width: 85px;
+}
+
+.items-table .table-cell:nth-child(4) input[type="number"] {
+  max-width: 85px;
 }
 
 .recurring-select:focus {

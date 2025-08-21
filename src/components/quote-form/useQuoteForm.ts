@@ -69,7 +69,7 @@ export const useQuoteForm = () => {
     isTaxEnabled: false,
     paymentTerms: 'Net 30',
     items: [
-      { id: '1', description: '', quantity: 1, unitPrice: 0, total: 0 },
+      { id: '1', description: '', quantity: 1, unitPrice: 0, total: 0, recurring: 'none' },
     ],
     subtotal: 0,
     tax: 0,
@@ -364,8 +364,9 @@ export const useQuoteForm = () => {
               description: item.description || '',
               quantity: item.quantity || 1,
               unitPrice: item.unit_price || 0,
-              total: item.total || 0
-            })) || [{ id: '1', description: '', quantity: 1, unitPrice: 0, total: 0 }],
+              total: item.total || 0,
+              recurring: item.recurring || 'none'
+            })) || [{ id: '1', description: '', quantity: 1, unitPrice: 0, total: 0, recurring: 'none' }],
             paymentSchedule: latestRevision.payment_terms?.map((term: DatabasePaymentTerm) => ({
               id: term.id,
               percentage: term.percentage || 100,
@@ -739,7 +740,7 @@ export const useQuoteForm = () => {
         quoteNumber: newQuoteData.quoteNumber,
         clientName: selectedClient.name,
         clientEmail: selectedClient.email,
-        items: [{ id: '1', description: '', quantity: 1, unitPrice: 0, total: 0 }],
+        items: [{ id: '1', description: '', quantity: 1, unitPrice: 0, total: 0, recurring: 'none' }],
         subtotal: 0,
         tax: 0,
         total: 0

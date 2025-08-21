@@ -22,7 +22,7 @@ interface QuoteData {
     quantity: number
     unit_price: number
     total: number
-    recurring: boolean
+    recurring: string | false
   }>
   payment_terms: Array<{
     percentage: number
@@ -158,7 +158,7 @@ export const ClientQuoteView: React.FC<ClientQuoteViewProps> = ({ revisionId }) 
             {items.map((item, index) => (
               <tr key={index}>
                 <td>{item.description}</td>
-                <td>{item.recurring === false || item.recurring === 'none' ? 'No' : item.recurring}</td>
+                <td>{!item.recurring || item.recurring === 'none' ? 'No' : item.recurring}</td>
                 <td>{item.quantity}</td>
                 <td>${item.unit_price.toFixed(2)}</td>
                 <td>${item.total.toFixed(2)}</td>
