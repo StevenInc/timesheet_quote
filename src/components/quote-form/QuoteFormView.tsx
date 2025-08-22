@@ -370,15 +370,6 @@ export const QuoteFormView: React.FC<Props> = (props) => {
             <Add sx={{ fontSize: 16 }} />
             New Quote
           </button>
-          {/* Clear Form Button */}
-          <button
-            type="button"
-            className="btn btn-secondary"
-            onClick={props.resetForm}
-            title="Clear all form fields and start fresh"
-          >
-            Clear Form
-          </button>
           <button
             type="button"
             className="btn btn-primary"
