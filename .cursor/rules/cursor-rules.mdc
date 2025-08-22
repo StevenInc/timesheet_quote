@@ -9,7 +9,7 @@ Respond to each task with the steps to complete the task, but do not execute the
 
 Ask to run npm run build instead of npm run dev after code has been modified.
 
-Do not update clientComments if the form is empty
+Do not update clientNotes if the form is empty
 
 Variable names should be consise and detailed.
 For example: Do not use gereric names like "newFormData" instead use "newQuoteFormData"

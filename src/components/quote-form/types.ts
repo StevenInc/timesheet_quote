@@ -64,7 +64,7 @@ export interface QuoteFormData {
   title: string
   notes: string
   legalTerms: string
-  clientComments: string
+  clientNotes: string
   isRecurring: boolean
   billingPeriod: string
   recurringAmount: number
@@ -153,7 +153,7 @@ export interface ClientSuggestion {
   id: string
   name: string
   email: string
-  client_comments?: string
+  client_notes?: string
 }
 
 export interface DatabaseOwner {

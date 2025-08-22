@@ -1,7 +1,7 @@
 // Test script to debug client comments functionality
 // This can be run in the browser console to test the database operations
 
-async function testClientComments() {
+async function testClientNotes() {
   console.log('🧪 Testing client comments functionality...');
 
   try {
@@ -9,7 +9,7 @@ async function testClientComments() {
     console.log('📖 Testing client table read...');
     const { data: clients, error: readError } = await supabase
       .from('clients')
-      .select('id, name, email, client_comments')
+              .select('id, name, email, client_notes')
       .limit(3);
 
     if (readError) {
@@ -27,11 +27,11 @@ async function testClientComments() {
       const { data: updateResult, error: updateError } = await supabase
         .from('clients')
         .update({
-          client_comments: `Test comment updated at ${new Date().toISOString()}`,
+          client_notes: `Test comment updated at ${new Date().toISOString()}`,
           updated_at: new Date().toISOString()
         })
         .eq('id', testClient.id)
-        .select('id, name, email, client_comments, updated_at');
+        .select('id, name, email, client_notes, updated_at');
 
       if (updateError) {
         console.error('❌ Error updating client:', updateError);
@@ -43,7 +43,7 @@ async function testClientComments() {
       // Test 3: Verify the update worked
       const { data: verifyResult, error: verifyError } = await supabase
         .from('clients')
-        .select('id, name, email, client_comments, updated_at')
+        .select('id, name, email, client_notes, updated_at')
         .eq('id', testClient.id)
         .single();
 
@@ -61,4 +61,4 @@ async function testClientComments() {
 }
 
 // Run the test
-testClientComments();
+testClientNotes();

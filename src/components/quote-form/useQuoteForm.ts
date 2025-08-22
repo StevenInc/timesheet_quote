@@ -45,7 +45,7 @@ export const useQuoteForm = () => {
       currentData.isTaxEnabled !== originalData.isTaxEnabled ||
       currentData.notes !== originalData.notes ||
       currentData.legalTerms !== originalData.legalTerms ||
-      currentData.clientComments !== originalData.clientComments ||
+      currentData.clientNotes !== originalData.clientNotes ||
       currentData.isRecurring !== originalData.isRecurring ||
       currentData.billingPeriod !== originalData.billingPeriod ||
       currentData.recurringAmount !== originalData.recurringAmount ||
@@ -77,7 +77,7 @@ export const useQuoteForm = () => {
     title: '',
     notes: '',
     legalTerms: '',
-    clientComments: '',
+    clientNotes: '',
     isRecurring: false,
     billingPeriod: '',
     recurringAmount: 0,
@@ -104,10 +104,10 @@ export const useQuoteForm = () => {
     console.log('🔍 Form data changed:', {
       clientName: formData.clientName,
       clientEmail: formData.clientEmail,
-      clientComments: formData.clientComments,
+      clientNotes: formData.clientNotes,
       quoteNumber: formData.quoteNumber
     })
-  }, [formData.clientName, formData.clientEmail, formData.clientComments, formData.quoteNumber])
+  }, [formData.clientName, formData.clientEmail, formData.clientNotes, formData.quoteNumber])
 
   // Custom setter with guards to prevent unnecessary updates
   const setSelectedClientQuote = React.useCallback((quoteId: string) => {
@@ -336,7 +336,7 @@ export const useQuoteForm = () => {
         .from('quotes')
         .select(`
           *,
-          clients(name, email, client_comments),
+          clients(name, email, client_notes),
           quote_revisions(
             *,
             quote_items(*),
@@ -360,7 +360,7 @@ export const useQuoteForm = () => {
             quoteNumber: quote.quote_number,
             clientName: quote.clients?.name || '',
             clientEmail: quote.clients?.email || '',
-            clientComments: quote.clients?.client_comments || '',
+            clientNotes: quote.clients?.client_notes || '',
             expires: latestRevision.expires_on || getDefaultExpirationDate(),
             taxRate: latestRevision.tax_rate || 0.08,
             isTaxEnabled: latestRevision.is_tax_enabled || false,
@@ -668,7 +668,7 @@ export const useQuoteForm = () => {
     try {
       const { data, error } = await supabase
         .from('clients')
-        .select('id, name, email, client_comments')
+        .select('id, name, email, client_notes')
         .order('name')
 
       if (error) throw error
@@ -693,7 +693,7 @@ export const useQuoteForm = () => {
     try {
       const { data, error } = await supabase
         .from('clients')
-        .select('id, name, email, client_comments')
+        .select('id, name, email, client_notes')
         .ilike('name', `%${searchTerm}%`)
         .limit(10)
 
@@ -736,90 +736,72 @@ export const useQuoteForm = () => {
       // Clear any loaded revision state
       clearLoadedRevisionState()
 
-              // Load existing client data and comments for this client
-        let existingClientComments = ''
-        let clientName = ''
-        let clientEmail = ''
+      // Load existing client data and notes for this client
+      let existingClientNotes = ''
+      let clientName = ''
+      let clientEmail = ''
 
-        console.log('🔍 Starting to load client data for client ID:', newQuoteData.selectedClientId)
-        try {
-          // Read client data directly from the clients table
-          console.log('🔍 Querying clients table for client ID:', newQuoteData.selectedClientId)
-          const { data: clientData, error: clientError } = await supabase
-            .from('clients')
-            .select('client_comments, name, email')
-            .eq('id', newQuoteData.selectedClientId)
-            .single()
+      console.log('🔍 Starting to load client data for client ID:', newQuoteData.selectedClientId)
+      try {
+        // Read client data directly from the clients table
+        console.log('🔍 Querying clients table for client ID:', newQuoteData.selectedClientId)
+        const { data: clientData, error: clientError } = await supabase
+          .from('clients')
+          .select('client_notes, name, email')
+          .eq('id', newQuoteData.selectedClientId)
+          .single()
 
-          console.log('🔍 Client query result:', { clientData, clientError })
+        console.log('🔍 Client query result:', { clientData, clientError })
 
-          if (!clientError && clientData) {
-            existingClientComments = clientData.client_comments || ''
-            clientName = clientData.name || ''
-            clientEmail = clientData.email || ''
-            console.log('📝 Loaded client data from clients table:', { name: clientName, email: clientEmail, comments: existingClientComments })
-          } else {
-            console.log('🔍 No client data found in clients table or error:', { clientData, clientError })
-            throw new Error('Failed to load client data')
-          }
-        } catch (error) {
-          console.log('🔍 Error loading client data from clients table:', error)
-          throw new Error(`Error loading client data: ${error instanceof Error ? error.message : 'Unknown error'}`)
+        if (!clientError && clientData) {
+          existingClientNotes = clientData.client_notes || ''
+          clientName = clientData.name || ''
+          clientEmail = clientData.email || ''
+          console.log('📝 Loaded client data from clients table:', { name: clientName, email: clientEmail, notes: existingClientNotes })
+        } else {
+          console.log('🔍 No client data found in clients table or error:', { clientData, clientError })
+          throw new Error('Failed to load client data')
         }
+      } catch (error) {
+        console.log('🔍 Error loading client data from clients table:', error)
+        throw new Error(`Error loading client data: ${error instanceof Error ? error.message : 'Unknown error'}`)
+      }
 
-        // Populate the form with new quote data and existing client comments
-        console.log('🔍 About to create newFormData with:')
-        console.log('  - clientName:', clientName)
-        console.log('  - clientEmail:', clientEmail)
-        console.log('  - existingClientComments:', existingClientComments)
-        console.log('  - newQuoteData.quoteNumber:', newQuoteData.quoteNumber)
+      // First, reset the form to clean state
+      console.log('🧹 Resetting form to clean state...')
+      await resetForm()
 
-        const newQuoteFormData = {
-          owner: formData.owner,
-          ownerName: formData.ownerName,
-          creatorName: '',
-          createdAt: '',
-          quoteNumber: newQuoteData.quoteNumber,
-          quoteUrl: 'https://quotes.timesheets.com/68124-AJ322ADV3',
-          clientName: clientName,
-          clientEmail: clientEmail,
-          expires: getDefaultExpirationDate(),
-          taxRate: 0.08,
-          isTaxEnabled: false,
-          paymentTerms: 'Net 30',
-          items: [{ id: '1', description: '', quantity: 1, unitPrice: 0, total: 0, recurring: 'none', taxable: true }],
-          subtotal: 0,
-          tax: 0,
-          total: 0,
-          title: '', // Ensure title is empty for new quotes
-          notes: '', // Ensure notes is empty for new quotes
-          legalTerms: formData.legalTerms, // Keep default legal terms
-          clientComments: existingClientComments, // Include existing client comments
-          isRecurring: false,
-          billingPeriod: '',
-          recurringAmount: 0,
-          quoteHistory: [],
-          selectedHistoryVersion: '',
-          paymentSchedule: [{ id: 'ps-1', percentage: 100, description: 'Net 30' }],
-          sentViaEmail: false,
-          defaultLegalTerms: formData.defaultLegalTerms
-        }
+      // Then populate with minimal new quote data
+      console.log('🔍 About to create newFormData with:')
+      console.log('  - clientName:', clientName)
+      console.log('  - clientEmail:', clientEmail)
+      console.log('  - existingClientNotes:', existingClientNotes)
+      console.log('  - newQuoteData.quoteNumber:', newQuoteData.quoteNumber)
+
+      const newQuoteFormData = {
+        ...formData, // Start with reset form data
+        quoteNumber: newQuoteData.quoteNumber,
+        clientName: clientName,
+        clientEmail: clientEmail,
+        clientNotes: existingClientNotes, // Include existing client notes
+        // Keep all other fields as reset (empty title, notes, items, etc.)
+      }
 
       console.log('🔍 New quote form data created:', newQuoteFormData)
-      console.log('🔍 About to call setFormData with clientComments:', newQuoteFormData.clientComments)
+      console.log('🔍 About to call setFormData with clientNotes:', newQuoteFormData.clientNotes)
 
       // Update the form with the new quote data
       setFormData(newQuoteFormData)
       setOriginalFormData(newQuoteFormData)
       setHasUnsavedChanges(false)
 
-      // Close the modal without resetting the form (since we want to keep the new quote data)
+      // Close the modal
       setIsNewQuoteModalOpen(false)
       setNewQuoteData({ quoteNumber: '', selectedClientId: '' })
       setClientSuggestions([])
 
       // Show success message
-      setSaveMessage({ type: 'success', text: 'New quote created successfully!' })
+      setSaveMessage({ type: 'success', text: 'New quote created successfully! Form has been reset and populated with client information.' })
     } catch (error) {
       console.error('Error creating new quote:', error)
       setSaveMessage({ type: 'error', text: `Error creating new quote: ${error instanceof Error ? error.message : 'Unknown error'}` })
@@ -871,7 +853,7 @@ export const useQuoteForm = () => {
       title: '',
       notes: '',
       legalTerms: defaultLegalTerms, // Load default legal terms
-      clientComments: '',
+      clientNotes: '',
       isRecurring: false,
       billingPeriod: '',
       recurringAmount: 0,
@@ -1048,7 +1030,7 @@ export const useQuoteForm = () => {
       const hasActualContent = dataToSave.items.some(item => item.description.trim()) ||
                                dataToSave.notes?.trim() ||
                                (dataToSave.legalTerms?.trim() && dataToSave.legalTerms !== dataToSave.defaultLegalTerms) ||
-                               dataToSave.clientComments?.trim()
+                               dataToSave.clientNotes?.trim()
 
       if (hasActualContent && !dataToSave.title?.trim()) {
         throw new Error('Quote title is required')
@@ -1085,7 +1067,7 @@ export const useQuoteForm = () => {
           // Check if the client's email has changed and update it
           const { data: currentClient, error: clientFetchError } = await supabase
             .from('clients')
-            .select('email, client_comments')
+            .select('email, client_notes')
             .eq('id', clientId)
             .single()
 
@@ -1135,7 +1117,7 @@ export const useQuoteForm = () => {
                 // Verify the update actually worked by fetching the client again
                 const { data: verifyClient, error: verifyError } = await supabase
                   .from('clients')
-                  .select('email, client_comments')
+                  .select('email, client_notes')
                   .eq('id', clientId)
                   .single()
 
@@ -1160,16 +1142,16 @@ export const useQuoteForm = () => {
               }
             }
 
-            // Check if client comments have changed and update them
-            if (currentClient && dataToSave.clientComments?.trim() !== currentClient.client_comments) {
-              console.log('✅ Client comments have changed, updating client record...')
-              console.log('📝 Old comments:', currentClient.client_comments)
-              console.log('📝 New comments:', dataToSave.clientComments?.trim() || '(empty)')
+            // Check if client notes have changed and update them
+            if (currentClient && dataToSave.clientNotes?.trim() !== currentClient.client_notes) {
+              console.log('✅ Client notes have changed, updating client record...')
+              console.log('📝 Old notes:', currentClient.client_notes)
+              console.log('📝 New notes:', dataToSave.clientNotes?.trim() || '(empty)')
 
               const { error: commentsUpdateError } = await supabase
                 .from('clients')
                 .update({
-                  client_comments: dataToSave.clientComments?.trim() || '',
+                  client_notes: dataToSave.clientNotes?.trim() || '',
                   updated_at: new Date().toISOString()
                 })
                 .eq('id', clientId)
@@ -1210,7 +1192,7 @@ export const useQuoteForm = () => {
             .insert({
               name: dataToSave.clientName || 'Unknown Client',
               email: clientEmail,
-              client_comments: dataToSave.clientComments?.trim() || ''
+              client_notes: dataToSave.clientNotes?.trim() || ''
             })
             .select()
             .single()
@@ -1218,7 +1200,7 @@ export const useQuoteForm = () => {
           if (createError) {
             console.error('Error creating new client:', createError)
             throw createError
-          }
+        }
           clientId = newClient.id
           console.log('Created new client with ID:', clientId)
         }
@@ -1232,7 +1214,7 @@ export const useQuoteForm = () => {
           .insert({
             name: 'Default Client',
             email: 'default@example.com',
-            client_comments: ''
+            client_notes: ''
           })
           .select()
           .single()
@@ -1718,7 +1700,7 @@ export const useQuoteForm = () => {
                   quote_number,
                   owner_id,
                   created_at,
-                  clients(name, email, client_comments)
+                  clients(name, email, client_notes)
                 ),
                 quote_items(*),
                 payment_terms(*),
@@ -1747,7 +1729,7 @@ export const useQuoteForm = () => {
                 quoteNumber: revision.quotes.quote_number,
                 clientName: revision.quotes.clients?.name || '',
                 clientEmail: revision.quotes.clients?.email || '',
-                clientComments: revision.quotes.clients?.client_comments || '',
+                clientNotes: revision.quotes.clients?.client_notes || '',
                 expires: revision.expires_on || getDefaultExpirationDate(),
                 taxRate: revision.tax_rate || 0.08,
                 isTaxEnabled: revision.is_tax_enabled || false,
@@ -1853,7 +1835,7 @@ export const useQuoteForm = () => {
         ...prev,
         clientName: selectedClient.name,
         clientEmail: selectedClient.email,
-        clientComments: selectedClient.client_comments || '',
+        clientNotes: selectedClient.client_notes || '',
         // Note: Owner field is not available in client data, so it remains unchanged
       }))
     }
@@ -1989,7 +1971,7 @@ export const useQuoteForm = () => {
             quote_number,
             owner_id,
             created_at,
-            clients(name, email, client_comments)
+            clients(name, email, client_notes)
           ),
           quote_items(*),
           payment_terms(*),
@@ -2026,7 +2008,7 @@ export const useQuoteForm = () => {
           quoteNumber: revision.quotes.quote_number,
           clientName: revision.quotes.clients?.name || '',
           clientEmail: revision.quotes.clients?.email || '',
-          clientComments: revision.quotes.clients?.client_comments || '',
+          clientNotes: revision.quotes.clients?.client_notes || '',
           expires: revision.expires_on || getDefaultExpirationDate(),
           taxRate: revision.tax_rate || 0.08,
           isTaxEnabled: revision.is_tax_enabled || false,
@@ -2105,7 +2087,7 @@ export const useQuoteForm = () => {
       const hasActualContent = dataToSave.items.some(item => item.description.trim()) ||
                                dataToSave.notes?.trim() ||
                                (dataToSave.legalTerms?.trim() && dataToSave.legalTerms !== dataToSave.defaultLegalTerms) ||
-                               dataToSave.clientComments?.trim()
+                               dataToSave.clientNotes?.trim()
 
       if (hasActualContent && !dataToSave.title?.trim()) {
         throw new Error('Quote title is required')
@@ -2142,7 +2124,7 @@ export const useQuoteForm = () => {
           // Check if the client's email has changed and update it
           const { data: currentClient, error: clientFetchError } = await supabase
             .from('clients')
-            .select('email, client_comments')
+            .select('email, client_notes')
             .eq('id', clientId)
             .single()
 
@@ -2192,7 +2174,7 @@ export const useQuoteForm = () => {
                 // Verify the update actually worked by fetching the client again
                 const { data: verifyClient, error: verifyError } = await supabase
                   .from('clients')
-                  .select('email, client_comments')
+                  .select('email, client_notes')
                   .eq('id', clientId)
                   .single()
 
@@ -2217,16 +2199,16 @@ export const useQuoteForm = () => {
               }
             }
 
-            // Check if client comments have changed and update them
-            if (currentClient && dataToSave.clientComments?.trim() !== currentClient.client_comments) {
-              console.log('✅ Client comments have changed, updating client record...')
-              console.log('📝 Old comments:', currentClient.client_comments)
-              console.log('📝 New comments:', dataToSave.clientComments?.trim() || '(empty)')
+            // Check if client notes have changed and update them
+            if (currentClient && dataToSave.clientNotes?.trim() !== currentClient.client_notes) {
+              console.log('✅ Client notes have changed, updating client record...')
+              console.log('📝 Old notes:', currentClient.client_notes)
+              console.log('📝 New notes:', dataToSave.clientNotes?.trim() || '(empty)')
 
               const { error: commentsUpdateError } = await supabase
                 .from('clients')
                 .update({
-                  client_comments: dataToSave.clientComments?.trim() || '',
+                  client_notes: dataToSave.clientNotes?.trim() || '',
                   updated_at: new Date().toISOString()
                 })
                 .eq('id', clientId)
@@ -2267,7 +2249,7 @@ export const useQuoteForm = () => {
             .insert({
               name: dataToSave.clientName || 'Unknown Client',
               email: clientEmail,
-              client_comments: dataToSave.clientComments?.trim() || ''
+              client_notes: dataToSave.clientNotes?.trim() || ''
             })
             .select()
             .single()
@@ -2289,7 +2271,7 @@ export const useQuoteForm = () => {
           .insert({
             name: 'Default Client',
             email: 'default@example.com',
-            client_comments: ''
+            client_notes: ''
           })
           .select()
           .single()

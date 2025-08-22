@@ -370,6 +370,15 @@ export const QuoteFormView: React.FC<Props> = (props) => {
             <Add sx={{ fontSize: 16 }} />
             New Quote
           </button>
+          {/* Clear Form Button */}
+          <button
+            type="button"
+            className="btn btn-secondary"
+            onClick={props.resetForm}
+            title="Clear all form fields and start fresh"
+          >
+            Clear Form
+          </button>
           <button
             type="button"
             className="btn btn-primary"
@@ -446,11 +455,11 @@ export const QuoteFormView: React.FC<Props> = (props) => {
                 />
               </div>
               <div className="form-group">
-                <label htmlFor="clientComments">Client Comments (Office Notes - not included in quote)</label>
+                <label htmlFor="clientNotes">Client Notes (Office Notes - not included in quote)</label>
                 <textarea
-                  id="clientComments"
-                  value={formData.clientComments}
-                  onChange={(e) => handleInputChange('clientComments', e.target.value)}
+                  id="clientNotes"
+                  value={formData.clientNotes}
+                  onChange={(e) => handleInputChange('clientNotes', e.target.value)}
                   rows={3}
                   placeholder="Internal office notes about this client..."
                 />
