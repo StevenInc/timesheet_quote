@@ -95,7 +95,6 @@ const QuoteForm: React.FC = () => {
       addItem={addItem}
       removeItem={removeItem}
       handleInputChange={handleInputChange}
-      handleCheckboxChange={handleCheckboxChange}
       updatePaymentTerm={updatePaymentTerm}
       addPaymentTerm={addPaymentTerm}
       removePaymentTerm={removePaymentTerm}

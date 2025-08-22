@@ -783,12 +783,12 @@ export const useQuoteForm = () => {
 
   const recalc = (
     items: QuoteItem[] = formData.items,
-    isTaxEnabled: boolean = formData.isTaxEnabled,
     taxRate: number = formData.taxRate
   ) => {
     const subtotal = items.reduce((sum, item) => sum + item.total, 0)
     const taxableSubtotal = items.reduce((sum, item) => sum + (item.taxable ? item.total : 0), 0)
-    const tax = isTaxEnabled ? taxableSubtotal * taxRate : 0
+    const hasTaxableItems = items.some(item => item.taxable)
+    const tax = hasTaxableItems ? taxableSubtotal * taxRate : 0
     const total = subtotal + tax
     return { subtotal, tax, total }
   }
@@ -860,7 +860,7 @@ export const useQuoteForm = () => {
       return item
     })
 
-    const { subtotal, tax, total } = recalc(updatedItems)
+    const { subtotal, tax, total } = recalc(updatedItems, formData.taxRate)
 
     const newFormData = { ...formData, items: updatedItems, subtotal, tax, total }
 
@@ -893,7 +893,7 @@ export const useQuoteForm = () => {
   const removeItem = (id: string) => {
     if (formData.items.length <= 1) return
     const updatedItems = formData.items.filter((item) => item.id !== id)
-    const { subtotal, tax, total } = recalc(updatedItems)
+    const { subtotal, tax, total } = recalc(updatedItems, formData.taxRate)
     const newFormData = { ...formData, items: updatedItems, subtotal, tax, total }
 
     // Check if this change creates unsaved changes
@@ -909,7 +909,7 @@ export const useQuoteForm = () => {
 
       // Handle tax rate changes - recalculate totals
       if (field === 'taxRate') {
-        const { subtotal, tax, total } = recalc(prev.items, prev.isTaxEnabled, value as number)
+        const { subtotal, tax, total } = recalc(prev.items, value as number)
         newData = { ...newData, subtotal, tax, total }
       }
 
@@ -927,18 +927,6 @@ export const useQuoteForm = () => {
   }
 
   const handleCheckboxChange = (field: keyof QuoteFormData, value: boolean) => {
-    if (field === 'isTaxEnabled') {
-      const { subtotal, tax, total } = recalc(formData.items, value, formData.taxRate)
-      const newFormData = { ...formData, isTaxEnabled: value, subtotal, tax, total }
-
-      // Check if this change creates unsaved changes
-      const hasChanges = checkFormChanges(newFormData, originalFormData)
-      setHasUnsavedChanges(hasChanges)
-
-      setFormData(newFormData)
-      return
-    }
-
     const newFormData = { ...formData, [field]: value }
 
     // Check if this change creates unsaved changes
@@ -1726,7 +1714,7 @@ export const useQuoteForm = () => {
 
               // Recalculate totals
               const items = newFormData.items
-              const { subtotal, tax, total } = recalc(items, newFormData.isTaxEnabled, newFormData.taxRate)
+              const { subtotal, tax, total } = recalc(items, newFormData.taxRate)
 
               console.log('Updating form data with new revision data')
               // Update form data in one batch
@@ -1999,7 +1987,7 @@ export const useQuoteForm = () => {
 
         // Recalculate totals
         const items = newFormData.items
-        const { subtotal, tax, total } = recalc(items, newFormData.isTaxEnabled, newFormData.taxRate)
+        const { subtotal, tax, total } = recalc(items, newFormData.taxRate)
 
         console.log('Updating form data with new revision data')
         // Update form data in one batch

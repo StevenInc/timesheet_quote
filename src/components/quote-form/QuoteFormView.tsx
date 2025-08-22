@@ -30,7 +30,6 @@ interface Props {
   removeItem: (id: string) => void
   // form handlers
   handleInputChange: (field: keyof QuoteFormData, value: string | number | boolean) => void
-  handleCheckboxChange: (field: keyof QuoteFormData, value: boolean) => void
   // payment term handlers
   updatePaymentTerm: (id: string, field: keyof PaymentTermItem, value: string | number) => void
   addPaymentTerm: () => void
@@ -257,7 +256,6 @@ export const QuoteFormView: React.FC<Props> = (props) => {
     addItem,
     removeItem,
     handleInputChange,
-    handleCheckboxChange,
     updatePaymentTerm,
     addPaymentTerm,
     removePaymentTerm,
@@ -531,15 +529,7 @@ export const QuoteFormView: React.FC<Props> = (props) => {
 
             <div className="form-section totals-section">
               <div className="form-group-horizontal" style={{ marginBottom: '0.5rem', display: 'flex', alignItems: 'baseline', gap: '0.5rem' }}>
-                <input
-                  type="checkbox"
-                  id="taxEnabled"
-                  className="tax-enabled-input"
-                  checked={formData.isTaxEnabled}
-                  onChange={(e) => handleCheckboxChange('isTaxEnabled', e.target.checked)}
-                  style={{ marginRight: '0.5rem' }}
-                />
-                <label htmlFor="taxEnabled" className="tax-rate-input-label" style={{ marginBottom: 0, whiteSpace: 'nowrap', lineHeight: '1' }}>Apply Tax (%)</label>
+                <label htmlFor="taxRate" className="tax-rate-input-label" style={{ marginBottom: 0, whiteSpace: 'nowrap', lineHeight: '1', opacity: formData.items.some(item => item.taxable) ? 1 : 0.5 }}>Tax Rate (%)</label>
                 <input
                   id="taxRate"
                   type="number"
@@ -559,8 +549,7 @@ export const QuoteFormView: React.FC<Props> = (props) => {
                     }
                     setTaxInputValue('')
                   }}
-                  placeholder="0.00"
-                  disabled={!formData.isTaxEnabled}
+                  disabled={!formData.items.some(item => item.taxable)}
                 />
               </div>
               <div className="totals-grid">
@@ -568,7 +557,7 @@ export const QuoteFormView: React.FC<Props> = (props) => {
                   <span>Subtotal:</span>
                   <span>${formData.subtotal.toFixed(2)}</span>
                 </div>
-                {formData.isTaxEnabled && (
+                {formData.items.some(item => item.taxable) && (
                   <div className="total-row">
                     <span>Taxable Subtotal:</span>
                     <span>${formData.items.reduce((sum, item) => sum + (item.taxable ? item.total : 0), 0).toFixed(2)}</span>
