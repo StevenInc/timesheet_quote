@@ -603,7 +603,10 @@ export const useQuoteForm = () => {
     await loadNextQuoteNumber()
     console.log('After loading next quote number, newQuoteData:', newQuoteData)
 
-    // Don't reset the form here - we want to populate it with client data when creating the quote
+    // Reset the form to clean state when opening the modal for a new quote
+    // This ensures title, notes, and other fields are empty for each new quote
+    await resetForm()
+
     console.log('Setting modal to open...')
     setIsNewQuoteModalOpen(true)
     console.log('Got new quote number: Modal should now be open')
@@ -617,11 +620,6 @@ export const useQuoteForm = () => {
     setNewQuoteData({ quoteNumber: '', selectedClientId: '' })
     console.log('Reset newQuoteData to empty values')
     setClientSuggestions([])
-
-    // Reset the main form to clean state when canceling new quote creation
-    // This will clear any form data and return to default state
-    // NOTE: Use this function only when canceling, not when successfully creating a quote
-    await resetForm()
 
     // Clear any success/error messages that might be showing
     setSaveMessage(null)
@@ -776,20 +774,35 @@ export const useQuoteForm = () => {
         console.log('  - newQuoteData.quoteNumber:', newQuoteData.quoteNumber)
 
         const newQuoteFormData = {
-          ...formData,
+          owner: formData.owner,
+          ownerName: formData.ownerName,
+          creatorName: '',
+          createdAt: '',
           quoteNumber: newQuoteData.quoteNumber,
+          quoteUrl: 'https://quotes.timesheets.com/68124-AJ322ADV3',
           clientName: clientName,
           clientEmail: clientEmail,
+          expires: getDefaultExpirationDate(),
+          taxRate: 0.08,
+          isTaxEnabled: false,
+          paymentTerms: 'Net 30',
+          items: [{ id: '1', description: '', quantity: 1, unitPrice: 0, total: 0, recurring: 'none', taxable: true }],
+          subtotal: 0,
+          tax: 0,
+          total: 0,
+          title: '', // Ensure title is empty for new quotes
+          notes: '', // Ensure notes is empty for new quotes
+          legalTerms: formData.legalTerms, // Keep default legal terms
           clientComments: existingClientComments, // Include existing client comments
-        items: [{ id: '1', description: '', quantity: 1, unitPrice: 0, total: 0, recurring: 'none', taxable: true }],
-        subtotal: 0,
-        tax: 0,
-        total: 0,
-        // Set default values for required fields
-        quoteTitle: `Quote ${newQuoteData.quoteNumber}`,
-        taxRate: 0.08, // Default tax rate
-        paymentTerms: 'Net 30'
-      }
+          isRecurring: false,
+          billingPeriod: '',
+          recurringAmount: 0,
+          quoteHistory: [],
+          selectedHistoryVersion: '',
+          paymentSchedule: [{ id: 'ps-1', percentage: 100, description: 'Net 30' }],
+          sentViaEmail: false,
+          defaultLegalTerms: formData.defaultLegalTerms
+        }
 
       console.log('🔍 New quote form data created:', newQuoteFormData)
       console.log('🔍 About to call setFormData with clientComments:', newQuoteFormData.clientComments)

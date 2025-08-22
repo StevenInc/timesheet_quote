@@ -391,7 +391,7 @@ export const QuoteFormView: React.FC<Props> = (props) => {
           <div className="form-column left-column">
             <div className="form-section">
               <div className="form-group">
-                <label htmlFor="title">Quote</label>
+                <label htmlFor="title">Title</label>
                 <input
                   id="title"
                   type="text"
