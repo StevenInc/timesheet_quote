@@ -25,7 +25,7 @@ interface Props {
   formData: QuoteFormData
   paymentScheduleTotal: number
   // item handlers
-  updateItem: (id: string, field: keyof QuoteItem, value: string | number) => void
+  updateItem: (id: string, field: keyof QuoteItem, value: string | number | boolean) => void
   addItem: () => void
   removeItem: (id: string) => void
   // form handlers
@@ -506,7 +506,7 @@ export const QuoteFormView: React.FC<Props> = (props) => {
                       <input
                         type="checkbox"
                         checked={item.taxable}
-                        onChange={(e) => updateItem(item.id, 'taxable', e.target.checked)}
+                        onChange={(e) => updateItem(item.id, 'taxable' as keyof QuoteItem, e.target.checked)}
                         className="taxable-checkbox"
                       />
                     </div>
@@ -568,6 +568,12 @@ export const QuoteFormView: React.FC<Props> = (props) => {
                   <span>Subtotal:</span>
                   <span>${formData.subtotal.toFixed(2)}</span>
                 </div>
+                {formData.isTaxEnabled && (
+                  <div className="total-row">
+                    <span>Taxable Subtotal:</span>
+                    <span>${formData.items.reduce((sum, item) => sum + (item.taxable ? item.total : 0), 0).toFixed(2)}</span>
+                  </div>
+                )}
                 <div className="total-row">
                   <span>Tax:</span>
                   <span>${formData.tax.toFixed(2)}</span>

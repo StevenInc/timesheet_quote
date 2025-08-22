@@ -365,8 +365,9 @@ export const useQuoteForm = () => {
               quantity: item.quantity || 1,
               unitPrice: item.unit_price || 0,
               total: item.total || 0,
-              recurring: item.recurring || 'none'
-            })) || [{ id: '1', description: '', quantity: 1, unitPrice: 0, total: 0, recurring: 'none' }],
+              recurring: item.recurring || 'none',
+              taxable: item.taxable || true
+            })) || [{ id: '1', description: '', quantity: 1, unitPrice: 0, total: 0, recurring: 'none', taxable: true }],
             paymentSchedule: latestRevision.payment_terms?.map((term: DatabasePaymentTerm) => ({
               id: term.id,
               percentage: term.percentage || 100,
@@ -740,7 +741,7 @@ export const useQuoteForm = () => {
         quoteNumber: newQuoteData.quoteNumber,
         clientName: selectedClient.name,
         clientEmail: selectedClient.email,
-        items: [{ id: '1', description: '', quantity: 1, unitPrice: 0, total: 0, recurring: 'none' }],
+        items: [{ id: '1', description: '', quantity: 1, unitPrice: 0, total: 0, recurring: 'none', taxable: true }],
         subtotal: 0,
         tax: 0,
         total: 0
@@ -847,7 +848,7 @@ export const useQuoteForm = () => {
     window.scrollTo({ top: 0, behavior: 'smooth' })
   }
 
-  const updateItem = (id: string, field: keyof QuoteItem, value: string | number | boolean) => {
+  const updateItem = (id: string, field: keyof QuoteItem, value: string | number | boolean): void => {
     const updatedItems = formData.items.map((item) => {
       if (item.id === id) {
         const updatedItem = { ...item, [field]: value }
