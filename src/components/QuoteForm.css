@@ -329,12 +329,13 @@ div.form-section.quote-version {
 }
 
 /* Indent the ITEM TOTAL header ~1/4" */
-.table-header .header-cell:nth-child(4) {
+.table-header .header-cell:nth-child(5) {
   padding-left: 0.25in;
 }
 
 .header-cell {
-  padding: 0.75rem;
+  padding: 0.5rem;
+  padding-left: 8px;
   font-weight: 600;
   color: #374151;
   font-size: 0.75rem;
@@ -454,6 +455,11 @@ div.form-section.quote-version {
   font-weight: 600;
   color: #1e293b;
   text-align: left;
+  padding-left: 0.25in;
+}
+
+/* Ensure the Item Total header cell has the same left padding */
+.header-cell:nth-child(5) {
   padding-left: 0.25in;
 }
 
