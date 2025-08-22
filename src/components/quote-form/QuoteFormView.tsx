@@ -536,7 +536,7 @@ export const QuoteFormView: React.FC<Props> = (props) => {
                   min={0}
                   max={100}
                   step={0.01}
-                  value={taxInputValue}
+                  value={taxInputValue || (formData.taxRate * 100).toFixed(2)}
                   onChange={(e) => {
                     const value = e.target.value
                     setTaxInputValue(value)
