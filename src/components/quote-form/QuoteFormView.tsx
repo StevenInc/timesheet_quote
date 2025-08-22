@@ -252,7 +252,6 @@ export const QuoteFormView: React.FC<Props> = (props) => {
 
   const {
     formData,
-    setFormData,
     paymentScheduleTotal,
     updateItem,
     addItem,
@@ -435,13 +434,13 @@ export const QuoteFormView: React.FC<Props> = (props) => {
                 />
               </div>
               <div className="form-group">
-                <label htmlFor="clientComments">Client Comments</label>
+                <label htmlFor="clientComments">Client Comments (Office Notes - not included in quote)</label>
                 <textarea
                   id="clientComments"
                   value={formData.clientComments}
                   onChange={(e) => handleInputChange('clientComments', e.target.value)}
                   rows={3}
-                  placeholder="Client feedback and comments..."
+                  placeholder="Internal office notes about this client..."
                 />
               </div>
 

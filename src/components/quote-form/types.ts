@@ -110,11 +110,6 @@ export interface DefaultLegalTerms {
   updated_at: string
 }
 
-export interface DatabaseClientComment {
-  id: string
-  comment: string
-}
-
 export interface DatabaseQuoteRevision {
   id: string
   quote_id: string
@@ -137,7 +132,6 @@ export interface DatabaseQuoteRevision {
   quote_items?: DatabaseQuoteItem[]
   payment_terms?: DatabasePaymentTerm[]
   legal_terms?: DatabaseLegalTerm[]
-  client_comments?: DatabaseClientComment[]
   quotes?: {
     quote_number: string
     owner_id?: string

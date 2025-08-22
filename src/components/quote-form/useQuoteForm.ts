@@ -341,8 +341,7 @@ export const useQuoteForm = () => {
             *,
             quote_items(*),
             payment_terms(*),
-            legal_terms(*),
-            client_comments(*)
+            legal_terms(*)
           )
         `)
         .eq('id', quoteId)
@@ -384,7 +383,7 @@ export const useQuoteForm = () => {
               description: term.description || ''
             })) || [{ id: 'ps-1', percentage: 100, description: 'Net 30' }],
             legalTerms: latestRevision.legal_terms?.[0]?.terms || '',
-            clientComments: latestRevision.client_comments?.[0]?.comment || ''
+
           }))
 
           // Load the quote history
@@ -1072,7 +1071,7 @@ export const useQuoteForm = () => {
           // Check if the client's email has changed and update it
           const { data: currentClient, error: clientFetchError } = await supabase
             .from('clients')
-            .select('email')
+            .select('email, client_comments')
             .eq('id', clientId)
             .single()
 
@@ -1122,7 +1121,7 @@ export const useQuoteForm = () => {
                 // Verify the update actually worked by fetching the client again
                 const { data: verifyClient, error: verifyError } = await supabase
                   .from('clients')
-                  .select('email')
+                  .select('email, client_comments')
                   .eq('id', clientId)
                   .single()
 
@@ -1145,6 +1144,29 @@ export const useQuoteForm = () => {
               } else if (dataToSave.clientEmail?.trim() && !isValidEmail(dataToSave.clientEmail.trim())) {
                 console.log('⚠️ New email format is invalid, skipping update')
               }
+            }
+
+            // Check if client comments have changed and update them
+            if (currentClient && dataToSave.clientComments?.trim() !== currentClient.client_comments) {
+              console.log('✅ Client comments have changed, updating client record...')
+              console.log('📝 Old comments:', currentClient.client_comments)
+              console.log('📝 New comments:', dataToSave.clientComments?.trim() || '(empty)')
+
+              const { error: commentsUpdateError } = await supabase
+                .from('clients')
+                .update({
+                  client_comments: dataToSave.clientComments?.trim() || '',
+                  updated_at: new Date().toISOString()
+                })
+                .eq('id', clientId)
+
+              if (commentsUpdateError) {
+                console.error('❌ Error updating client comments:', commentsUpdateError)
+              } else {
+                console.log('✅ Successfully updated client comments in database')
+              }
+            } else {
+              console.log('ℹ️ No client comments update needed')
             }
           }
         } else {
@@ -1173,7 +1195,8 @@ export const useQuoteForm = () => {
             .from('clients')
             .insert({
               name: dataToSave.clientName || 'Unknown Client',
-              email: clientEmail
+              email: clientEmail,
+              client_comments: dataToSave.clientComments?.trim() || ''
             })
             .select()
             .single()
@@ -1194,7 +1217,8 @@ export const useQuoteForm = () => {
           .from('clients')
           .insert({
             name: 'Default Client',
-            email: 'default@example.com'
+            email: 'default@example.com',
+            client_comments: ''
           })
           .select()
           .single()
@@ -1345,9 +1369,7 @@ export const useQuoteForm = () => {
           await supabase.from('legal_terms').delete().eq('quote_revision_id',
             (await supabase.from('quote_revisions').select('id').eq('quote_id', quoteId).eq('revision_number', 1).single()).data?.id
           )
-          await supabase.from('client_comments').delete().eq('quote_revision_id',
-            (await supabase.from('quote_revisions').select('id').eq('quote_id', quoteId).eq('revision_number', 1).single()).data?.id
-          )
+
 
           // Update the existing revision instead of creating a new one
           const { error: revisionUpdateError } = await supabase
@@ -1507,17 +1529,7 @@ export const useQuoteForm = () => {
         if (legalTermsError) throw legalTermsError
       }
 
-      // Insert client comments for this revision
-      if (dataToSave.clientComments) {
-        const { error: clientCommentsError } = await supabase
-          .from('client_comments')
-          .insert({
-            quote_id: quoteId,
-            quote_revision_id: revisionId,
-            comment: dataToSave.clientComments
-          })
-        if (clientCommentsError) throw clientCommentsError
-      }
+
 
       // Add new quote to history
       const newHistoryItem: QuoteHistory = {
@@ -1696,8 +1708,7 @@ export const useQuoteForm = () => {
                 ),
                 quote_items(*),
                 payment_terms(*),
-                legal_terms(*),
-                client_comments(*)
+                legal_terms(*)
               `)
               .eq('id', mostRecentRevision.id)
               .single()
@@ -1743,7 +1754,7 @@ export const useQuoteForm = () => {
                   description: term.description || ''
                 })) || [{ id: 'ps-1', percentage: 100, description: 'Net 30' }],
                 legalTerms: revision.legal_terms?.[0]?.terms || '',
-                clientComments: revision.client_comments?.[0]?.comment || '',
+                clientComments: '',
                 sentViaEmail: revision.sent_via_email || false
               }
 
@@ -1967,8 +1978,7 @@ export const useQuoteForm = () => {
           ),
           quote_items(*),
           payment_terms(*),
-          legal_terms(*),
-          client_comments(*)
+          legal_terms(*)
         `)
         .eq('id', revisionId)
         .single()
@@ -2023,7 +2033,7 @@ export const useQuoteForm = () => {
             description: term.description || ''
           })) || [{ id: 'ps-1', percentage: 100, description: 'Net 30' }],
           legalTerms: revision.legal_terms?.[0]?.terms || '',
-          clientComments: revision.client_comments?.[0]?.comment || '',
+          clientComments: '',
           sentViaEmail: revision.sent_via_email || false
         }
 
@@ -2117,7 +2127,7 @@ export const useQuoteForm = () => {
           // Check if the client's email has changed and update it
           const { data: currentClient, error: clientFetchError } = await supabase
             .from('clients')
-            .select('email')
+            .select('email, client_comments')
             .eq('id', clientId)
             .single()
 
@@ -2167,7 +2177,7 @@ export const useQuoteForm = () => {
                 // Verify the update actually worked by fetching the client again
                 const { data: verifyClient, error: verifyError } = await supabase
                   .from('clients')
-                  .select('email')
+                  .select('email, client_comments')
                   .eq('id', clientId)
                   .single()
 
@@ -2190,6 +2200,29 @@ export const useQuoteForm = () => {
               } else if (dataToSave.clientEmail?.trim() && !isValidEmail(dataToSave.clientEmail.trim())) {
                 console.log('⚠️ New email format is invalid, skipping update')
               }
+            }
+
+            // Check if client comments have changed and update them
+            if (currentClient && dataToSave.clientComments?.trim() !== currentClient.client_comments) {
+              console.log('✅ Client comments have changed, updating client record...')
+              console.log('📝 Old comments:', currentClient.client_comments)
+              console.log('📝 New comments:', dataToSave.clientComments?.trim() || '(empty)')
+
+              const { error: commentsUpdateError } = await supabase
+                .from('clients')
+                .update({
+                  client_comments: dataToSave.clientComments?.trim() || '',
+                  updated_at: new Date().toISOString()
+                })
+                .eq('id', clientId)
+
+              if (commentsUpdateError) {
+                console.error('❌ Error updating client comments:', commentsUpdateError)
+              } else {
+                console.log('✅ Successfully updated client comments in database')
+              }
+            } else {
+              console.log('ℹ️ No client comments update needed')
             }
           }
         } else {
@@ -2218,7 +2251,8 @@ export const useQuoteForm = () => {
             .from('clients')
             .insert({
               name: dataToSave.clientName || 'Unknown Client',
-              email: clientEmail
+              email: clientEmail,
+              client_comments: dataToSave.clientComments?.trim() || ''
             })
             .select()
             .single()
@@ -2239,7 +2273,8 @@ export const useQuoteForm = () => {
           .from('clients')
           .insert({
             name: 'Default Client',
-            email: 'default@example.com'
+            email: 'default@example.com',
+            client_comments: ''
           })
           .select()
           .single()
@@ -2495,28 +2530,7 @@ export const useQuoteForm = () => {
         }
       }
 
-      // Save client comments
-      if (dataToSave.clientComments) {
-        console.log('Saving client comments...')
-        try {
-          // Use upsert with the correct column name
-          const { error: clientCommentsError } = await supabase
-            .from('client_comments') // Fixed: was quote_client_comments
-            .insert({
-              quote_id: quoteId, // This table has both quote_id and quote_revision_id
-              quote_revision_id: revisionId, // Fixed: was revision_id
-              comment: dataToSave.clientComments
-            })
 
-          if (clientCommentsError) {
-            console.error('Error inserting client comments:', clientCommentsError)
-            throw clientCommentsError
-          }
-        } catch (error) {
-          console.error('Error in client comments operation:', error)
-          throw error
-        }
-      }
 
       console.log('✅ Quote saved successfully for email sending')
       return { quoteId, success: true }
