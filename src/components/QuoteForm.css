@@ -329,7 +329,7 @@ div.form-section.quote-version {
 }
 
 /* Indent the ITEM TOTAL header ~1/4" */
-.table-header .header-cell:nth-child(5) {
+.table-header .header-cell:nth-child(6) {
   padding-left: 0.25in;
 }
 
@@ -362,6 +362,10 @@ div.form-section.quote-version {
 }
 
 .header-cell:nth-child(5) {
+  flex: 0 0 60px;
+}
+
+.header-cell:nth-child(6) {
   flex: 0 0 100px;
 }
 
@@ -403,6 +407,10 @@ div.form-section.quote-version {
 }
 
 .table-cell:nth-child(5) {
+  flex: 0 0 60px;
+}
+
+.table-cell:nth-child(6) {
   flex: 0 0 100px;
 }
 
@@ -451,6 +459,18 @@ div.form-section.quote-version {
 
 
 
+.taxable-cell {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.taxable-checkbox {
+  width: 16px;
+  height: 16px;
+  cursor: pointer;
+}
+
 .total-cell {
   font-weight: 600;
   color: #1e293b;
@@ -459,7 +479,7 @@ div.form-section.quote-version {
 }
 
 /* Ensure the Item Total header cell has the same left padding */
-.header-cell:nth-child(5) {
+.header-cell:nth-child(6) {
   padding-left: 0.25in;
 }
 

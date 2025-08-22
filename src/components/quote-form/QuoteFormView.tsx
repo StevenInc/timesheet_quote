@@ -454,6 +454,7 @@ export const QuoteFormView: React.FC<Props> = (props) => {
                   <div className="header-cell">Recurring</div>
                   <div className="header-cell">Quantity</div>
                   <div className="header-cell">Unit Price</div>
+                  <div className="header-cell">Taxable</div>
                   <div className="header-cell">Item Total</div>
                   <div className="header-cell" aria-hidden="true"></div>
                 </div>
@@ -499,6 +500,14 @@ export const QuoteFormView: React.FC<Props> = (props) => {
                         value={item.unitPrice}
                         onChange={(e) => updateItem(item.id, 'unitPrice', parseFloat(e.target.value) || 0)}
                         placeholder="0.00"
+                      />
+                    </div>
+                    <div className="table-cell taxable-cell">
+                      <input
+                        type="checkbox"
+                        checked={item.taxable}
+                        onChange={(e) => updateItem(item.id, 'taxable', e.target.checked)}
+                        className="taxable-checkbox"
                       />
                     </div>
                     <div className="table-cell total-cell">${item.total.toFixed(2)}</div>

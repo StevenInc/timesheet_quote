@@ -5,6 +5,7 @@ export interface QuoteItem {
   unitPrice: number
   total: number
   recurring: string | false
+  taxable: boolean
 }
 
 export interface PaymentTermItem {
@@ -87,6 +88,7 @@ export interface DatabaseQuoteItem {
   unit_price: number
   total: number
   recurring: string | false
+  taxable: boolean
 }
 
 export interface DatabasePaymentTerm {

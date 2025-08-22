@@ -69,7 +69,7 @@ export const useQuoteForm = () => {
     isTaxEnabled: false,
     paymentTerms: 'Net 30',
     items: [
-      { id: '1', description: '', quantity: 1, unitPrice: 0, total: 0, recurring: 'none' },
+      { id: '1', description: '', quantity: 1, unitPrice: 0, total: 0, recurring: 'none', taxable: true },
     ],
     subtotal: 0,
     tax: 0,
@@ -786,7 +786,8 @@ export const useQuoteForm = () => {
     taxRate: number = formData.taxRate
   ) => {
     const subtotal = items.reduce((sum, item) => sum + item.total, 0)
-    const tax = isTaxEnabled ? subtotal * taxRate : 0
+    const taxableSubtotal = items.reduce((sum, item) => sum + (item.taxable ? item.total : 0), 0)
+    const tax = isTaxEnabled ? taxableSubtotal * taxRate : 0
     const total = subtotal + tax
     return { subtotal, tax, total }
   }
@@ -814,7 +815,7 @@ export const useQuoteForm = () => {
       isTaxEnabled: false,
       paymentTerms: 'Net 30',
       items: [
-        { id: '1', description: '', quantity: 1, unitPrice: 0, total: 0, recurring: 'none' },
+        { id: '1', description: '', quantity: 1, unitPrice: 0, total: 0, recurring: 'none', taxable: true },
       ],
       subtotal: 0,
       tax: 0,
@@ -877,6 +878,7 @@ export const useQuoteForm = () => {
       unitPrice: 0,
       total: 0,
       recurring: 'none',
+      taxable: true,
     }
     const newFormData = { ...formData, items: [...formData.items, newItem] }
 
