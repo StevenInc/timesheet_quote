@@ -8,27 +8,8 @@ interface ClientQuoteViewProps {
   revisionId: string
 }
 
-interface QuoteData {
-  revision: DatabaseQuoteRevision
-  quote: {
-    quote_number: string
-    clients: {
-      name: string
-      email: string
-    }
-  }
-  items: Array<{
-    description: string
-    quantity: number
-    unit_price: number
-    total: number
-    recurring: string | false
-  }>
-  payment_terms: Array<{
-    percentage: number
-    description: string
-  }>
-}
+// Use the existing DatabaseQuoteRevision type since it already has the structure we need
+type QuoteData = DatabaseQuoteRevision
 
 export const ClientQuoteView: React.FC<ClientQuoteViewProps> = ({ revisionId }) => {
   const [quoteData, setQuoteData] = useState<QuoteData | null>(null)
@@ -108,35 +89,40 @@ export const ClientQuoteView: React.FC<ClientQuoteViewProps> = ({ revisionId }) 
     )
   }
 
-  const { revision, quote, items, payment_terms } = quoteData
-  const subtotal = items.reduce((sum, item) => sum + item.total, 0)
+  // The database returns the data in a nested structure, so we need to access it correctly
+  const safeItems = quoteData.quote_items || []
+  const safePaymentTerms = quoteData.payment_terms || []
+  const revision = quoteData
+  const quote = quoteData.quotes
+
+  const subtotal = safeItems.reduce((sum, item) => sum + item.total, 0)
   const taxAmount = revision.is_tax_enabled ? subtotal * (revision.tax_rate / 100) : 0
   const total = subtotal + taxAmount
 
   return (
     <div className="client-quote-container">
       <div className="quote-header">
-        <h1>Quote #{quote.quote_number}</h1>
+        <h1>Quote #{quote?.quote_number || 'Unknown'}</h1>
         <div className="client-info">
-          <p><strong>Client:</strong> {quote.clients.name}</p>
-          <p><strong>Email:</strong> {quote.clients.email}</p>
+          <p><strong>Client:</strong> {quote?.clients?.name || 'Unknown'}</p>
+          <p><strong>Email:</strong> {quote?.clients?.email || 'Unknown'}</p>
         </div>
         <div className="quote-meta">
-          <p><strong>Revision:</strong> v{revision.revision_number}</p>
-          <p><strong>Date:</strong> {new Date(revision.created_at).toLocaleDateString()}</p>
-          {revision.expires_on && (
+          <p><strong>Revision:</strong> v{revision?.revision_number || 'Unknown'}</p>
+          <p><strong>Date:</strong> {revision?.created_at ? new Date(revision.created_at).toLocaleDateString() : 'Unknown'}</p>
+          {revision?.expires_on && (
             <p><strong>Expires:</strong> {new Date(revision.expires_on).toLocaleDateString()}</p>
           )}
         </div>
       </div>
 
-      {revision.title && (
+      {revision?.title && (
         <div className="quote-title">
           <h2>{revision.title}</h2>
         </div>
       )}
 
-      {revision.notes && (
+      {revision?.notes && (
         <div className="quote-notes">
           <p>{revision.notes}</p>
         </div>
@@ -155,7 +141,7 @@ export const ClientQuoteView: React.FC<ClientQuoteViewProps> = ({ revisionId }) 
             </tr>
           </thead>
           <tbody>
-            {items.map((item, index) => (
+            {safeItems.map((item, index) => (
               <tr key={index}>
                 <td>{item.description}</td>
                 <td>{!item.recurring || item.recurring === 'none' ? 'No' : item.recurring}</td>
@@ -173,9 +159,9 @@ export const ClientQuoteView: React.FC<ClientQuoteViewProps> = ({ revisionId }) 
           <span>Subtotal:</span>
           <span>${subtotal.toFixed(2)}</span>
         </div>
-        {revision.is_tax_enabled && (
+        {revision?.is_tax_enabled && (
           <div className="summary-row">
-            <span>Tax ({revision.tax_rate}%):</span>
+            <span>Tax ({revision?.tax_rate || 0}%):</span>
             <span>${taxAmount.toFixed(2)}</span>
           </div>
         )}
@@ -185,11 +171,11 @@ export const ClientQuoteView: React.FC<ClientQuoteViewProps> = ({ revisionId }) 
         </div>
       </div>
 
-      {payment_terms.length > 0 && (
+      {safePaymentTerms.length > 0 && (
         <div className="payment-terms">
           <h3>Payment Terms</h3>
           <ul>
-            {payment_terms.map((term, index) => (
+            {safePaymentTerms.map((term, index) => (
               <li key={index}>
                 {term.percentage}% - {term.description}
               </li>
@@ -198,12 +184,12 @@ export const ClientQuoteView: React.FC<ClientQuoteViewProps> = ({ revisionId }) 
         </div>
       )}
 
-      {revision.is_recurring && (
+      {revision?.is_recurring && (
         <div className="recurring-info">
           <h3>Recurring Service</h3>
           <p>
-            <strong>Amount:</strong> ${revision.recurring_amount?.toFixed(2)}
-            {revision.billing_period && (
+            <strong>Amount:</strong> ${revision?.recurring_amount?.toFixed(2) || '0.00'}
+            {revision?.billing_period && (
               <span> <strong>Billing:</strong> {revision.billing_period}
             </span>
             )}

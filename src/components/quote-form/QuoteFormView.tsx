@@ -325,7 +325,19 @@ export const QuoteFormView: React.FC<Props> = (props) => {
           )}
 
           <div className="quote-url-section">
-            <span className="quote-url">{formData.quoteUrl}</span>
+            {props.currentLoadedRevisionId ? (
+              <a
+                href={`${window.location.origin}?revision=${props.currentLoadedRevisionId}`}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="quote-url clickable"
+                title="Click to preview quote in new tab"
+              >
+                {formData.quoteUrl}
+              </a>
+            ) : (
+              <span className="quote-url">{formData.quoteUrl}</span>
+            )}
             <button type="button" className="btn btn-icon" onClick={copyQuoteUrl}>
                               <ContentCopy sx={{ fontSize: 16 }} />
             </button>
