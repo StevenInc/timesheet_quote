@@ -336,7 +336,7 @@ export const useQuoteForm = () => {
         .from('quotes')
         .select(`
           *,
-          clients(name, email),
+          clients(name, email, client_comments),
           quote_revisions(
             *,
             quote_items(*),
@@ -360,6 +360,7 @@ export const useQuoteForm = () => {
             quoteNumber: quote.quote_number,
             clientName: quote.clients?.name || '',
             clientEmail: quote.clients?.email || '',
+            clientComments: quote.clients?.client_comments || '',
             expires: latestRevision.expires_on || getDefaultExpirationDate(),
             taxRate: latestRevision.tax_rate || 0.08,
             isTaxEnabled: latestRevision.is_tax_enabled || false,
@@ -667,7 +668,7 @@ export const useQuoteForm = () => {
     try {
       const { data, error } = await supabase
         .from('clients')
-        .select('id, name, email')
+        .select('id, name, email, client_comments')
         .order('name')
 
       if (error) throw error
@@ -692,7 +693,7 @@ export const useQuoteForm = () => {
     try {
       const { data, error } = await supabase
         .from('clients')
-        .select('id, name, email')
+        .select('id, name, email, client_comments')
         .ilike('name', `%${searchTerm}%`)
         .limit(10)
 
@@ -1717,7 +1718,7 @@ export const useQuoteForm = () => {
                   quote_number,
                   owner_id,
                   created_at,
-                  clients(name, email)
+                  clients(name, email, client_comments)
                 ),
                 quote_items(*),
                 payment_terms(*),
@@ -1746,6 +1747,7 @@ export const useQuoteForm = () => {
                 quoteNumber: revision.quotes.quote_number,
                 clientName: revision.quotes.clients?.name || '',
                 clientEmail: revision.quotes.clients?.email || '',
+                clientComments: revision.quotes.clients?.client_comments || '',
                 expires: revision.expires_on || getDefaultExpirationDate(),
                 taxRate: revision.tax_rate || 0.08,
                 isTaxEnabled: revision.is_tax_enabled || false,
@@ -1767,7 +1769,6 @@ export const useQuoteForm = () => {
                   description: term.description || ''
                 })) || [{ id: 'ps-1', percentage: 100, description: 'Net 30' }],
                 legalTerms: revision.legal_terms?.[0]?.terms || '',
-                clientComments: '',
                 sentViaEmail: revision.sent_via_email || false
               }
 
@@ -1852,6 +1853,7 @@ export const useQuoteForm = () => {
         ...prev,
         clientName: selectedClient.name,
         clientEmail: selectedClient.email,
+        clientComments: selectedClient.client_comments || '',
         // Note: Owner field is not available in client data, so it remains unchanged
       }))
     }
@@ -1987,7 +1989,7 @@ export const useQuoteForm = () => {
             quote_number,
             owner_id,
             created_at,
-            clients(name, email)
+            clients(name, email, client_comments)
           ),
           quote_items(*),
           payment_terms(*),
@@ -2024,6 +2026,7 @@ export const useQuoteForm = () => {
           quoteNumber: revision.quotes.quote_number,
           clientName: revision.quotes.clients?.name || '',
           clientEmail: revision.quotes.clients?.email || '',
+          clientComments: revision.quotes.clients?.client_comments || '',
           expires: revision.expires_on || getDefaultExpirationDate(),
           taxRate: revision.tax_rate || 0.08,
           isTaxEnabled: revision.is_tax_enabled || false,
@@ -2046,7 +2049,6 @@ export const useQuoteForm = () => {
             description: term.description || ''
           })) || [{ id: 'ps-1', percentage: 100, description: 'Net 30' }],
           legalTerms: revision.legal_terms?.[0]?.terms || '',
-          clientComments: '',
           sentViaEmail: revision.sent_via_email || false
         }
 
