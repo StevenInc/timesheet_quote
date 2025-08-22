@@ -599,16 +599,15 @@ export const useQuoteForm = () => {
   // New Quote Modal Functions
   const openNewQuoteModal = React.useCallback(async () => {
     // Always get a fresh, unique quote number when opening the modal
-    console.log('Opening new quote modal, current newQuoteData:', newQuoteData)
-    console.log('About to call loadNextQuoteNumber...')
+    console.log('Opening new quote modal, current newQuoteData:', newQuoteData);
+    console.log('About to call loadNextQuoteNumber...');
     await loadNextQuoteNumber()
     console.log('After loading next quote number, newQuoteData:', newQuoteData)
 
     // Don't reset the form here - we want to populate it with client data when creating the quote
-
     console.log('Setting modal to open...')
     setIsNewQuoteModalOpen(true)
-    console.log('Modal should now be open')
+    console.log('Got new quote number: Modal should now be open')
     // Load available clients when opening the modal
     await loadAvailableClients()
   }, [newQuoteData])
@@ -622,6 +621,7 @@ export const useQuoteForm = () => {
 
     // Reset the main form to clean state when canceling new quote creation
     // This will clear any form data and return to default state
+    // NOTE: Use this function only when canceling, not when successfully creating a quote
     await resetForm()
 
     // Clear any success/error messages that might be showing
@@ -738,48 +738,50 @@ export const useQuoteForm = () => {
       // Clear any loaded revision state
       clearLoadedRevisionState()
 
-      // Get the selected client information
-      const selectedClient = clientSuggestions.find(client => client.id === newQuoteData.selectedClientId)
-      if (!selectedClient) {
-        throw new Error('Selected client not found')
-      }
+              // Load existing client data and comments for this client
+        let existingClientComments = ''
+        let clientName = ''
+        let clientEmail = ''
 
-                  // Load existing client comments for this client
-      let existingClientComments = ''
-      console.log('🔍 Starting to load client comments for client ID:', newQuoteData.selectedClientId)
-      try {
-        // Read client comments directly from the clients table
-        console.log('🔍 Querying clients table for client ID:', newQuoteData.selectedClientId)
-        const { data: clientData, error: clientError } = await supabase
-          .from('clients')
-          .select('client_comments')
-          .eq('id', newQuoteData.selectedClientId)
-          .single()
+        console.log('🔍 Starting to load client data for client ID:', newQuoteData.selectedClientId)
+        try {
+          // Read client data directly from the clients table
+          console.log('🔍 Querying clients table for client ID:', newQuoteData.selectedClientId)
+          const { data: clientData, error: clientError } = await supabase
+            .from('clients')
+            .select('client_comments, name, email')
+            .eq('id', newQuoteData.selectedClientId)
+            .single()
 
-        console.log('🔍 Client query result:', { clientData, clientError })
+          console.log('🔍 Client query result:', { clientData, clientError })
 
-        if (!clientError && clientData && clientData.client_comments) {
-          existingClientComments = clientData.client_comments
-          console.log('📝 Loaded existing client comments from clients table:', existingClientComments)
-        } else {
-          console.log('🔍 No client comments found in clients table or error:', { clientData, clientError })
+          if (!clientError && clientData) {
+            existingClientComments = clientData.client_comments || ''
+            clientName = clientData.name || ''
+            clientEmail = clientData.email || ''
+            console.log('📝 Loaded client data from clients table:', { name: clientName, email: clientEmail, comments: existingClientComments })
+          } else {
+            console.log('🔍 No client data found in clients table or error:', { clientData, clientError })
+            throw new Error('Failed to load client data')
+          }
+        } catch (error) {
+          console.log('🔍 Error loading client data from clients table:', error)
+          throw new Error(`Error loading client data: ${error instanceof Error ? error.message : 'Unknown error'}`)
         }
-      } catch (error) {
-        console.log('🔍 Error loading client comments from clients table:', error)
-      }
 
-      // Populate the form with new quote data and existing client comments
-      console.log('🔍 About to create newFormData with:')
-      console.log('  - selectedClient:', selectedClient)
-      console.log('  - existingClientComments:', existingClientComments)
-      console.log('  - newQuoteData.quoteNumber:', newQuoteData.quoteNumber)
+        // Populate the form with new quote data and existing client comments
+        console.log('🔍 About to create newFormData with:')
+        console.log('  - clientName:', clientName)
+        console.log('  - clientEmail:', clientEmail)
+        console.log('  - existingClientComments:', existingClientComments)
+        console.log('  - newQuoteData.quoteNumber:', newQuoteData.quoteNumber)
 
-      const newFormData = {
-        ...formData,
-        quoteNumber: newQuoteData.quoteNumber,
-        clientName: selectedClient.name,
-        clientEmail: selectedClient.email,
-        clientComments: existingClientComments, // Include existing client comments
+        const newQuoteFormData = {
+          ...formData,
+          quoteNumber: newQuoteData.quoteNumber,
+          clientName: clientName,
+          clientEmail: clientEmail,
+          clientComments: existingClientComments, // Include existing client comments
         items: [{ id: '1', description: '', quantity: 1, unitPrice: 0, total: 0, recurring: 'none', taxable: true }],
         subtotal: 0,
         tax: 0,
@@ -790,16 +792,20 @@ export const useQuoteForm = () => {
         paymentTerms: 'Net 30'
       }
 
-      console.log('🔍 New quote form data created:', newFormData)
-      console.log('🔍 About to call setFormData with clientComments:', newFormData.clientComments)
+      console.log('🔍 New quote form data created:', newQuoteFormData)
+      console.log('🔍 About to call setFormData with clientComments:', newQuoteFormData.clientComments)
 
       // Update the form with the new quote data
-      setFormData(newFormData)
-      setOriginalFormData(newFormData)
+      setFormData(newQuoteFormData)
+      setOriginalFormData(newQuoteFormData)
       setHasUnsavedChanges(false)
 
-      // Close the modal and show success message
-      closeNewQuoteModal()
+      // Close the modal without resetting the form (since we want to keep the new quote data)
+      setIsNewQuoteModalOpen(false)
+      setNewQuoteData({ quoteNumber: '', selectedClientId: '' })
+      setClientSuggestions([])
+
+      // Show success message
       setSaveMessage({ type: 'success', text: 'New quote created successfully!' })
     } catch (error) {
       console.error('Error creating new quote:', error)

@@ -23,6 +23,7 @@ const PAYMENT_SCHEDULE_OPTIONS = [
 
 interface Props {
   formData: QuoteFormData
+  setFormData: (data: QuoteFormData | ((prev: QuoteFormData) => QuoteFormData)) => void
   paymentScheduleTotal: number
   // item handlers
   updateItem: (id: string, field: keyof QuoteItem, value: string | number | boolean) => void
@@ -251,6 +252,7 @@ export const QuoteFormView: React.FC<Props> = (props) => {
 
   const {
     formData,
+    setFormData,
     paymentScheduleTotal,
     updateItem,
     addItem,

@@ -5,6 +5,7 @@ import { useQuoteForm } from './quote-form/useQuoteForm'
 const QuoteForm: React.FC = () => {
   const {
     formData,
+    setFormData,
     updateItem,
     addItem,
     removeItem,
@@ -89,6 +90,7 @@ const QuoteForm: React.FC = () => {
   return (
     <QuoteFormView
       formData={formData}
+      setFormData={setFormData}
       paymentScheduleTotal={paymentScheduleTotal}
       updateItem={updateItem}
       addItem={addItem}
