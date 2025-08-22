@@ -153,6 +153,7 @@ export interface ClientSuggestion {
   id: string
   name: string
   email: string
+  client_comments?: string
 }
 
 export interface DatabaseOwner {

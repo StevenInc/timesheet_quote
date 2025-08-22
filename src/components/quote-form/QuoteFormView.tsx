@@ -1,5 +1,5 @@
 import React from 'react'
-import { Trash2, Save, Send, Copy, Download, Plus } from 'lucide-react'
+import { Add, Visibility, Description, Save, Send, ContentCopy, Download, Delete } from '@mui/icons-material'
 import '../QuoteForm.css'
 import scopedCss from '../QuoteFormView.module.css'
 import type { QuoteFormData, QuoteItem, PaymentTermItem, NewQuoteModalData, ClientQuote, DatabaseQuoteRevision, ClientSuggestion } from './types'
@@ -327,10 +327,10 @@ export const QuoteFormView: React.FC<Props> = (props) => {
           <div className="quote-url-section">
             <span className="quote-url">{formData.quoteUrl}</span>
             <button type="button" className="btn btn-icon" onClick={copyQuoteUrl}>
-              <Copy size={16} />
+                              <ContentCopy sx={{ fontSize: 16 }} />
             </button>
             <button type="button" className="btn btn-icon" onClick={downloadQuote}>
-              <Download size={16} />
+                              <Download sx={{ fontSize: 16 }} />
             </button>
             {props.currentLoadedRevisionId && (
               <button
@@ -349,29 +349,29 @@ export const QuoteFormView: React.FC<Props> = (props) => {
           </div>
         </div>
         <div className="header-right">
-          <button
-            type="button"
-            className="btn btn-primary"
-            onClick={openViewQuoteModal}
-          >
-            👁️
-            View Quotes
-          </button>
           {/* New Quote Button */}
           <button
             type="button"
             className="btn btn-primary"
             onClick={openNewQuoteModal}
           >
-            <Plus size={16} />
+            <Add sx={{ fontSize: 16 }} />
             New Quote
+          </button>
+          <button
+            type="button"
+            className="btn btn-primary"
+            onClick={openViewQuoteModal}
+          >
+            <Visibility sx={{ fontSize: 16 }} />
+            View Quotes
           </button>
           <button
             type="button"
             className="btn btn-primary"
             onClick={props.openDefaultLegalTermsModal}
           >
-            <Plus size={16} />
+            <Description sx={{ fontSize: 16 }} />
             Default Legal Terms
           </button>
         </div>
@@ -516,9 +516,8 @@ export const QuoteFormView: React.FC<Props> = (props) => {
                         type="button"
                         className="btn btn-danger btn-sm"
                         onClick={() => removeItem(item.id)}
-                        disabled={formData.items.length === 1}
                       >
-                        <Trash2 size={14} />
+                        <Delete sx={{ fontSize: 14 }} />
                       </button>
                     </div>
                   </div>
@@ -627,7 +626,7 @@ export const QuoteFormView: React.FC<Props> = (props) => {
                       </div>
                       <div className="table-cell">
                         <button type="button" className="btn btn-danger btn-sm" onClick={() => removePaymentTerm(t.id)}>
-                          <Trash2 size={14} />
+                          <Delete sx={{ fontSize: 14 }} />
                         </button>
                       </div>
                     </div>
@@ -774,11 +773,11 @@ export const QuoteFormView: React.FC<Props> = (props) => {
 
         <div className="form-actions">
           <button type="submit" className="btn btn-primary" disabled={props.isSaving || (props.currentLoadedRevisionId ? !hasUnsavedChanges : !formData.title?.trim())}>
-            <Save size={16} />
+            <Save sx={{ fontSize: 16 }} />
             {props.isSaving ? 'Saving...' : 'Save'}
           </button>
           <button type="button" className="btn btn-primary" onClick={props.sendQuoteToClient} disabled={props.isSaving || !props.currentLoadedRevisionId || hasUnsavedChanges}>
-            <Send size={16} />
+            <Send sx={{ fontSize: 16 }} />
             {props.isSaving ? 'Sending...' : 'Send to Client'}
           </button>
           <button type="button" className="btn btn-secondary" onClick={props.resetForm} disabled={props.isSaving}>
