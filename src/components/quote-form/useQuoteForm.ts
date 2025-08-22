@@ -1525,6 +1525,14 @@ export const useQuoteForm = () => {
         await loadQuoteRevisions(quoteId, true)
       }
 
+      // Set the currentLoadedRevisionId to the newly created/updated revision
+      // This enables the "Send to Client" button after saving
+      if (revisionId) {
+        console.log('✅ Setting currentLoadedRevisionId to newly saved revision:', revisionId)
+        setCurrentLoadedRevisionId(revisionId)
+        setCurrentLoadedQuoteId(quoteId)
+      }
+
       return { quoteId, success: true }
 
     } catch (error) {
