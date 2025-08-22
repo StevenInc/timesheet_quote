@@ -133,6 +133,7 @@ export interface DatabaseQuoteRevision {
   payment_terms?: DatabasePaymentTerm[]
   legal_terms?: DatabaseLegalTerm[]
   quotes?: {
+    id: string
     quote_number: string
     owner_id?: string
     created_at?: string
@@ -193,4 +194,30 @@ export interface ClientQuote {
   lastSentViaEmail?: boolean
   lastSentRevisionNumber?: number
   lastViewedRevisionNumber?: number
+}
+
+// New types for client feedback
+export interface ClientFeedback {
+  id: string
+  quoteId: string
+  quoteRevisionId: string
+  clientEmail: string
+  action: 'ACCEPT' | 'DECLINE' | 'REQUEST_REVISION'
+  comment?: string
+  createdAt: string
+  updatedAt: string
+}
+
+export interface ClientFeedbackFormData {
+  clientEmail: string
+  action: 'ACCEPT' | 'DECLINE' | 'REQUEST_REVISION'
+  comment: string
+}
+
+export interface ClientFeedbackSubmission {
+  quoteId: string
+  quoteRevisionId: string
+  clientEmail: string
+  action: 'ACCEPT' | 'DECLINE' | 'REQUEST_REVISION'
+  comment?: string
 }

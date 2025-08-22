@@ -1,7 +1,9 @@
 import React, { useEffect, useState } from 'react'
 import { supabase } from '../lib/supabaseClient'
 import { QuoteViewService } from '../lib/quoteViewService'
-import type { DatabaseQuoteRevision } from './quote-form/types'
+import { ClientFeedbackService } from '../lib/clientFeedbackService'
+import { ClientFeedbackForm } from './ClientFeedbackForm'
+import type { DatabaseQuoteRevision, ClientFeedbackFormData } from './quote-form/types'
 import './QuoteForm.css'
 
 interface ClientQuoteViewProps {
@@ -16,6 +18,10 @@ export const ClientQuoteView: React.FC<ClientQuoteViewProps> = ({ revisionId }) 
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
   const [viewTracked, setViewTracked] = useState(false)
+  const [showFeedbackForm, setShowFeedbackForm] = useState(false)
+  const [isSubmittingFeedback, setIsSubmittingFeedback] = useState(false)
+  const [feedbackSubmitted, setFeedbackSubmitted] = useState(false)
+  const [feedbackMessage, setFeedbackMessage] = useState<{ type: 'success' | 'error'; text: string } | null>(null)
 
   useEffect(() => {
     const loadQuoteData = async () => {
@@ -28,6 +34,7 @@ export const ClientQuoteView: React.FC<ClientQuoteViewProps> = ({ revisionId }) 
           .select(`
             *,
             quotes!inner(
+              id,
               quote_number,
               clients!inner(name, email)
             ),
@@ -72,6 +79,52 @@ export const ClientQuoteView: React.FC<ClientQuoteViewProps> = ({ revisionId }) 
       loadQuoteData()
     }
   }, [revisionId, viewTracked])
+
+  const handleFeedbackSubmit = async (feedback: ClientFeedbackFormData) => {
+    if (!quoteData) return
+
+    setIsSubmittingFeedback(true)
+    setFeedbackMessage(null)
+
+    try {
+      if (!quoteData.quotes) {
+        setFeedbackMessage({
+          type: 'error',
+          text: 'Quote data is incomplete. Please refresh the page and try again.'
+        })
+        return
+      }
+
+      const result = await ClientFeedbackService.submitFeedback({
+        quoteId: quoteData.quotes.id,
+        quoteRevisionId: revisionId,
+        clientEmail: feedback.clientEmail,
+        action: feedback.action,
+        comment: feedback.comment
+      })
+
+      if (result.success) {
+        setFeedbackSubmitted(true)
+        setFeedbackMessage({
+          type: 'success',
+          text: `Thank you! Your ${feedback.action.toLowerCase().replace('_', ' ')} has been submitted successfully.`
+        })
+        setShowFeedbackForm(false)
+      } else {
+        setFeedbackMessage({
+          type: 'error',
+          text: result.error || 'Failed to submit feedback. Please try again.'
+        })
+      }
+    } catch {
+      setFeedbackMessage({
+        type: 'error',
+        text: 'An unexpected error occurred. Please try again.'
+      })
+    } finally {
+      setIsSubmittingFeedback(false)
+    }
+  }
 
   if (loading) {
     return (
@@ -196,6 +249,59 @@ export const ClientQuoteView: React.FC<ClientQuoteViewProps> = ({ revisionId }) 
           </p>
         </div>
       )}
+
+      {/* Client Feedback Section */}
+      <div className="client-feedback-section">
+        {feedbackMessage && (
+          <div className={`feedback-message ${feedbackMessage.type}`}>
+            {feedbackMessage.text}
+          </div>
+        )}
+
+        {!feedbackSubmitted ? (
+          <div className="feedback-actions">
+            <h3>What would you like to do with this quote?</h3>
+            <p>Please let us know your decision or request any changes needed.</p>
+
+            {!showFeedbackForm ? (
+              <div className="feedback-buttons">
+                <button
+                  type="button"
+                  className="btn btn-success"
+                  onClick={() => setShowFeedbackForm(true)}
+                >
+                  Accept Quote
+                </button>
+                <button
+                  type="button"
+                  className="btn btn-danger"
+                  onClick={() => setShowFeedbackForm(true)}
+                >
+                  Decline Quote
+                </button>
+                <button
+                  type="button"
+                  className="btn btn-warning"
+                  onClick={() => setShowFeedbackForm(true)}
+                >
+                  Request Revision
+                </button>
+              </div>
+            ) : (
+              <ClientFeedbackForm
+                clientEmail={quote?.clients?.email || ''}
+                onSubmit={handleFeedbackSubmit}
+                isSubmitting={isSubmittingFeedback}
+              />
+            )}
+          </div>
+        ) : (
+          <div className="feedback-submitted">
+            <h3>Thank you for your feedback!</h3>
+            <p>We have received your response and will follow up with you shortly.</p>
+          </div>
+        )}
+      </div>
 
       <div className="quote-footer">
         <p>Thank you for your business!</p>
