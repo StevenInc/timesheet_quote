@@ -1604,11 +1604,13 @@ div.form-section.quote-version {
 
 /* Make percent column narrower in schedule */
 .schedule-table .table-header {
+  display: grid !important;
   grid-template-columns: 120px 1fr 60px;
   column-gap: 12px;
 }
 
 .schedule-table .table-row {
+  display: grid !important;
   grid-template-columns: 120px 1fr 60px;
   column-gap: 12px;
 }
@@ -1618,6 +1620,22 @@ div.form-section.quote-version {
   width: 100%;
   max-width: 120px;
   margin-right: 10px;
+}
+
+/* Ensure Description column fills available space and aligns left */
+.schedule-table .table-row .table-cell:nth-child(2) {
+  display: flex;
+  justify-content: flex-start;
+  width: 100%;
+  min-width: 0; /* Allow grid item to shrink */
+}
+
+.schedule-table .table-row .table-cell:nth-child(2) select {
+  width: 100%;
+  min-width: 0; /* Allow select to shrink */
+  text-align: left;
+  text-align-last: left;
+  box-sizing: border-box;
 }
 
 /* Extra left margin for schedule term trash icons */
