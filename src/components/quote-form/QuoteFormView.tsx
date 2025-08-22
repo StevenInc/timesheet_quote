@@ -356,6 +356,7 @@ export const QuoteFormView: React.FC<Props> = (props) => {
             👁️
             View Quotes
           </button>
+          {/* New Quote Button */}
           <button
             type="button"
             className="btn btn-primary"

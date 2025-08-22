@@ -99,6 +99,16 @@ export const useQuoteForm = () => {
   const [isLoadingClientQuotes, setIsLoadingClientQuotes] = useState(false)
   const [selectedClientQuote, setSelectedClientQuoteState] = useState<string>('')
 
+  // Debug: Monitor form data changes, especially client comments
+  useEffect(() => {
+    console.log('🔍 Form data changed:', {
+      clientName: formData.clientName,
+      clientEmail: formData.clientEmail,
+      clientComments: formData.clientComments,
+      quoteNumber: formData.quoteNumber
+    })
+  }, [formData.clientName, formData.clientEmail, formData.clientComments, formData.quoteNumber])
+
   // Custom setter with guards to prevent unnecessary updates
   const setSelectedClientQuote = React.useCallback((quoteId: string) => {
     console.log('setSelectedClientQuote called with:', quoteId, 'current:', selectedClientQuote)
@@ -594,9 +604,7 @@ export const useQuoteForm = () => {
     await loadNextQuoteNumber()
     console.log('After loading next quote number, newQuoteData:', newQuoteData)
 
-    // Reset the main form to clean state when opening new quote creation
-    // This ensures all form fields are reset to defaults
-    await resetForm()
+    // Don't reset the form here - we want to populate it with client data when creating the quote
 
     console.log('Setting modal to open...')
     setIsNewQuoteModalOpen(true)
@@ -713,6 +721,7 @@ export const useQuoteForm = () => {
   }
 
   const createNewQuote = async () => {
+    console.log('🚀 createNewQuote function called!')
     setIsCreatingQuote(true)
     try {
       console.log('Creating new quote with data:', newQuoteData)
@@ -735,44 +744,63 @@ export const useQuoteForm = () => {
         throw new Error('Selected client not found')
       }
 
-      // Create the quote using the existing saveQuote function
-      const dataToPass = {
+                  // Load existing client comments for this client
+      let existingClientComments = ''
+      console.log('🔍 Starting to load client comments for client ID:', newQuoteData.selectedClientId)
+      try {
+        // Read client comments directly from the clients table
+        console.log('🔍 Querying clients table for client ID:', newQuoteData.selectedClientId)
+        const { data: clientData, error: clientError } = await supabase
+          .from('clients')
+          .select('client_comments')
+          .eq('id', newQuoteData.selectedClientId)
+          .single()
+
+        console.log('🔍 Client query result:', { clientData, clientError })
+
+        if (!clientError && clientData && clientData.client_comments) {
+          existingClientComments = clientData.client_comments
+          console.log('📝 Loaded existing client comments from clients table:', existingClientComments)
+        } else {
+          console.log('🔍 No client comments found in clients table or error:', { clientData, clientError })
+        }
+      } catch (error) {
+        console.log('🔍 Error loading client comments from clients table:', error)
+      }
+
+      // Populate the form with new quote data and existing client comments
+      console.log('🔍 About to create newFormData with:')
+      console.log('  - selectedClient:', selectedClient)
+      console.log('  - existingClientComments:', existingClientComments)
+      console.log('  - newQuoteData.quoteNumber:', newQuoteData.quoteNumber)
+
+      const newFormData = {
         ...formData,
         quoteNumber: newQuoteData.quoteNumber,
         clientName: selectedClient.name,
         clientEmail: selectedClient.email,
+        clientComments: existingClientComments, // Include existing client comments
         items: [{ id: '1', description: '', quantity: 1, unitPrice: 0, total: 0, recurring: 'none', taxable: true }],
         subtotal: 0,
         tax: 0,
-        total: 0
+        total: 0,
+        // Set default values for required fields
+        quoteTitle: `Quote ${newQuoteData.quoteNumber}`,
+        taxRate: 0.08, // Default tax rate
+        paymentTerms: 'Net 30'
       }
-      console.log('Data being passed to saveQuote:', dataToPass)
-      console.log('Client email being passed:', dataToPass.clientEmail)
 
-      const result = await saveQuote(dataToPass) // Save the new quote
+      console.log('🔍 New quote form data created:', newFormData)
+      console.log('🔍 About to call setFormData with clientComments:', newFormData.clientComments)
 
-      if (result.success) {
-        console.log('New quote created successfully:', result.quoteId)
-        setSaveMessage({ type: 'success', text: 'New quote created successfully!' })
-        closeNewQuoteModal()
+      // Update the form with the new quote data
+      setFormData(newFormData)
+      setOriginalFormData(newFormData)
+      setHasUnsavedChanges(false)
 
-        // Reset form to default state first
-        await resetForm()
-
-        // Then set the specific values for the newly created quote
-        const newFormData = {
-          ...formData,
-          quoteNumber: newQuoteData.quoteNumber,
-          clientName: selectedClient.name,
-          clientEmail: selectedClient.email,
-        }
-
-        setFormData(newFormData)
-
-        // Reset change tracking for new quote
-        setOriginalFormData(newFormData)
-        setHasUnsavedChanges(false)
-      }
+      // Close the modal and show success message
+      closeNewQuoteModal()
+      setSaveMessage({ type: 'success', text: 'New quote created successfully!' })
     } catch (error) {
       console.error('Error creating new quote:', error)
       setSaveMessage({ type: 'error', text: `Error creating new quote: ${error instanceof Error ? error.message : 'Unknown error'}` })
